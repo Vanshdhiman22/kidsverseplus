@@ -85,4 +85,6 @@ export default function ConfidenceMission() {
         <Button variant="ghost" size="md" icon={<RefreshCw size={22} />} className="h-[64px] px-8 text-[19px]" onClick={() => setTurn(0)}>Try Again</Button>
         <Button size="md" arrow className="w-[300px] h-[64px] text-[22px]" sound="whoosh" onClick={() => { g.addXp(20, 'Confidence mission'); nav('/extra') }}>Continue</Button>
       </motion.div>
-    </Page
+    </Page>
+  )
+}

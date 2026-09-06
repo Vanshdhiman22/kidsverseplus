@@ -70,4 +70,6 @@ export default function BattleOpponents() {
         </div>
       </Panel>
       <Dock className="w-[860px]" spread style={{ bottom: 14 }} />
-    </Page
+    </Page>
+  )
+}

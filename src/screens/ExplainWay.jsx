@@ -108,4 +108,6 @@ export default function ExplainWay() {
 
       <div className="absolute left-[1350px] top-[180px]"><SpeechBubble tail="bottom" text="Fractions are equal parts. Which model makes most sense to you? ✦" delay={0.3} className="w-[245px] text-[18px]" /></div>
       <Dock spread className="w-[1440px]" style={{ bottom: 10 }} compact />
-    </Page
+    </Page>
+  )
+}

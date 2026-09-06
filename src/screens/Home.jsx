@@ -286,4 +286,6 @@ export default function Home() {
       <AnimatePresence>
         {gate && <ParentGate onCancel={() => setGate(false)} onPass={() => { setGate(false); nav('/parent') }} />}
       </AnimatePresence>
-    </Page
+    </Page>
+  )
+}

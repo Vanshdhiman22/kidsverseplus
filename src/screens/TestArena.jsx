@@ -44,4 +44,6 @@ export default function TestArena() {
       <Stack className="absolute left-[58px] top-[488px] flex items-end gap-[16px]" start={0.7} delay={0.08}>{row1.map((t, i) => <TestCard key={t.id} t={t} i={i} />)}</Stack>
       <Stack className="absolute left-[58px] top-[714px] flex gap-[16px]" start={1.1} delay={0.08}>{row2.map((t, i) => <TestCard key={t.id} t={t} wide />)}</Stack>
       <Dock spread className="w-[1200px]" style={{ bottom: 12 }} />
-    </Page
+    </Page>
+  )
+}

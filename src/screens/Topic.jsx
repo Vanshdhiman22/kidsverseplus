@@ -65,4 +65,6 @@ export default function Topic() {
         <Item v="pop" className="mt-4 grid grid-cols-2 gap-4"><Button variant="ghost" size="md" icon={<Pencil size={20} />} className="h-[68px] uppercase text-[17px] px-4 whitespace-nowrap" onClick={() => nav('/missions/fractions/explain')}>Practise</Button><Button variant="ghost" size="md" icon={<ClipboardCheck size={20} />} className="h-[68px] uppercase text-[17px] px-4 whitespace-nowrap" onClick={() => nav('/tests/mixed/intro')}>Take Test</Button></Item>
       </Stack>
       <Dock spread className="w-[1440px]" style={{ bottom: 12 }} />
-    </Page
+    </Page>
+  )
+}

@@ -43,4 +43,20 @@ export function Cutout({ id, src, box, delay = 0.3, amp = 8, dur = 3.8, float = 
       initial={{ opacity: 0, y: 28, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 24, delay: d }}>
       <div className="char-shadow" style={{ width: '70%' }} />
       <motion.img src={img} alt="" draggable={false} className="block w-full h-full" style={{ filter: 'drop-shadow(0 18px 24px rgba(40,20,120,.28))' }}
-        animate={float ? { y: [0, -amp, 0], 
+        animate={float ? { y: [0, -amp, 0], rotate: [0, 0.5, 0, -0.5, 0] } : undefined} transition={{ duration: dur, repeat: Infinity, ease: 'easeInOut', delay: d + 0.4 }} />
+    </motion.div>
+  )
+}
+
+/* Child: the cutout drawn as whichever character this player picked.
+   `screen` is a key in SLOTS. The pose, the box and the animation all come from
+   the design and never change -- only the child does. Until that character's
+   render for this pose exists, this draws the master art, so the screen always
+   looks as approved. */
+export function Child({ screen, ...rest }) {
+  const { profile } = useGame().state
+  const slot = SLOTS[screen]
+  if (!slot?.cutout) return null
+  return <Cutout id={slot.cutout} src={childSrc(profile.face, screen, { outfit: profile.outfit })}
+    box={childBox(profile.face, screen)} {...rest} />
+}
