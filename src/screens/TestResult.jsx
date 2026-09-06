@@ -22,7 +22,7 @@ export default function TestResult() {
       <Scene name="result" />
       <Child screen="result" delay={0.5} amp={7} />
       <Confetti count={140} />
-      <TopBar right={<UserChip name={name} sub={gradeLabel(grade)} face={face} />} showControls={false} />
+      <TopBar back={false} right={<UserChip name={name} sub={gradeLabel(grade)} face={face} />} showControls={false} />
       <Stack className="absolute left-[160px] top-[135px]" start={0.2}>
         <Item v="pop"><span className="chip h-[44px] px-5 text-[16px] uppercase tracking-[0.12em] text-white" style={{ background: 'var(--grad-primary)' }}><Star size={18} className="text-gold" fill="currentColor" /> Test Result</span></Item>
         <Item><h1 className="mt-3 font-display font-extrabold text-[66px] leading-none text-ink">Great work, <span className="grad-text">{name}!</span> 🎉</h1></Item>

@@ -31,7 +31,7 @@ export default function LearningSetup() {
     <Page>
       <Scene name="setup" />
       <Child screen="setup" delay={0.14} amp={5} />
-      <TopBar center={<Steps steps={['Welcome', 'Learning Setup', 'Profile', 'Complete']} current={1} className="w-[640px]" />} />
+      <TopBar back={false} center={<Steps steps={['Welcome', 'Learning Setup', 'Profile', 'Complete']} current={1} className="w-[640px]" />} />
       <Stack className="absolute left-[130px] top-[160px] w-[560px]" start={0.25}>
         <Item><h1 className="font-display font-extrabold text-[64px] leading-[1.02] text-ink">Set the learning<br />path <span className="text-gold">✦</span></h1></Item>
         <Item className="mt-6 text-[24px] font-semibold text-ink-2 leading-snug w-[420px]">Nova will match school learning with the right adventures.</Item>

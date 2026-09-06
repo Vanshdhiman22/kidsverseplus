@@ -167,6 +167,40 @@ export const TOPICS = {
       { n: 5, name: 'Life Cycles', stars: 0, state: 'locked' },
     ],
   },
+  computer: {
+    title: 'Sequences', subject: 'Computer',
+    desc: 'Put steps in the right order, spot a pattern that repeats, and tell a machine exactly what to do.',
+    nova: 'A computer does exactly what you say — so the order of your steps is everything! ✨',
+    tracks: [
+      ['School Syllabus', ['Parts of a computer', 'Using a keyboard'], 'Completed', 'done'],
+      ['Kidsverse Plus', ['Step by step', 'Patterns', 'Repeating a step'], 'In progress', 'progress'],
+      ['Competition Edge', ['Debugging a sequence'], 'Locked', 'locked'],
+    ],
+    steps: [
+      { n: 1, name: 'What is a Step?', stars: 3, state: 'done' },
+      { n: 2, name: 'Right Order', stars: 3, state: 'done' },
+      { n: 3, name: 'Spot the Pattern', stars: 2, state: 'current' },
+      { n: 4, name: 'Repeat It', stars: 0, state: 'locked' },
+      { n: 5, name: 'Fix the Mistake', stars: 0, state: 'locked' },
+    ],
+  },
+  general: {
+    title: 'Our Community', subject: 'General Awareness',
+    desc: 'Meet the people who keep a place running, learn how to stay safe, and see what it means to help.',
+    nova: 'A community works because everybody does their bit — including you! ✨',
+    tracks: [
+      ['School Syllabus', ['People who help us', 'Our country'], 'Completed', 'done'],
+      ['Kidsverse Plus', ['Staying safe', 'Money sense', 'Being a good neighbour'], 'In progress', 'progress'],
+      ['Competition Edge', ['Current affairs'], 'Locked', 'locked'],
+    ],
+    steps: [
+      { n: 1, name: 'People Who Help', stars: 3, state: 'done' },
+      { n: 2, name: 'My Neighbourhood', stars: 3, state: 'done' },
+      { n: 3, name: 'Staying Safe', stars: 2, state: 'current' },
+      { n: 4, name: 'Money Sense', stars: 0, state: 'locked' },
+      { n: 5, name: 'Helping Out', stars: 0, state: 'locked' },
+    ],
+  },
 }
 
 export const topicFor = world => TOPICS[world] ?? TOPICS.maths

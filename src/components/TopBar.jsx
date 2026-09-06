@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useBackTrail, parentOf, NO_BACK } from '../lib/nav.js'
 import { AnimatePresence, motion } from 'motion/react'
 import { ChevronDown, Globe, Sun, Moon, Volume2, VolumeX, Flame, Star, Zap, Gem, Settings, Check, ArrowLeft } from 'lucide-react'
 import Logo from './Logo.jsx'
@@ -12,17 +13,23 @@ import { openSettings } from './SettingsSheet.jsx'
 import ScreenPill from './ScreenFit.jsx'
 import { bleedX, safeT } from './Stage.jsx'
 
-/* `back` is for screens that carry no dock of their own. Navigation lives on the
-   main screen, so a screen opened from it needs one clear way home rather than a
-   full nav bar -- pass a route, or `true` to step back through history. */
+/* Every screen with a header gets a Back, without having to ask for it: if the route has
+   a parent, the control appears. Screens used to carry their own way out -- a dock, a rail,
+   an ad-hoc button -- so dropping a dock from one silently turned it into a dead end.
+   Pass `back={false}` to suppress it, or an explicit route to override where it goes. */
 export function TopBar({ logo = 'plus', center, right, className, showControls = true, back, backLabel = 'Back' }) {
   const nav = useNavigate()
+  const { pathname } = useLocation()
+  const goBack = useBackTrail()
+  const auto = !NO_BACK.has(pathname) && parentOf(pathname) != null
+  const showBack = back === false ? false : (back != null || auto)
+  const onBack = () => { sfx.tap(); back === true || back == null ? goBack() : nav(back) }
   return (
     <motion.header className={cn('absolute flex items-center justify-between px-9 pt-7 z-20', className)} style={{ ...bleedX(0), ...safeT(0) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: EASE }}>
       <div className="flex items-center gap-4">
-        {back && (
+        {showBack && (
           <motion.button type="button" className="pill h-[54px] pl-3 pr-5 gap-2 text-primary-ink"
-            whileHover={{ x: -3 }} onClick={() => { sfx.tap(); back === true ? nav(-1) : nav(back) }}>
+            aria-label="Go back" whileHover={{ x: -3 }} onClick={onBack}>
             <ArrowLeft size={22} strokeWidth={2.6} />
             <span className="font-display font-extrabold text-[18px]">{backLabel}</span>
           </motion.button>

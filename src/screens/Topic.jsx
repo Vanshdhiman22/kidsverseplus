@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useBackTrail } from '../lib/nav.js'
 import { motion } from 'motion/react'
 import { ArrowLeft, BookOpen, Box, Trophy, Check, Lock, Loader, Pencil, ClipboardCheck, Rocket, Star } from 'lucide-react'
 import Scene, { Cutout, Child } from '../components/Scene.jsx'
@@ -9,7 +10,7 @@ import { Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import Dock from '../components/Dock.jsx'
-import { topicFor, gradeLabel } from '../data/catalog.js'
+import { topicFor, gradeLabel, WORLDS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { cn } from '../lib/utils.js'
 
@@ -19,18 +20,25 @@ const XS = [480, 660, 840, 1000, 1150]
 export default function Topic() {
   const nav = useNavigate()
   const { world = 'maths' } = useParams()
+  /* Back goes where the child came from. This said "Back to Learn" and always went to the
+     Learn Hub, which is wrong for the common path now: most children arrive from Home. */
+  const goBack = useBackTrail()
   const T = topicFor(world)
   /* The headline column is 500px and the tracks below start at a fixed y, so a long
      title must shrink rather than wrap -- two lines pushed the description down behind
      the syllabus cards. Sized off the title that shipped ("Fractions", 9 characters). */
   const titlePx = T.title.length <= 10 ? 86 : T.title.length <= 15 ? 62 : 50
+  /* The designer's backdrop carried a fraction pizza here, which was right when Fractions
+     was the only page this route served. Every subject opens it now, so the pizza was
+     painted out and each world draws its own globe on the pedestal instead. */
+  const globe = (WORLDS.find(w => w.id === world) ?? WORLDS[1]).img
   const g = useGame(); const { name, face, grade } = g.state.profile; const { xp, streak } = g.state.stats
   return (
     <Page>
       <Scene name="topic" />
-      <TopBar right={<><div className="pill h-[68px] px-2 gap-0"><StatPill kind="streak" value={streak} label="Day streak" className="border-0 shadow-none bg-transparent" /><span className="w-px h-8 bg-[var(--line)]" /><StatPill kind="xp" value={xp.toLocaleString()} label="Nova XP" className="border-0 shadow-none bg-transparent" /></div><UserChip name={name} sub={gradeLabel(grade)} face={face} /></>} showControls={false} />
+      <TopBar back={false} right={<><div className="pill h-[68px] px-2 gap-0"><StatPill kind="streak" value={streak} label="Day streak" className="border-0 shadow-none bg-transparent" /><span className="w-px h-8 bg-[var(--line)]" /><StatPill kind="xp" value={xp.toLocaleString()} label="Nova XP" className="border-0 shadow-none bg-transparent" /></div><UserChip name={name} sub={gradeLabel(grade)} face={face} /></>} showControls={false} />
       <Stack className="absolute left-[50px] top-[115px] w-[500px]" start={0.2}>
-        <Item><button className="flex items-center gap-2 text-[21px] font-extrabold text-primary-ink hover:underline" onClick={() => nav('/learn')}><ArrowLeft size={22} strokeWidth={2.6} /> Back to Learn</button></Item>
+        <Item><button className="flex items-center gap-2 text-[21px] font-extrabold text-primary-ink hover:underline" onClick={goBack}><ArrowLeft size={22} strokeWidth={2.6} /> Back</button></Item>
         <Item className="flex items-center gap-4"><h1 className="font-display font-extrabold leading-none text-ink whitespace-nowrap" style={{ fontSize: titlePx }}>{T.title}</h1><img src="/art/planet-sm.webp" alt="" className="w-[70px] floaty" /></Item>
         <Item className="text-[26px] font-extrabold text-primary-ink">{gradeLabel(grade)} <span className="text-ink-3">•</span> {T.subject}</Item>
         <Item className="mt-2 text-[18px] font-semibold text-ink-2 leading-snug">{T.desc}</Item>
@@ -46,6 +54,10 @@ export default function Topic() {
       </Stack>
 
       <Child screen="topic" delay={0.4} />
+      <motion.img src={globe} alt="" draggable={false} className="absolute left-[820px] top-[120px] w-[270px] pointer-events-none"
+        style={{ filter: 'drop-shadow(0 26px 34px rgba(40,30,140,.4))' }}
+        initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1, y: [0, -12, 0], rotate: [0, 3, 0, -3, 0] }}
+        transition={{ opacity: { delay: 0.25 }, scale: { type: 'spring', stiffness: 200, damping: 18, delay: 0.25 }, y: { duration: 6, repeat: Infinity, ease: 'easeInOut' }, rotate: { duration: 9, repeat: Infinity, ease: 'easeInOut' } }} />
       <Cutout id="topic-1" delay={0.19} amp={10} />
       <div className="absolute left-[1310px] top-[180px]"><SpeechBubble tail="left" text={T.nova} delay={0.3} className="w-[240px] text-[17px]" /></div>
 

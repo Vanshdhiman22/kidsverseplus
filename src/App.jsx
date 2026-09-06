@@ -2,6 +2,7 @@ import React, { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { GameProvider } from './state/GameProvider.jsx'
+import BackButton from './components/BackButton.jsx'
 import Stage from './components/Stage.jsx'
 import Cosmos from './components/Cosmos.jsx'
 import NovaIsland from './components/NovaIsland.jsx'
@@ -178,7 +179,7 @@ export default function App() {
         <MotionConfig reducedMotion="user">
           <Cosmos lite />
           <MusicPlayer />
-          <Stage><Routed /><Overlays /></Stage>
+          <Stage><Routed /><BackButton /><Overlays /></Stage>
         </MotionConfig>
       </GameProvider>
     </BrowserRouter>

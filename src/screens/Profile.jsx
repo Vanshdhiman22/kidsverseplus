@@ -27,7 +27,7 @@ export default function Profile() {
   return (
     <Page>
       <Scene name="profile" />
-      <TopBar logo="planet" right={<><IconPill className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill><UserChip name={`Hi, ${name}!`} sub="Keep Exploring!" face={face} /></>} showControls={false} />
+      <TopBar back={false} logo="planet" right={<><IconPill className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill><UserChip name={`Hi, ${name}!`} sub="Keep Exploring!" face={face} /></>} showControls={false} />
 
       <Panel soft className="absolute left-[115px] top-[95px] w-[665px] h-[465px] p-8" initial="hidden" animate="show">
         <Sparkles n={5} seed={31} />

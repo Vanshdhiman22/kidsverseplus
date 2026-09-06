@@ -14,8 +14,8 @@ import { useGame } from '../state/GameProvider.jsx'
 const CARDS = [
   { I: CalendarDays, c: '#7c3aed', t: 'Daily Challenge', s: 'New challenge every day!', tag: '+30 XP', btn: 'Start', to: '/tests/mixed/intro', primary: true },
   { I: Swords, c: '#3b82f6', t: 'Battle Arena', s: 'Compete with AI opponents.', btn: 'Enter Battle', to: '/challenge/opponents', primary: true },
-  { I: Trophy, c: '#f59e0b', t: 'Leaderboard', s: 'See how you rank.', btn: 'View Leaderboard', to: '/challenge/leaderboard' },
-  { I: Medal, c: '#f97316', t: 'Personal Best', s: 'Track your top scores.', btn: 'View Stats', to: '/profile' },
+  { I: Trophy, c: '#f59e0b', grad: 'linear-gradient(100deg,#f59e0b,#f97316)', t: 'Leaderboard', s: 'See how you rank.', btn: 'View Leaderboard', to: '/challenge/leaderboard' },
+  { I: Medal, c: '#f97316', grad: 'linear-gradient(100deg,#fb923c,#ea580c)', t: 'Personal Best', s: 'Track your top scores.', btn: 'View Stats', to: '/profile' },
 ]
 
 export default function ChallengeHome() {
@@ -39,7 +39,7 @@ export default function ChallengeHome() {
           <Item key={c.t} v="pop"><Tilt max={5}>
             <Card hover className="w-[378px] h-[235px] p-5 flex flex-col" onClick={() => nav(c.to)}>
               <div className="flex items-start gap-4"><span className="icon-orb w-[86px] h-[86px]" style={{ color: c.c, background: `${c.c}1f` }}><c.I size={44} /></span><span className="flex-1 leading-tight"><span className="block font-display font-extrabold text-[24px] text-ink">{c.t}</span><span className="block mt-1 text-[16px] font-semibold text-ink-2">{c.s}</span>{c.tag && <span className="block mt-2 text-[16px] font-extrabold text-orange-500 text-right">{c.tag}</span>}</span></div>
-              <div className="mt-auto">{c.primary ? <Button size="md" arrow={c.t !== 'Daily Challenge'} className="w-full h-[54px] text-[19px] uppercase" sound="whoosh" onClick={e => { e.stopPropagation(); nav(c.to) }}>{c.btn}{c.t === 'Daily Challenge' && <ChevronRight size={22} className="ml-auto" />}</Button> : <Button variant="ghost" size="md" className="w-full h-[54px] text-[18px] uppercase" style={{ background: `${c.c}1f`, color: c.c, borderColor: `${c.c}59` }} onClick={e => { e.stopPropagation(); nav(c.to) }}>{c.btn}<ChevronRight size={22} className="ml-auto" /></Button>}</div>
+              <div className="mt-auto">{c.primary ? <Button size="md" arrow={c.t !== 'Daily Challenge'} className="w-full h-[54px] text-[19px] uppercase" sound="whoosh" onClick={e => { e.stopPropagation(); nav(c.to) }}>{c.btn}{c.t === 'Daily Challenge' && <ChevronRight size={22} className="ml-auto" />}</Button> : <Button size="md" className="w-full h-[54px] text-[18px] uppercase text-white" style={{ background: c.grad, boxShadow: `0 14px 30px -14px ${c.c}` }} onClick={e => { e.stopPropagation(); nav(c.to) }}>{c.btn}<ChevronRight size={22} className="ml-auto" /></Button>}</div>
             </Card>
           </Tilt></Item>
         ))}

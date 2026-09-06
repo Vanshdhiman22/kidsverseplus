@@ -51,7 +51,7 @@ export default function Avatar() {
       <Scene name="avatar" />
       {isDefault && <Cutout id="avatar-0" delay={0.35} />}
       <Cutout id="avatar-1" delay={0.2} amp={10} />
-      <TopBar center={<MiniSteps steps={['Avatar', 'Interests', 'Goals', 'Switch Student']} current={0} />} />
+      <TopBar back={false} center={<MiniSteps steps={['Avatar', 'Interests', 'Goals', 'Switch Student']} current={0} />} />
       <Stack className="absolute left-[85px] top-[115px]" start={0.2}>
         <Item><h1 className="font-display font-extrabold text-[46px] leading-tight text-ink">Choose your explorer look <span className="text-gold">✦</span></h1></Item>
         <Item className="mt-1 text-[19px] font-semibold text-ink-3">Pick an avatar that looks like you or that you love!</Item>

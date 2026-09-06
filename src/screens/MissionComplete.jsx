@@ -30,7 +30,7 @@ export default function MissionComplete() {
       <Scene name="complete" />
       <Child screen="complete" delay={0.6} amp={7} />
       <Confetti />
-      <TopBar logo="planet" right={<><UserChip name={`Hi, ${name}! 👋`} sub={`Explorer Level ${level}`} face={face} /><span className="pill h-[68px] px-6 gap-3 font-display font-extrabold text-[24px] text-ink"><Star size={28} className="text-gold" fill="currentColor" /> <Counter to={320} from={300} delay={0.3} /> XP</span></>} showControls={false} />
+      <TopBar back={false} logo="planet" right={<><UserChip name={`Hi, ${name}! 👋`} sub={`Explorer Level ${level}`} face={face} /><span className="pill h-[68px] px-6 gap-3 font-display font-extrabold text-[24px] text-ink"><Star size={28} className="text-gold" fill="currentColor" /> <Counter to={320} from={300} delay={0.3} /> XP</span></>} showControls={false} />
       <div className="absolute left-[150px] top-[120px] w-[700px] text-center">
         <Chunky className="text-[112px] leading-[0.9]" delay={0.2}>MISSION</Chunky>
         <Chunky className="text-[112px] leading-[0.9] -mt-2" delay={0.35}>COMPLETE!</Chunky>

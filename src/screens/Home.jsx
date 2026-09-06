@@ -9,6 +9,7 @@ import {
 import Scene, { Cutout, Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { Ring, Bar, Counter } from '../components/Widgets.jsx'
+import { WORLDS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { openSettings } from '../components/SettingsSheet.jsx'
 import ParentGate from '../components/ParentGate.jsx'
@@ -27,13 +28,22 @@ const NAV = [
   { label: 'Settings', icon: Settings, to: null },
 ]
 
-const SUBJECTS = [
-  { t: 'Mathematics', s: 'Solve • Think • Grow', icon: Calculator, c: '#2563eb', bg: 'linear-gradient(160deg,#bfdbfe,#93c5fd)', to: '/learn' },
-  { t: 'Science', s: 'Discover • Experiment', icon: FlaskConical, c: '#7c3aed', bg: 'linear-gradient(160deg,#e9d5ff,#d8b4fe)', to: '/learn' },
-  { t: 'Language', s: 'Read • Write • Express', icon: BookMarked, c: '#db2777', bg: 'linear-gradient(160deg,#fbcfe8,#f9a8d4)', to: '/extra/reading' },
-  { t: 'Creativity', s: 'Imagine • Create', icon: Palette, c: '#d97706', bg: 'linear-gradient(160deg,#fde68a,#fcd34d)', to: '/learn' },
-  { t: 'Life Skills', s: 'Learn • Apply • Grow', icon: Sprout, c: '#16a34a', bg: 'linear-gradient(160deg,#bbf7d0,#86efac)', to: '/extra/confidence' },
-]
+/* The same five worlds the Learn Hub lists, in the same order, with their names taken
+   from WORLDS so the two screens can never drift apart -- Home used to call them
+   Mathematics / Science / Language / Creativity / Life Skills while the Learn Hub called
+   the same things Maths / EVS / Literacy / Computer / General Awareness.
+
+   Each card opens its own subject's syllabus directly. The Learn Hub is the picker you
+   reach from the rail when you do not already know which world you want; landing on it
+   after naming a subject asks the child the question they just answered. */
+const SUBJECT_STYLE = {
+  literacy: { s: 'Read • Write • Express', icon: BookMarked, c: '#db2777', bg: 'linear-gradient(160deg,#fbcfe8,#f9a8d4)' },
+  maths:    { s: 'Solve • Think • Grow',   icon: Calculator, c: '#2563eb', bg: 'linear-gradient(160deg,#bfdbfe,#93c5fd)' },
+  evs:      { s: 'Discover • Experiment',  icon: FlaskConical, c: '#7c3aed', bg: 'linear-gradient(160deg,#e9d5ff,#d8b4fe)' },
+  computer: { s: 'Imagine • Create',       icon: Palette, c: '#d97706', bg: 'linear-gradient(160deg,#fde68a,#fcd34d)' },
+  general:  { s: 'Learn • Apply • Grow',   icon: Sprout, c: '#16a34a', bg: 'linear-gradient(160deg,#bbf7d0,#86efac)' },
+}
+const SUBJECTS = WORLDS.map(w => ({ ...SUBJECT_STYLE[w.id], t: w.name, to: `/learn/topics/${w.id}` }))
 
 const MISSIONS = [
   [BookOpen, '#3b82f6', 'Read a new story', 30],
