@@ -1,0 +1,65 @@
+import React, { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion } from 'motion/react'
+import { Rocket, Trophy, Home, Check, Flag, TrendingUp, ArrowRight, Star } from 'lucide-react'
+import Scene, { Child } from '../components/Scene.jsx'
+import Page, { Stack, Item } from '../components/Page.jsx'
+import { TopBar, UserChip } from '../components/TopBar.jsx'
+import { Panel, Card } from '../components/Panel.jsx'
+import Button from '../components/Button.jsx'
+import SpeechBubble from '../components/SpeechBubble.jsx'
+import Dock from '../components/Dock.jsx'
+import { Ring, Counter, Bar, Confetti, Sparkles } from '../components/Widgets.jsx'
+import { useGame } from '../state/GameProvider.jsx'
+import { sfx } from '../lib/sound.js'
+import { useAccent } from '../lib/accent.js'
+
+/* Chunky 3D headline: layered text-shadows give the extruded, toy-like look. */
+const Chunky = ({ children, className, delay = 0 }) => (
+  <motion.div className={className} initial={{ opacity: 0, scale: 0.3, rotate: -12, y: 40 }} animate={{ opacity: 1, scale: 1, rotate: -4, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 14, delay }} style={{ fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.01em', color: '#fff', WebkitTextStroke: '2px #7c3aed', textShadow: '0 2px 0 #c4b5fd, 0 4px 0 #a78bfa, 0 6px 0 #8b5cf6, 0 8px 0 #7c3aed, 0 12px 0 #5b21b6, 0 20px 30px rgba(91,33,182,.45)' }}>{children}</motion.div>
+)
+
+export default function MissionComplete() {
+  const nav = useNavigate()
+  const g = useGame(); const { name, face } = g.state.profile; const level = g.level
+  const ac = useAccent()
+  useEffect(() => { const t = setTimeout(() => sfx.unlock(), 300); const t2 = setTimeout(() => g.addXp(20, 'Fractions mission'), 1400); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <Page>
+      <Scene name="complete" />
+      <Child screen="complete" delay={0.6} amp={7} />
+      <Confetti />
+      <TopBar logo="planet" right={<><UserChip name={`Hi, ${name}! 👋`} sub={`Explorer Level ${level}`} face={face} /><span className="pill h-[68px] px-6 gap-3 font-display font-extrabold text-[24px] text-ink"><Star size={28} className="text-gold" fill="currentColor" /> <Counter to={320} from={300} delay={0.3} /> XP</span></>} showControls={false} />
+      <div className="absolute left-[150px] top-[120px] w-[700px] text-center">
+        <Chunky className="text-[112px] leading-[0.9]" delay={0.2}>MISSION</Chunky>
+        <Chunky className="text-[112px] leading-[0.9] -mt-2" delay={0.35}>COMPLETE!</Chunky>
+        <motion.div className="mt-4 font-display font-extrabold text-[38px] text-sky-500" style={{ rotate: -4 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27 }}>Fractions as equal parts</motion.div>
+      </div>
+      <Sparkles n={12} seed={8} className="left-[80px] top-[80px] w-[800px] h-[700px]" />
+      <motion.div className="absolute left-[520px] top-[400px] font-display font-extrabold text-[40px] text-primary-ink text-center leading-none" initial={{ opacity: 0, y: 30, scale: 0.5 }} animate={{ opacity: 1, y: [30, -10, 0], scale: 1 }} transition={{ delay: 0.3, type: 'spring', stiffness: 300, damping: 14 }}>+20<br /><span className="text-[26px]">XP</span></motion.div>
+      <div className="absolute left-[40px] top-[540px]"><SpeechBubble tail="right" delay={0.3} className="w-[200px] text-[17px]">Awesome work, <span className="text-primary-ink font-extrabold">{name}!</span> You're building real skills! 🌟</SpeechBubble></div>
+
+      <Panel className="absolute left-[930px] top-[110px] w-[655px] h-[240px] p-6 flex items-center gap-8" initial="hidden" animate="show">
+        <div className="relative"><div className="label-caps absolute -top-1 left-0 whitespace-nowrap">Your Progress</div><Ring size={180} stroke={16} value={0.8} id="mc" delay={0.27} className="mt-6"><div className="text-center leading-none"><div className="font-display font-extrabold text-[44px] text-ink"><Counter to={80} delay={0.27} />%</div><div className="text-[15px] font-bold text-ink-3 mt-1">Mastered</div></div></Ring></div>
+        <div className="flex-1"><div className="font-display font-extrabold text-[26px] text-ink">Fractions as equal parts</div><div className="text-[20px] font-semibold text-ink-2">Great job! Keep it up!</div><Bar value={0.8} className="mt-4" h={12} delay={0.3} /><div className="mt-2 text-[16px] font-bold text-ink-3">8 of 10 skills mastered</div></div>
+      </Panel>
+      <Stack className="absolute left-[850px] top-[365px] flex gap-[18px]" start={1} delay={0.12}>
+        {[[Trophy, '#7c3aed', 'You understood', 'Equal parts', 'You can identify and understand equal parts with confidence.', 6], [TrendingUp, '#3b82f6', 'You improved', 'Visual fractions', "You're getting better at representing fractions visually.", 6], [Flag, '#22c55e', 'Next', 'Fraction word problems', 'Ready to apply your skills to real-world word problems?', null]].map(([I, c0, t, s, d, v], i) => { const c = ac(c0); return (
+          <Item key={t} v="pop"><Card hover className="relative w-[240px] h-[300px] p-5 flex flex-col items-center text-center">
+            {v != null && <span className="absolute top-3 right-3 w-[28px] h-[28px] rounded-full grid place-items-center text-white" style={{ background: c }}><Check size={16} strokeWidth={3.5} /></span>}
+            <span className="icon-orb w-[74px] h-[74px]" style={{ color: c, background: `${c}1f` }}><I size={38} strokeWidth={2} /></span>
+            <div className="mt-3 font-display font-extrabold text-[18px] uppercase" style={{ color: c }}>{t}</div>
+            <div className="text-[17px] font-extrabold text-primary-ink">{s}</div>
+            <div className="mt-1 text-[14px] font-semibold text-ink-2 leading-snug">{d}</div>
+            <div className="mt-auto w-full">{v != null ? <div className="flex items-center gap-3"><Bar value={v / 8} h={8} className="flex-1" delay={0.3 + i * 0.1} /><span className="text-[14px] font-extrabold text-ink-2">{v}/8</span></div> : <span className="flex justify-end text-ink-2"><ArrowRight size={24} /></span>}</div>
+          </Card></Item>
+        ) })}
+      </Stack>
+      <Stack className="absolute left-[850px] top-[685px] w-[755px]" start={1.4}>
+        <Item v="pop" className="grid grid-cols-2 gap-5"><Button size="md" arrow icon={<Rocket size={24} />} className="h-[70px] uppercase text-[22px]" sound="whoosh" onClick={() => nav('/journey')}>Nova's next step</Button><Button variant="outline" size="md" icon={<Trophy size={24} />} className="h-[70px] uppercase text-[20px]" onClick={() => nav('/challenge')}>Try a challenge</Button></Item>
+        <Item v="pop" className="mt-4"><Button variant="ghost" size="md" icon={<Home size={22} />} className="w-full h-[58px] text-[20px]" onClick={() => nav('/journey')}>Back to Journey</Button></Item>
+      </Stack>
+      <Dock sub spread className="w-[1440px]" style={{ bottom: 12 }} active="learn" />
+    </Page>
+  )
+}
