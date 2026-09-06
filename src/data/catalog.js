@@ -10,7 +10,7 @@ export const GRADES = [
 export const gradeLabel = id => GRADES.find(g => g.id === String(id))?.label ?? `Grade ${id}`
 
 export const BOARDS = [
-  { id: 'CBSE', label: 'CBSE', icon: 'book', verified: true },
+  { id: 'CBSE', label: 'CBSE', icon: 'book' },
   { id: 'ICSE', label: 'ICSE', icon: 'bank' },
   { id: 'IB', label: 'IB', icon: 'globe' },
   { id: 'Other', label: 'Other', icon: 'dots' },
@@ -50,7 +50,12 @@ export const WORLD_STATIONS = {
     { id: 'news', name: 'News Nebula', sub: 'Current affairs' }, { id: 'community', name: 'Community Cove', sub: 'Citizenship' },
   ],
 }
-const STATION_SPOTS = [{ x: 705, y: 100 }, { x: 1180, y: 140 }, { x: 660, y: 330 }, { x: 1290, y: 410 }, { x: 700, y: 560 }, { x: 790, y: 700 }]
+export const STATION_SPOTS = [{ x: 705, y: 100 }, { x: 1180, y: 140 }, { x: 660, y: 330 }, { x: 1290, y: 410 }, { x: 700, y: 560 }, { x: 790, y: 700 }]
+/* Lessons per station: the same split deriveStations uses, exported so screens can
+   advance the child by exactly one stop. */
+export const STATION_TOTAL = 20
+export const STATION_PER = STATION_TOTAL / 6
+
 /** Turn a world's lesson count into station states: done → here → next → locked. */
 export function deriveStations(worldId, done = 0, total = 20) {
   const path = WORLD_STATIONS[worldId] ?? WORLD_STATIONS.maths
@@ -91,7 +96,7 @@ export const GOALS = [
 
 export const WORLDS = [
   { id: 'literacy', name: 'Literacy', desc: 'Stories, reading and language', img: '/art/world-literacy.webp', pct: 70, done: 14, total: 20 },
-  { id: 'maths', name: 'Maths', desc: 'Numbers, logic and problem solving', img: '/art/world-maths.webp', pct: 60, done: 12, total: 20, next: 'Fractions', featured: true },
+  { id: 'maths', name: 'Maths', desc: 'Numbers, logic and problem solving', img: '/art/world-maths.webp', pct: 60, done: 12, total: 20 },
   { id: 'evs', name: 'EVS / Science', desc: 'Explore nature and our world', img: '/art/world-evs.webp', pct: 45, done: 9, total: 20 },
   { id: 'computer', name: 'Computer', desc: 'Tech, coding and creativity', img: '/art/world-computer.webp', pct: 30, done: 6, total: 20, locked: true },
   { id: 'general', name: 'General Awareness', desc: 'Current affairs and life skills', img: '/art/world-general.webp', pct: 20, done: 4, total: 20, locked: true },
@@ -106,13 +111,68 @@ export const JOURNEY = [
   { id: 'geometry', name: 'Geometry', sub: 'Geometry', state: 'locked', x: 790, y: 700 },
 ]
 
-export const TOPIC_STEPS = [
-  { n: 1, name: 'What is a Fraction?', stars: 3, state: 'done' },
-  { n: 2, name: 'Equivalent Fractions', stars: 3, state: 'done' },
-  { n: 3, name: 'Compare & Order', stars: 2, state: 'current' },
-  { n: 4, name: 'Add & Subtract', stars: 0, state: 'locked' },
-  { n: 5, name: 'Word Problems', stars: 0, state: 'locked' },
-]
+/* The syllabus a subject opens on: its current topic, what that topic covers across
+   the three tracks, and the five lessons inside it. Keyed by world id so tapping any
+   subject on the Learn Hub opens that subject's own page rather than everyone landing
+   on Fractions. Five steps each, because the Topic screen's path art has five stops. */
+export const TOPICS = {
+  maths: {
+    title: 'Fractions', subject: 'Maths',
+    desc: 'Understand parts of a whole, equivalent fractions, compare and order, and solve real-world problems.',
+    nova: 'Equivalent fractions show the same value even though the numerator and denominator change! ✨',
+    tracks: [
+      ['School Syllabus', ['Equivalent fractions', 'Compare and order'], 'Completed', 'done'],
+      ['Kidsverse Plus', ['Visual models', 'Applications', 'Word problems'], 'In progress', 'progress'],
+      ['Competition Edge', ['Higher-order reasoning'], 'Locked', 'locked'],
+    ],
+    steps: [
+      { n: 1, name: 'What is a Fraction?', stars: 3, state: 'done' },
+      { n: 2, name: 'Equivalent Fractions', stars: 3, state: 'done' },
+      { n: 3, name: 'Compare & Order', stars: 2, state: 'current' },
+      { n: 4, name: 'Add & Subtract', stars: 0, state: 'locked' },
+      { n: 5, name: 'Word Problems', stars: 0, state: 'locked' },
+    ],
+  },
+  literacy: {
+    title: 'Comprehension', subject: 'Literacy',
+    desc: 'Read closely, find the main idea, work out new words from context, and say what you think about a story.',
+    nova: 'The main idea is what the whole passage is about — not just the bit you liked best! ✨',
+    tracks: [
+      ['School Syllabus', ['Main idea and detail', 'New words in context'], 'Completed', 'done'],
+      ['Kidsverse Plus', ['Story mapping', 'Inference', 'Retelling'], 'In progress', 'progress'],
+      ['Competition Edge', ['Author’s purpose'], 'Locked', 'locked'],
+    ],
+    steps: [
+      { n: 1, name: 'Read for Meaning', stars: 3, state: 'done' },
+      { n: 2, name: 'Main Idea', stars: 3, state: 'done' },
+      { n: 3, name: 'New Words', stars: 2, state: 'current' },
+      { n: 4, name: 'Reading Between Lines', stars: 0, state: 'locked' },
+      { n: 5, name: 'Tell It Again', stars: 0, state: 'locked' },
+    ],
+  },
+  evs: {
+    title: 'Living Things', subject: 'EVS / Science',
+    desc: 'Sort living from non-living, see what plants and animals need, and follow how they depend on each other.',
+    nova: 'Every living thing needs food, water and air — that is how we tell it is alive! ✨',
+    tracks: [
+      ['School Syllabus', ['Living and non-living', 'Plant parts'], 'Completed', 'done'],
+      ['Kidsverse Plus', ['Habitats', 'Food chains', 'Life cycles'], 'In progress', 'progress'],
+      ['Competition Edge', ['Adaptation and survival'], 'Locked', 'locked'],
+    ],
+    steps: [
+      { n: 1, name: 'Living or Not?', stars: 3, state: 'done' },
+      { n: 2, name: 'Parts of a Plant', stars: 3, state: 'done' },
+      { n: 3, name: 'Habitats', stars: 2, state: 'current' },
+      { n: 4, name: 'Food Chains', stars: 0, state: 'locked' },
+      { n: 5, name: 'Life Cycles', stars: 0, state: 'locked' },
+    ],
+  },
+}
+
+export const topicFor = world => TOPICS[world] ?? TOPICS.maths
+
+/* Kept for anything still importing the old flat list. */
+export const TOPIC_STEPS = TOPICS.maths.steps
 
 export const TESTS = [
   { id: 'quick', name: 'Quick Test', desc: '10 quick questions to warm up your brain.', time: '5 min', icon: 'ico-rocket' },
@@ -128,5 +188,6 @@ export const TESTS = [
 export const QUESTIONS = [
   { q: 'Which fraction is equivalent to', frac: [3, 4], options: [[6, 8], [2, 3], [9, 12], [5, 8]], answer: 0, hint1: 'Multiply top and bottom by the same number.', hint2: '3 × 2 = 6 and 4 × 2 = 8.' },
   { q: 'Which fraction is equivalent to', frac: [1, 2], options: [[2, 3], [3, 6], [1, 4], [4, 6]], answer: 1, hint1: 'Half of something.', hint2: '3 is half of 6.' },
-  { q: 'Which fraction is equivalent to', frac: [2, 5], options: [[3, 5], [4, 10], [2, 10], [5, 2]], answer: 1, hint1: 'Double both numbers.', hint2: '2 × 2 = 4, 5 × 2 = 10.' },
+  { q: 'Which fraction is equivalent to', frac: [2, 5], options: [[3, 5], [4, 10], [2, 10], [5, 2]], answer: 1, hint1: 'Double both numbers.', hint2: '2 × 2 = 4, 5 × 2 = 10.' },  { q: 'Which fraction is equivalent to', frac: [1, 3], options: [[2, 6], [1, 6], [3, 4], [2, 5]], answer: 0, hint1: 'Double the top and the bottom.', hint2: '1 × 2 = 2 and 3 × 2 = 6.' },
+  { q: 'Which fraction is equivalent to', frac: [3, 5], options: [[5, 3], [6, 8], [6, 10], [3, 10]], answer: 2, hint1: 'Multiply both numbers by 2.', hint2: '3 × 2 = 6 and 5 × 2 = 10.' },
 ]

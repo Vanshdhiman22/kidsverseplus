@@ -1,0 +1,25 @@
+{
+  "file": "65_nova_dark.png",
+  "chars": [
+    [134, 250, 418, 938],
+    [402, 114, 756, 536]
+  ],
+  "ui": [
+    [34, 22, 368, 98],
+    [1472, 26, 1638, 90],
+    [872, 40, 1532, 900],
+    [946, 96, 1294, 302],
+    [926, 292, 1424, 422],
+    [986, 426, 1364, 474],
+    [922, 464, 1464, 632],
+    [1038, 636, 1332, 692],
+    [922, 694, 1472, 784],
+    [1024, 788, 1364, 854],
+    [110, 748, 806, 902]
+  ],
+  "erase": [
+    [134, 748, 418, 902]
+  ],
+  "flat": false,
+  "describe": "Dark futuristic night scene: an indoor lab/room on the left with shelves, a globe and warm lamp light, a huge glowing purple-blue swirling energy portal in the centre standing on a neon ring platform, and a violet neon city skyline with towers and potted plants on the right under a starry sky. A curly-haired boy in a blue hoodie with a yellow backpack stands at lower left looking up at Nova, the white-and-blue robot with a glowing smiley face visor, who floats in front of the portal with one hand raised. The dark trust-bar panel at the bottom left is drawn semi-transparently over the boy's legs and shoe tops."
+}

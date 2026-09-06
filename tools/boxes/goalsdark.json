@@ -1,0 +1,27 @@
+{
+  "file": "52_goals_dark.png",
+  "chars": [
+    [990, 284, 1452, 764]
+  ],
+  "ui": [
+    [44, 18, 322, 94],
+    [636, 40, 1072, 84],
+    [1490, 26, 1638, 92],
+    [114, 108, 228, 168],
+    [112, 160, 722, 234],
+    [112, 222, 578, 266],
+    [108, 262, 798, 906],
+    [956, 136, 1080, 294],
+    [1122, 52, 1260, 220],
+    [1294, 134, 1428, 294],
+    [878, 302, 990, 456],
+    [1348, 298, 1496, 462],
+    [1452, 456, 1626, 546],
+    [942, 780, 1478, 912]
+  ],
+  "erase": [
+    [1348, 296, 1452, 458]
+  ],
+  "flat": false,
+  "describe": "Dark sci-fi goal-picker screen: a spaceship interior with a large curved window on the left wall, warm lamp and bookshelf on the far left, and a neon purple-blue futuristic cityscape with planets and stars filling the right two thirds. A boy in a blue jacket points up at a glowing star while the white-and-blue Nova robot waves beside him, both standing on a glowing circular platform. UI is a left column of six goal cards under a headline, a top logo/progress/language bar, a floating constellation of five labelled goal nodes on the right, a small Nova speech bubble, and a wide CONTINUE button at bottom right."
+}

@@ -31,11 +31,14 @@ SCREENS = {
   "welcome":  dict(file="10", chars=[(215,235,800,725)], erase=[(560,255,745,375)], ui=[(0,0,218,941), (1240,15,1650,90), (240,60,800,245), (560,255,745,375), (850,100,1650,435), (845,440,1650,540), (240,555,1650,895), (540,895,1660,940)]),
   "home":     dict(file="09", chars=[(80,400,520,800)], ui=[LOGO, (1490,15,1650,60), (1200,75,1650,145), (95,130,530,275), (130,285,510,420), (610,145,1180,805), (1200,160,1650,805), (200,820,1480,920)]),
   "learn":    dict(file="11", chars=[(0,230,400,690)], ui=[(30,25,300,95), (1500,25,1640,75), (540,70,1140,215), (1370,125,1630,190), (150,120,460,365), (380,400,550,500), (520,220,1650,730), (490,735,1650,835), (40,835,1650,935)]),
-  "journey":  dict(file="13", chars=[(1140,220,1400,430)], ui=[LOGO, (1200,25,1650,100), (30,110,500,900), (700,90,920,180), (1170,130,1380,215), (650,320,930,410), (1280,395,1510,590), (690,545,930,655), (780,690,1040,800), (150,830,1530,925)]),
+  "journey":  dict(file="13", chars=[(912,238,1272,578)], ui=[LOGO, (1200,25,1650,100), (30,110,500,900), (700,90,920,180), (1170,130,1380,215), (650,320,930,410), (1280,395,1510,590), (690,545,930,655), (780,690,1040,800), (150,830,1530,925)]),
   "topic":    dict(file="12", chars=[(560,110,840,600), (1010,230,1310,600)], ui=[LOGO, (1110,20,1650,100), (40,110,560,340), (40,345,545,720), (790,395,1070,515), (1310,170,1560,370), (1580,160,1640,290), (330,580,1200,830), (1220,600,1640,800), (30,835,1640,935)]),
   "discover": dict(file="14", chars=[(10,430,300,760)], fill="soft", ui=[(0,0,W,H)]),
   "explain":  dict(file="15", chars=[(20,480,300,820), (1390,600,1660,880)], ui=[(10,10,300,880), (640,20,1060,80), (1390,20,1650,80), (440,90,1300,240), (420,250,1250,560), (400,570,1240,775), (440,785,1210,850), (1390,100,1660,600), (20,865,1660,935)]),
-  "spot":     dict(file="16", chars=[(20,420,300,790), (1030,350,1260,760)], ui=[(20,20,300,90), (640,25,1100,70), (450,80,1250,260), (20,105,280,365), (600,270,960,610), (1075,245,1265,350), (430,610,1140,790), (1350,80,1650,800), (10,815,1660,935)]),
+  "spot":     dict(file="16", chars=[(20,420,300,790), (1030,350,1260,760)],
+                # a check badge and its connector line sit behind Nova's left side in the
+                # design; without this they ride along inside the cutout
+                erase=[(1054,598,1106,762)], ui=[(20,20,300,90), (640,25,1100,70), (450,80,1250,260), (20,105,280,365), (600,270,960,610), (1075,245,1265,350), (430,610,1140,790), (1350,80,1650,800), (10,815,1660,935)]),
   "complete": dict(file="17", chars=[(60,340,760,800)], model="isnet-anime", ui=[LOGO, (1120,20,1660,105), (120,100,860,360), (450,380,600,470), (20,470,300,640), (840,95,1610,840), (60,820,1610,930)]),
   "arena":    dict(file="18", chars=[(400,190,780,510), (820,150,1100,470)], ui=[LOGO, (1000,25,1650,100), (30,130,620,250), (590,130,800,250), (1120,110,1580,470), (60,490,1610,840), (270,845,1420,935)]),
   "intro":    dict(file="19", chars=[(230,90,880,800)], ui=[LOGO, (680,15,1030,85), (1180,15,1650,95), (870,105,1645,790), (30,790,1650,935)]),
@@ -104,6 +107,15 @@ def cut(names):
                 al = Image.composite(Image.new("L", al.size, 255), al, edge); cut.putalpha(al)
             if cfg.get("alpha_gamma"):   # glossy white robots come back half-transparent against white; firm them up
                 al = cut.split()[-1].point(lambda v: int(255 * (v / 255) ** cfg["alpha_gamma"])); cut.putalpha(al)
+            # Pale backdrops (a white speech bubble, a hazy city) come back as a broad
+            # veil of alpha 1-60 -- invisible in the matte, but a ghost rectangle beside
+            # the character once it is drawn on a light screen. A real antialiased edge
+            # is never more than a pixel or two from something solid, so drop faint
+            # pixels that sit away from the silhouette and leave the rim alone.
+            al = cut.split()[-1]
+            solid = al.point(lambda v: 255 if v > 160 else 0).filter(ImageFilter.MaxFilter(7))
+            al = Image.composite(al, al.point(lambda v: 0 if v < 140 else v), solid)
+            cut.putalpha(al)
             a = np.asarray(cut.split()[-1])
             if a.max() == 0: print(name, i, "empty"); continue
             ys, xs = np.where(a > 8); bb = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)

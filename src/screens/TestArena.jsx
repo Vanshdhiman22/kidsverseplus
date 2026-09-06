@@ -8,7 +8,6 @@ import { TopBar, UserChip, StatPill } from '../components/TopBar.jsx'
 import { Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
-import Dock from '../components/Dock.jsx'
 import { ArtIcon, Tilt } from '../components/Widgets.jsx'
 import { TESTS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
@@ -33,7 +32,7 @@ export default function TestArena() {
       <Scene name="arena" />
       <Cutout id="arena-1" delay={0.17} amp={10} />
       <Child screen="arena" delay={0.4} amp={6} />
-      <TopBar right={<><StatPill kind="xp" value={`${streak} days`} label="Streak" /><StatPill kind="bolt" value={(2450).toLocaleString()} label="XP" /><StatPill kind="coins" value={coins} label="Nova Coins" /><UserChip name={name} face={face} /></>} showControls={false} />
+      <TopBar back="/home" backLabel="Home" right={<><StatPill kind="xp" value={`${streak} days`} label="Streak" /><StatPill kind="bolt" value={(2450).toLocaleString()} label="XP" /><StatPill kind="coins" value={coins} label="Nova Coins" /><UserChip name={name} face={face} /></>} showControls={false} />
       <Stack className="absolute left-[90px] top-[98px]" start={0.2}>
         <Item className="eyebrow text-[19px]">18. Test Arena</Item>
         <Item className="flex items-center gap-4"><h1 className="font-display font-extrabold text-[62px] leading-none text-ink">Test with Nova</h1><img src="/art/planet-sm.webp" alt="" className="w-[56px] floaty" /></Item>
@@ -43,7 +42,6 @@ export default function TestArena() {
 
       <Stack className="absolute left-[58px] top-[488px] flex items-end gap-[16px]" start={0.7} delay={0.08}>{row1.map((t, i) => <TestCard key={t.id} t={t} i={i} />)}</Stack>
       <Stack className="absolute left-[58px] top-[714px] flex gap-[16px]" start={1.1} delay={0.08}>{row2.map((t, i) => <TestCard key={t.id} t={t} wide />)}</Stack>
-      <Dock spread className="w-[1200px]" style={{ bottom: 12 }} />
     </Page>
   )
 }

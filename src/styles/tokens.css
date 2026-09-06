@@ -79,6 +79,10 @@
 }
 
 [data-theme='dark'] {
+  /* The light-mode wordmark gradient runs #7c3aed -> #38bdf8: mid-tone purples that
+     sit almost on top of a near-black panel. Same hues, lifted into the range that
+     actually reads on dark. */
+  --grad-text: linear-gradient(90deg, #c4b5fd 0%, #a5b4fc 55%, #7dd3fc 100%);
   --ink: #f4f2ff;
   --ink-2: #d9d6ff;
   --ink-3: #b3aee6;

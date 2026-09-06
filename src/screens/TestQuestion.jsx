@@ -26,7 +26,9 @@ export default function TestQuestion() {
   const [submitted, setSubmitted] = useState(false)
   const [secs, setSecs] = useState(8 * 60 + 15)
   const q = QUESTIONS[qi]
-  const total = 10, shown = qi + 3
+  /* Was `total = 10, shown = qi + 3` -- staged for the design render. The child now
+     arrives here straight from the daily mission, so the count has to be the real one. */
+  const total = QUESTIONS.length, shown = qi + 1
   useEffect(() => { const id = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000); return () => clearInterval(id) }, [])
   const mm = String(Math.floor(secs / 60)).padStart(2, '0'), ss = String(secs % 60).padStart(2, '0')
   const submit = () => {

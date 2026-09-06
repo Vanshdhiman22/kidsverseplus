@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { ChevronDown, Globe, Sun, Moon, Volume2, VolumeX, Flame, Star, Zap, Gem, Settings, Check } from 'lucide-react'
+import { ChevronDown, Globe, Sun, Moon, Volume2, VolumeX, Flame, Star, Zap, Gem, Settings, Check, ArrowLeft } from 'lucide-react'
 import Logo from './Logo.jsx'
 import { cn } from '../lib/utils.js'
 import { useGame } from '../state/GameProvider.jsx'
@@ -11,10 +12,23 @@ import { openSettings } from './SettingsSheet.jsx'
 import ScreenPill from './ScreenFit.jsx'
 import { bleedX, safeT } from './Stage.jsx'
 
-export function TopBar({ logo = 'plus', center, right, className, showControls = true }) {
+/* `back` is for screens that carry no dock of their own. Navigation lives on the
+   main screen, so a screen opened from it needs one clear way home rather than a
+   full nav bar -- pass a route, or `true` to step back through history. */
+export function TopBar({ logo = 'plus', center, right, className, showControls = true, back, backLabel = 'Back' }) {
+  const nav = useNavigate()
   return (
     <motion.header className={cn('absolute flex items-center justify-between px-9 pt-7 z-20', className)} style={{ ...bleedX(0), ...safeT(0) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: EASE }}>
-      <Logo variant={logo} />
+      <div className="flex items-center gap-4">
+        {back && (
+          <motion.button type="button" className="pill h-[54px] pl-3 pr-5 gap-2 text-primary-ink"
+            whileHover={{ x: -3 }} onClick={() => { sfx.tap(); back === true ? nav(-1) : nav(back) }}>
+            <ArrowLeft size={22} strokeWidth={2.6} />
+            <span className="font-display font-extrabold text-[18px]">{backLabel}</span>
+          </motion.button>
+        )}
+        <Logo variant={logo} />
+      </div>
       {center && <div className="absolute left-1/2 -translate-x-1/2 top-7">{center}</div>}
       <div className="flex items-center gap-3">
         {right}

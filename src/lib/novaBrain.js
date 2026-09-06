@@ -20,7 +20,6 @@ const FACTS = {
 }
 const HINTS = {
   '/missions/fractions': ['Look at the pizza. How many astronauts are sharing it?', 'Equal sharing means every slice is the same size.'],
-  '/missions/fractions/explain': ['Count the shaded parts, then count all the parts.', 'Three shaded out of four equal parts is three quarters.'],
   '/missions/fractions/spot-mistake': ['Check the size of each part.', 'Look at the crust lengths. Are they all the same?'],
 }
 export const detectIntent = t => { for (const [n, re] of INTENTS) if (re.test(t)) return n; return 'unknown' }

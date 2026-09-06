@@ -1,0 +1,23 @@
+{
+  "file": "68_landing_light.png",
+  "chars": [
+    [476, 350, 872, 768]
+  ],
+  "ui": [
+    [30, 20, 412, 110],
+    [1468, 30, 1658, 100],
+    [80, 130, 655, 358],
+    [82, 372, 470, 452],
+    [676, 236, 918, 384],
+    [948, 132, 1604, 784],
+    [92, 795, 430, 900],
+    [432, 795, 790, 900],
+    [794, 795, 1136, 900]
+  ],
+  "erase": [
+    [790, 348, 814, 383]
+  ],
+  "flat": false,
+  "describe": "Landing / welcome hero on an illustrated futuristic pastel city plaza: neon glass towers left and right, a glowing purple swirl portal behind the characters, a reflective lilac floor with light rings and curved light roads, and planets plus a ringed planet in a soft blue starry sky. Not flat - rich painted scenery that must be inpainted where UI is removed.",
+  "charNote": "One combined box: the curly-haired boy in a blue jacket and jeans holding hands with Nova, the white-and-blue robot. Top 350 clears the boy's topmost hair wisp (measured at y=356); left 476 clears his left sneaker (x=487) and hair (x=490); right 872 clears Nova's outstretched right hand (x=866); bottom 768 sits just under both pairs of shoes (lowest sole y=758) and above the bright floor light ring that starts near y=770, so the glowing platform stays in the backdrop. The speech-bubble tail drops through the top of the box down to Nova's antenna ball, so the erase rectangle wipes that connector (stopping at the ball top, y=383)."
+}

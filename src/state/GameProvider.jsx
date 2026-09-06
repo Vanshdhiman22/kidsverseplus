@@ -12,7 +12,9 @@ const initial = {
   profile: { name: 'Aarav', grade: '4', board: 'CBSE', face: 1, outfit: 'explorer', interests: ['space', 'animals', 'art'], goals: ['school'], firstVisit: true },
   stats: { xp: 1250, xpToday: 240, streak: 7, coins: 320, badges: 12, day: 43 },
   settings: { theme: 'light', sound: true, music: true, voice: true, motion: true, lang: 'en', readAloud: true, screenFit: 'auto', zoom: 1 },
-  progress: { lessonStage: 1, missionsDone: 0, mastery: 68, world: 'maths' },
+  /* `worldDone` is lessons finished per world; the Journey map turns it into which
+     station the child is parked at, so finishing a mission drives the car forward. */
+  progress: { lessonStage: 1, missionsDone: 0, mastery: 68, world: 'maths', worldDone: {}, journeySeen: {} },
   /* The family. `profile` is whichever child is signed in; the rest wait here
      with their own progress so switching does not overwrite anyone. */
   children: [
@@ -49,6 +51,15 @@ function reducer(state, a) {
     case 'profile': return { ...state, profile: { ...state.profile, ...a.patch } }
     case 'settings': return { ...state, settings: { ...state.settings, ...a.patch } }
     case 'progress': return { ...state, progress: { ...state.progress, ...a.patch } }
+    case 'journeySeen':
+      return { ...state, progress: { ...state.progress, journeySeen: { ...state.progress.journeySeen, [a.world]: a.index } } }
+    case 'advanceStation': {
+      const w = a.world ?? state.progress.world
+      const done = state.progress.worldDone[w] ?? a.base ?? 0
+      // One station's worth of lessons, so `here` lands on exactly the next stop.
+      const next = Math.min(a.total ?? 20, Math.floor(done / a.per) * a.per + a.per)
+      return { ...state, progress: { ...state.progress, worldDone: { ...state.progress.worldDone, [w]: next } } }
+    }
     case 'xp': {
       const xp = state.stats.xp + a.amount
       const up = levelOf(xp) > levelOf(state.stats.xp)
@@ -95,6 +106,11 @@ export function GameProvider({ children }) {
     setProfile: patch => dispatch({ type: 'profile', patch }),
     setSettings: patch => dispatch({ type: 'settings', patch }),
     setProgress: patch => dispatch({ type: 'progress', patch }),
+    /* The car has now been watched arriving at this station, so it should not drive
+       there again the next time the map is opened. */
+    markJourneySeen: (world, index) => dispatch({ type: 'journeySeen', world, index }),
+    /* Move the child one station along the current world's map. */
+    advanceStation: ({ world, base, per, total } = {}) => dispatch({ type: 'advanceStation', world, base, per, total }),
     addXp: (amount, label) => dispatch({ type: 'xp', amount, label }),
     bumpStreak: () => dispatch({ type: 'streak' }),
     clearToast: id => dispatch({ type: 'clearToast', id }),

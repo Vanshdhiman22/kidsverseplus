@@ -104,7 +104,6 @@ export const SLOTS = {
   plan: { screen: '36', cutout: null, pose: 'P15', layer: 'face' },
 }
 
-export const posePath = (poseId, charId) => `/art/chars/pose/${poseId}/${charId}.webp`
 export const outfitPath = (charId, outfit) => `/art/avatar/full-kid${charById(charId)?.face ?? 1}-${outfit}.webp`
 
 /* The cutouts a character needs before they can carry the whole journey.

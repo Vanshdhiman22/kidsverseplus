@@ -1,0 +1,32 @@
+{
+  "file": "62_goals_light.png",
+  "chars": [
+    [1003, 288, 1236, 764],
+    [1240, 444, 1462, 780]
+  ],
+  "ui": [
+    [30, 20, 365, 96],
+    [636, 38, 1088, 86],
+    [1494, 32, 1656, 92],
+    [88, 110, 214, 166],
+    [95, 166, 697, 236],
+    [95, 230, 552, 264],
+    [82, 266, 792, 898],
+    [1118, 38, 1262, 208],
+    [953, 126, 1062, 282],
+    [1308, 130, 1422, 282],
+    [872, 268, 992, 456],
+    [1348, 268, 1492, 456],
+    [1036, 100, 1152, 178],
+    [1232, 100, 1332, 182],
+    [1040, 192, 1216, 306],
+    [1196, 196, 1340, 308],
+    [1200, 288, 1404, 366],
+    [1150, 292, 1212, 346],
+    [1452, 458, 1660, 558],
+    [928, 790, 1482, 900]
+  ],
+  "erase": [],
+  "flat": false,
+  "describe": "Desktop light onboarding 'goals' screen. Left column: logo lockup, Back pill, headline 'What should we grow first?', subtitle, and a stack of six selectable goal cards each with a 3D icon, title, benefit text and radio. Top centre: a step-pill progress row with a round '7' badge; top right: an English language chip. Right half: a futuristic pastel sci-fi cityscape with domes and a ringed planet, a glowing circular floor platform, a cartoon boy in a blue jacket pointing upward standing beside white-and-blue robot Nova, five circular goal-node badges with labels (graduation cap, star, trophy, book, planet) wired together by thin glowing connector lines that converge on a bright point near the boy's fingertip, a small speech bubble to the right of the robot, and a wide CONTINUE button near the bottom. No bottom navigation dock on this screen."
+}

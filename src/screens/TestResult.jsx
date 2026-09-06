@@ -36,9 +36,11 @@ export default function TestResult() {
       <Panel className="absolute left-[650px] top-[560px] w-[405px] h-[130px] px-4 grid grid-cols-3 items-center divide-x divide-[var(--line)]" initial="hidden" animate="show">
         {[[Clock, '6 min', 'Time Taken', '#7c5cff'], [Target, '8 / 10', 'Score', '#8b5cf6'], [TrendingUp, '+40 XP', 'Earned', '#22c55e']].map(([I, v, l, c]) => <div key={l} className="flex flex-col items-center leading-tight"><I size={28} style={{ color: c }} /><span className="mt-1 font-display font-extrabold text-[24px] text-ink">{v}</span><span className="text-[14px] font-bold text-ink-3">{l}</span></div>)}
       </Panel>
-      <motion.div className="absolute left-[390px] top-[725px] flex items-center gap-7" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow icon={<Rocket size={30} strokeWidth={2.4} />} className="w-[545px] h-[92px] uppercase text-[26px]" sub="Focus. Improve. Master!" sound="whoosh" onClick={() => nav('/missions/fractions')}>Practise weak concept</Button>
-        <Button variant="ghost" size="md" icon={<Gamepad2 size={26} />} className="h-[70px] px-9 uppercase text-[20px]" onClick={() => nav('/tests')}>Back to Test Arena</Button>
+      {/* The right-hand column starts at x=1075, so this row has to finish before it:
+          the wider version ran to 1280 and sat on the Nova Recommends card. */}
+      <motion.div className="absolute left-[350px] top-[725px] flex items-center gap-5" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[470px] h-[92px] uppercase text-[23px]" sub="Focus. Improve. Master!" sound="whoosh" onClick={() => nav('/missions/fractions')}>Practise weak concept</Button>
+        <Button variant="ghost" size="md" icon={<Gamepad2 size={24} />} className="w-[215px] h-[70px] px-4 uppercase text-[17px]" onClick={() => nav('/tests')}>Back to Arena</Button>
       </motion.div>
 
       <Panel className="absolute left-[1075px] top-[125px] w-[495px] p-6" initial="hidden" animate="show">

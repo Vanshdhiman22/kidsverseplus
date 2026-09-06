@@ -1,0 +1,20 @@
+{
+  "file": "61_setup_light.png",
+  "chars": [
+    [76, 371, 342, 730],
+    [352, 412, 602, 728]
+  ],
+  "ui": [
+    [28, 22, 356, 102],
+    [586, 20, 1180, 120],
+    [1470, 32, 1652, 102],
+    [110, 148, 612, 300],
+    [112, 300, 522, 376],
+    [672, 146, 1180, 764],
+    [1180, 146, 1634, 764],
+    [668, 774, 1646, 906]
+  ],
+  "erase": [],
+  "flat": false,
+  "describe": "Onboarding 'Learning Setup' step. Backdrop is an illustrated pastel-lavender futuristic city skyline with a ringed planet and clouds, plus a glowing circular holographic platform at lower left carrying a miniature neon city model with small holographic signs - all backdrop. Two separate characters stand behind the platform and do NOT touch: a cartoon boy in a blue jacket with an orange backpack (hair top y=371, pointing hand to x=308, right hair tuft to x=330, body occluded by the platform below y~710) and, about 45px to his right across a holographic castle, the white-and-blue robot Nova (antenna ball top y=417, extended left hand x=360, right elbow x=594). UI to erase: the Kidsverse+ logo lockup top-left, the 4-step progress stepper top-centre, the English language chip top-right, the headline 'Set the learning path' in its own box, the two-line subtitle below it, the SELECT GRADE card with the 1-6 grade tiles and hint panel, the SELECT BOARD card with CBSE/ICSE/Other rows, the verified badge and hint panel, and the bottom action bar holding Back and CONTINUE."
+}

@@ -10,6 +10,7 @@ import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import Dock from '../components/Dock.jsx'
 import { Ring, Counter, Bar, Confetti, Sparkles } from '../components/Widgets.jsx'
+import { WORLD_DONE, STATION_PER, STATION_TOTAL } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { useAccent } from '../lib/accent.js'
@@ -23,7 +24,7 @@ export default function MissionComplete() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile; const level = g.level
   const ac = useAccent()
-  useEffect(() => { const t = setTimeout(() => sfx.unlock(), 300); const t2 = setTimeout(() => g.addXp(20, 'Fractions mission'), 1400); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const t = setTimeout(() => sfx.unlock(), 300); const t2 = setTimeout(() => { g.addXp(20, 'Fractions mission'); g.advanceStation({ base: WORLD_DONE[g.state.progress.world] ?? 0, per: STATION_PER, total: STATION_TOTAL }) }, 1400); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Page>
       <Scene name="complete" />

@@ -1,0 +1,19 @@
+{
+  "file": "72_child_light.png",
+  "chars": [
+    [116, 332, 378, 772],
+    [481, 386, 724, 766]
+  ],
+  "ui": [
+    [18, 12, 362, 98],
+    [462, 20, 1300, 108],
+    [1412, 14, 1668, 94],
+    [154, 148, 596, 268],
+    [154, 268, 552, 342],
+    [798, 130, 1566, 902],
+    [84, 776, 728, 902]
+  ],
+  "erase": [],
+  "flat": false,
+  "describe": "Illustrated pastel-lilac futuristic city plaza in soft daylight: a glossy tiled floor with faint concentric light rings running across the whole width, a skyline of translucent violet/blue domed towers and spires behind, a large ringed planet at the upper left, small floating shards and star sparkles in a pale blue sky. Centre-left of the plaza holds a purple holographic pedestal projecting a glowing blue user-avatar hologram. The boy stands on the left of the pedestal, the white-and-blue robot Nova on the right; both are lit from the front with soft reflections on the floor beneath them."
+}

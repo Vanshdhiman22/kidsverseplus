@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
-import { Flame, Star, Lightbulb, Headphones, Volume2, Check, Lock } from 'lucide-react'
+import { Flame, Star, Lightbulb, Headphones, Volume2, Check, Lock, RefreshCw } from 'lucide-react'
 import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import Logo from '../components/Logo.jsx'
@@ -10,12 +10,22 @@ import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import Dock, { DOCK_EXPLORE } from '../components/Dock.jsx'
 import { Bar } from '../components/Widgets.jsx'
+import { MODELS } from '../components/LessonModels.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeB, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 
-const HINTS = ['Check the size of each part.', 'Look at the crust lengths.', 'Compare the toppings area.']
+/* The mis-cut the child has to catch. Every model is drawn from this one array,
+   so telling it another way changes the picture and never the answer: these four
+   parts are not equal whichever way you look at them. */
+const SPLIT = [0.34, 0.19, 0.29, 0.18]
+
+const HINTS = {
+  pizza: ['Check the size of each part.', 'Look at the crust lengths.', 'Compare the toppings area.'],
+  bar:   ['Check the size of each chunk.', 'Look along the top edge.', 'Compare the widest chunk with the narrowest.'],
+  line:  ['Check the size of each jump.', 'Look at the gaps between the marks.', 'Compare the longest jump with the shortest.'],
+}
 
 export default function SpotMistake() {
   const nav = useNavigate()
@@ -23,6 +33,10 @@ export default function SpotMistake() {
   const [pick, setPick] = useState(null)
   const [hints, setHints] = useState(1)
   const [wrong, setWrong] = useState(0)
+  /* Offered right on the question, not a screen further on: a child who cannot see
+     it in the pizza often sees it at once in a bar or on a number line. */
+  const [model, setModel] = useState(0)
+  const M = MODELS[model]
   const correct = pick === 'no'
   const choose = v => {
     setPick(v)
@@ -52,13 +66,48 @@ export default function SpotMistake() {
       <Panel className="absolute left-[320px] top-[90px] w-[1010px] h-[705px] p-8 overflow-hidden" initial="hidden" animate="show">
         <div className="text-center"><h1 className="font-display font-extrabold text-[62px] leading-none text-ink">Spot the Mistake!</h1><motion.div className="mx-auto mt-3 h-[6px] w-[90px] rounded-full" style={{ background: 'var(--grad-primary)' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.2 }} /><p className="mt-3 text-[21px] font-semibold text-ink-2 leading-snug">Look carefully.<br />Are these four parts equal?</p></div>
         <div className="absolute left-[765px] top-[160px]"><SpeechBubble tail="bottom" text="I'm checking every slice! 🔍" delay={0.3} className="w-[190px] text-[18px]" /></div>
-        <div className="absolute left-[120px] bottom-[30px] flex gap-7">
+
+        {/* The thing being judged. It lives here in the DOM, not in the backdrop,
+            so it can be re-drawn as a different model on request. */}
+        <div className="absolute left-[255px] top-[196px]">
+          {/* Keyed, but with no exit to wait on: the new model mounts at once, so
+              the picture and the words that name it can never disagree. */}
+          <motion.div key={M.key} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24 }}>
+            <M.Art split={SPLIT} />
+          </motion.div>
+        </div>
+        {/* Tucked into the corner beside NO rather than sitting between the picture
+            and the answers, where it read as a third thing to choose. */}
+        <div className="absolute right-[26px] bottom-[26px] w-[182px] h-[150px] flex flex-col items-center justify-center gap-2">
+          <Button variant="outline" size="sm" icon={<RefreshCw size={17} />} className="w-full h-[62px] px-3 text-[15px] leading-tight"
+            onClick={() => { sfx.tap(); setModel(m => (m + 1) % MODELS.length) }}>Show it another way</Button>
+          <span className="text-[13px] font-bold text-ink-3 text-center">Showing: {M.label}</span>
+        </div>
+        <div className="absolute left-[58px] bottom-[26px] flex gap-7">
           {[['yes', 'YES', 'They are equal'], ['no', 'NO', 'They are not equal']].map(([v, big, sub]) => {
             const on = pick === v
+            /* A wrong pick should not leave the child guessing which one was right:
+               once they have answered, NO carries its green tick and colour whether
+               or not it was the card they tapped. Nothing is coloured before that. */
+            const right = v === 'no' && pick !== null
+            const wrong = on && v === 'yes'
+            /* `selected` paints its own lavender, which would sit on top of the green
+               and make a right answer look merely picked, so once a card is marked
+               right or wrong that colour is the one left to read. */
             return (
-              <Card key={v} hover selected={on} className={cn('relative w-[330px] h-[150px] flex flex-col items-center justify-center', on && v === 'yes' && 'ring-4 ring-red-400')} style={on ? { boxShadow: v === 'no' ? '0 0 0 3px #22c55e, 0 20px 44px -16px rgba(34,197,94,.5)' : '0 0 0 3px #ef4444' } : undefined} onClick={() => choose(v)}>
-                <span className="absolute top-4 right-4">{on ? <span className={cn('w-[34px] h-[34px] rounded-full grid place-items-center text-white', v === 'no' ? 'bg-green-500' : 'bg-red-500')}>{v === 'no' ? <Check size={20} strokeWidth={3.5} /> : '✕'}</span> : <span className="radio" />}</span>
-                <span className="font-display font-extrabold text-[46px] leading-none text-ink">{big}</span>
+              <Card key={v} hover selected={on && !right && !wrong}
+                className={cn('relative w-[330px] h-[150px] flex flex-col items-center justify-center transition-colors', right && 'bg-[var(--success-bg)]', wrong && 'bg-[var(--danger-bg)]')}
+                style={right ? { boxShadow: '0 0 0 3px #22c55e, 0 20px 44px -16px rgba(34,197,94,.5)' } : wrong ? { boxShadow: '0 0 0 3px #ef4444' } : undefined}
+                onClick={() => choose(v)}>
+                <span className="absolute top-4 right-4">
+                  {right || wrong
+                    ? <motion.span initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                        className={cn('w-[34px] h-[34px] rounded-full grid place-items-center text-white font-extrabold', right ? 'bg-green-500' : 'bg-red-500')}>
+                        {right ? <Check size={20} strokeWidth={3.5} /> : '✕'}
+                      </motion.span>
+                    : <span className="radio" />}
+                </span>
+                <span className={cn('font-display font-extrabold text-[46px] leading-none', right ? 'text-[var(--success-ink)]' : wrong ? 'text-[var(--danger-ink)]' : 'text-ink')}>{big}</span>
                 <span className="mt-1 text-[19px] font-semibold text-ink-2">{sub}</span>
               </Card>
             )
@@ -69,7 +118,7 @@ export default function SpotMistake() {
       <Panel className="absolute top-[90px] w-[280px] h-[705px] p-5" style={bleedR(27)} initial="hidden" animate="show">
         <div className="eyebrow text-[17px] flex items-center gap-2"><Lightbulb size={20} className="text-gold" fill="currentColor" /> Hint Progress</div>
         <Stack className="mt-3 flex flex-col gap-3" start={0.7}>
-          {HINTS.map((h, i) => {
+          {HINTS[M.key].map((h, i) => {
             const st = i < hints ? 'open' : i === hints ? 'next' : 'locked'
             return (
               <Item key={i} v="soft"><Card hover={st === 'next'} className="px-4 py-3 flex items-center gap-3" onClick={() => st === 'next' && (sfx.unlock(), setHints(hints + 1))}>

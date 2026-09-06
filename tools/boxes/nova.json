@@ -1,0 +1,25 @@
+{
+  "file": "60_nova_light.png",
+  "chars": [
+    [72, 164, 862, 941]
+  ],
+  "ui": [
+    [30, 20, 412, 116],
+    [1476, 22, 1662, 106],
+    [1030, 96, 1436, 320],
+    [978, 304, 1552, 470],
+    [1018, 458, 1532, 514],
+    [978, 494, 1174, 676],
+    [1166, 494, 1374, 676],
+    [1366, 494, 1578, 676],
+    [1104, 662, 1410, 742],
+    [972, 716, 1578, 840],
+    [1104, 818, 1436, 912],
+    [160, 766, 888, 936]
+  ],
+  "erase": [
+    [160, 766, 862, 936]
+  ],
+  "flat": false,
+  "describe": "Meet Nova hero, desktop light. Illustrated backdrop: a pastel lilac/blue futuristic city with a glowing tiled walkway receding to a swirling purple-white portal ring, floating planets and stars in the sky - not flat. Left of centre a curly dark-haired boy in a blue hoodie with a yellow star backpack is seen from behind-three-quarter looking up and right; his hair tops out near y=282, the backpack's left edge reaches x=81 and his body runs off the bottom edge. Immediately right of him the white-and-blue robot Nova floats with its left hand raised in a wave (fingers from x=443) and its right hand reaching down-right to x=848; its antenna ball tops out at y=174 and its feet end near y=665. The boy's and Nova's bounds overlap, so both are captured in ONE chars box [72,164,862,941]. UI, right column top to bottom: the Meet Nova headline with sparkle (own box), the Hi Aarav speech bubble with its left tail, the I'M HERE TO HELP YOU divider with arrows, three feature cards, the YOU + NOVA chip, the START MY JOURNEY gradient button and the Hear Nova speak pill; plus the Kidsverse+ logo lockup top-left and the English language chip top-right. Bottom left a wide three-item trust card (Safe Learning / Loved by kids / Trusted by parents) overlaps the boy's body, so it is listed in both ui and erase. No top bar, side rails or bottom navigation dock in this screen. Boxes were widened past each element's soft glow/shadow (the button bloom and card halos) so no fragment survives the inpaint."
+}

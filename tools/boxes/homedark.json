@@ -1,0 +1,24 @@
+{
+  "file": "54_home_dark.png",
+  "chars": [
+    [102, 374, 550, 792],
+    [130, 296, 220, 372]
+  ],
+  "ui": [
+    [26, 18, 332, 104],
+    [90, 106, 532, 250],
+    [244, 250, 534, 414],
+    [1514, 22, 1658, 92],
+    [1194, 80, 1658, 170],
+    [1194, 160, 1658, 616],
+    [1194, 608, 1658, 814],
+    [632, 132, 1196, 796],
+    [186, 798, 1488, 922]
+  ],
+  "erase": [
+    [252, 374, 528, 388],
+    [278, 386, 528, 410]
+  ],
+  "flat": false,
+  "describe": "Dark sci-fi home screen. Backdrop is an illustrated night scene: a curved space-station window frame with a glowing neon-purple futuristic city skyline, distant planets/moons, a glossy reflective floor and potted plants in the lower corners. Foreground characters are a curly-haired boy in a blue jacket with an orange backpack fist-bumping the white-and-blue Nova robot on a glowing floor platform (left third); the boy's hair tops out near y=381, his shoes and the robot's feet end near y=782, his backpack reaches x=107 on the left and the robot's antenna ball tops at y=450 with its right foot at x=537. A small floating Nova head avatar (x 136-213, y 303-366) sits above them next to a speech bubble whose bottom-left corner overlaps the top of the character box. UI is dark navy glassmorphism with cyan/violet glow: top-left Kidsverse+ logo, a two-line headline 'Good morning, Aarav!', a Nova speech bubble with a left-pointing tail at x=252, a top-right English chip, an Aarav + Nova Day 43 profile chip with a 1250 streak pill, a large centre MOON MISSION card with a dotted moon-path progress track and two buttons, right-hand YOUR UNIVERSE and NOVA'S NOTE panels, and a wide bottom navigation dock (x 207-1480, y 805-905) with Home / Learn / Test / Challenge / Profile."
+}

@@ -24,7 +24,6 @@ const LearnHub = lazyScreen(() => import('./screens/LearnHub.jsx'))
 const Journey = lazyScreen(() => import('./screens/Journey.jsx'))
 const Topic = lazyScreen(() => import('./screens/Topic.jsx'))
 const LessonDiscover = lazyScreen(() => import('./screens/LessonDiscover.jsx'))
-const ExplainWay = lazyScreen(() => import('./screens/ExplainWay.jsx'))
 const SpotMistake = lazyScreen(() => import('./screens/SpotMistake.jsx'))
 const MissionComplete = lazyScreen(() => import('./screens/MissionComplete.jsx'))
 const TestArena = lazyScreen(() => import('./screens/TestArena.jsx'))
@@ -51,8 +50,8 @@ const ParentPlan = lazyScreen(() => import('./screens/ParentPlan.jsx'))
 export const SCREENS = [
   ['/', '01 Landing'], ['/parent/login', '02 Parent Login'], ['/onboarding/child', '03 Create Child'], ['/onboarding/grade-board', '04 Learning Setup'],
   ['/onboarding/avatar', '05 Avatar'], ['/onboarding/interests', '06 Interests'], ['/onboarding/goals', '07 Goals'], ['/onboarding/nova', '08 Meet Nova'],
-  ['/welcome', '09 First Welcome'], ['/home', '10 Home'], ['/learn', '11 Learn Hub'], ['/journey', '12 Journey Map'], ['/learn/topics/fractions', '13 Topic'],
-  ['/missions/fractions', '14 Lesson · Discover'], ['/missions/fractions/explain', '15 Explain Another Way'], ['/missions/fractions/spot-mistake', '16 Spot the Mistake'], ['/missions/fractions/complete', '17 Mission Complete'],
+  ['/welcome', '09 First Welcome'], ['/home', '10 Home'], ['/learn', '11 Learn Hub'], ['/journey', '12 Journey Map'], ['/learn/topics/maths', '13 Topic'],
+  ['/missions/fractions', '14 Lesson · Discover'], ['/missions/fractions/spot-mistake', '16 Spot the Mistake'], ['/missions/fractions/complete', '17 Mission Complete'],
   ['/tests', '18 Test Arena'], ['/tests/mixed/intro', '19 Test Intro'], ['/tests/mixed/question', '20 Test Question'], ['/tests/mixed/result', '21 Test Result'],
   ['/extra', '22 Extra Learning'], ['/extra/reading', '23 Reading Fluency'], ['/extra/confidence', '24 Confidence Mission'], ['/challenge', '25 Challenge Home'],
   ['/challenge/opponents', '26 Battle Opponents'], ['/challenge/preview', '27 Battle Preview'], ['/challenge/battle', '28 Battle'], ['/challenge/result', '29 Battle Result'],
@@ -94,7 +93,7 @@ function usePrefetch() {
     const chunks = [
       () => import('./screens/Home.jsx'), () => import('./screens/LearnHub.jsx'), () => import('./screens/TestArena.jsx'),
       () => import('./screens/ChallengeHome.jsx'), () => import('./screens/Profile.jsx'), () => import('./screens/Journey.jsx'),
-      () => import('./screens/Topic.jsx'), () => import('./screens/LessonDiscover.jsx'), () => import('./screens/ExplainWay.jsx'),
+      () => import('./screens/Topic.jsx'), () => import('./screens/LessonDiscover.jsx'),
       () => import('./screens/SpotMistake.jsx'), () => import('./screens/MissionComplete.jsx'), () => import('./screens/TestIntro.jsx'),
       () => import('./screens/TestQuestion.jsx'), () => import('./screens/TestResult.jsx'), () => import('./screens/ExtraLearning.jsx'),
       () => import('./screens/ReadingFluency.jsx'), () => import('./screens/ConfidenceMission.jsx'), () => import('./screens/BattleOpponents.jsx'),
@@ -142,9 +141,8 @@ function Routed() {
           <Route path="/home" element={<Home />} />
           <Route path="/learn" element={<LearnHub />} />
           <Route path="/journey" element={<Journey />} />
-          <Route path="/learn/topics/fractions" element={<Topic />} />
+          <Route path="/learn/topics/:world" element={<Topic />} />
           <Route path="/missions/fractions" element={<LessonDiscover />} />
-          <Route path="/missions/fractions/explain" element={<ExplainWay />} />
           <Route path="/missions/fractions/spot-mistake" element={<SpotMistake />} />
           <Route path="/missions/fractions/complete" element={<MissionComplete />} />
           <Route path="/tests" element={<TestArena />} />

@@ -1,0 +1,199 @@
+{
+  "_note": "Boxes for the Sept-2026 replacement designs. Coords are design pixels (1672x941).",
+  "arena": {
+    "file": "77_arena_light.png",
+    "chars": [
+      [
+        418,
+        242,
+        878,
+        498
+      ]
+    ],
+    "ui": [
+      [
+        20,
+        12,
+        300,
+        92
+      ],
+      [
+        1012,
+        18,
+        1666,
+        92
+      ],
+      [
+        78,
+        108,
+        545,
+        252
+      ],
+      [
+        676,
+        138,
+        890,
+        250
+      ],
+      [
+        52,
+        478,
+        1618,
+        674
+      ],
+      [
+        662,
+        468,
+        1018,
+        722
+      ],
+      [
+        46,
+        686,
+        1608,
+        840
+      ],
+      [
+        236,
+        848,
+        1434,
+        932
+      ]
+    ],
+    "erase": [],
+    "flat": false,
+    "describe": "bright futuristic classroom/library, glass shelves, city skyline through window, holo tablet on a lit platform"
+  },
+  "intro": {
+    "file": "57_intro_light.png",
+    "chars": [
+      [
+        295,
+        182,
+        738,
+        688
+      ]
+    ],
+    "ui": [
+      [
+        14,
+        8,
+        352,
+        90
+      ],
+      [
+        680,
+        16,
+        1034,
+        84
+      ],
+      [
+        1190,
+        18,
+        1354,
+        82
+      ],
+      [
+        1360,
+        6,
+        1668,
+        90
+      ],
+      [
+        870,
+        102,
+        1660,
+        790
+      ],
+      [
+        26,
+        793,
+        1650,
+        924
+      ]
+    ],
+    "erase": [],
+    "flat": false,
+    "describe": "bright library/lab interior, glowing portal ring, moon and city through the ring, lit floor platform"
+  },
+  "question": {
+    "file": "75_question_light.png",
+    "chars": [
+      [
+        70,
+        158,
+        352,
+        706
+      ],
+      [
+        1376,
+        330,
+        1610,
+        750
+      ]
+    ],
+    "ui": [
+      [
+        0,
+        0,
+        1672,
+        134
+      ],
+      [
+        352,
+        152,
+        1318,
+        668
+      ],
+      [
+        524,
+        656,
+        1134,
+        790
+      ],
+      [
+        1354,
+        196,
+        1564,
+        324
+      ],
+      [
+        1572,
+        258,
+        1646,
+        326
+      ],
+      [
+        50,
+        722,
+        310,
+        804
+      ],
+      [
+        1344,
+        724,
+        1614,
+        804
+      ],
+      [
+        80,
+        816,
+        1594,
+        914
+      ]
+    ],
+    "erase": [
+      [
+        1344,
+        724,
+        1614,
+        752
+      ]
+    ],
+    "flat": false,
+    "describe": "bright white futuristic classroom, shelves left, city skyline right, glossy floor and lit disc platform"
+  },
+  "result": {
+    "_todo": true
+  }
+}

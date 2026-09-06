@@ -1,0 +1,23 @@
+{
+  "file": "71_home_light.png",
+  "chars": [
+    [88, 394, 512, 796]
+  ],
+  "ui": [
+    [18, 10, 392, 104],
+    [88, 122, 530, 276],
+    [124, 272, 250, 392],
+    [242, 260, 528, 420],
+    [1482, 4, 1662, 70],
+    [1190, 62, 1662, 156],
+    [602, 126, 1198, 814],
+    [1190, 156, 1660, 618],
+    [1190, 618, 1660, 814],
+    [194, 808, 1502, 938]
+  ],
+  "erase": [
+    [250, 394, 512, 418]
+  ],
+  "flat": false,
+  "describe": "Bright pastel blue-lavender sci-fi cityscape at dawn: a futuristic glass-and-chrome skyline with domed towers and spires on the left and right, a large glowing circular portal / energy ring behind the boy on the far left, soft green treetops along the mid-right, faint pastel planets (a ringed Saturn-like planet and two small moons) drifting in the upper sky with scattered white stars, and a polished reflective tiled plaza floor with pale violet highlights running across the bottom third. Boy Aarav in a blue jacket with orange backpack fist-bumps the white-and-blue robot Nova on that plaza."
+}

@@ -1,0 +1,31 @@
+{
+  "file": "55_welcome_light.png",
+  "chars": [
+    [226, 234, 796, 722]
+  ],
+  "ui": [
+    [0, 0, 224, 941],
+    [236, 62, 796, 198],
+    [238, 196, 676, 242],
+    [552, 246, 750, 392],
+    [1238, 6, 1660, 92],
+    [846, 94, 1652, 440],
+    [842, 444, 1644, 538],
+    [238, 714, 694, 898],
+    [730, 546, 1406, 900],
+    [740, 570, 968, 878],
+    [962, 570, 1182, 878],
+    [1174, 570, 1394, 878],
+    [1400, 542, 1660, 898],
+    [536, 894, 1160, 940],
+    [1584, 890, 1658, 941]
+  ],
+  "erase": [
+    [552, 246, 750, 392],
+    [740, 576, 800, 726]
+  ],
+  "flat": false,
+  "describe": "Illustrated pastel sci-fi scene: a soft blue-lilac sky with a large ringed planet and a smaller moon top-left, a glowing white futuristic city with slender spires and domed towers across the middle, and a blurred bookshelf/library wall with warm lantern glows on the left. The foreground is a pale glossy floor with a cream circular rug the child and robot sit on. Warm golden and cyan bokeh sparkles throughout. Not flat - full painted scenery.",
+  "charNote": "One combined box around the sitting boy and the Nova robot, which touch (the boy's blue sneaker overlaps Nova's leg). Measured extents: boy's hair top y~247, his left hand fingertips x~231 and hand bottom y~700, Nova's antenna balls y~394, Nova's raised pointing hand x~790, Nova's feet bottom y~702. The box [226,234,796,722] is slightly generous on every side and leaves out the cream rug and glowing floor as backdrop. Two erase rects sit inside: Nova's 'Hi Aarav! Ready for our first adventure?' speech bubble with its tail, and the top-left corner of the Literacy Kingdom card / feature-card panel that intrudes at x>=740, y>=578. The erase rect deliberately starts at y=576 because Nova's white forearm ends at y~573 - starting it any higher would wipe part of the robot's arm out of the sprite.",
+  "uiNote": "Corrections over the previous version: (1) added [730,546,1406,900] for the pale white rounded PANEL that sits behind the three feature cards - its own edges are at x~743..1393, y~559..889 with a drop shadow to y~892, so the earlier per-card boxes (which stopped at y=570 and y=878) would have left the panel's top edge, bottom edge and right sliver visible; (2) widened the bottom-right planet chip box to x=1658 because the planet actually reaches x~1645; (3) small outward nudges on the sidebar, headline, mission card, stepper, Maths Galaxy card and Nova's Promise card. Measured UI edges: sidebar panel ends x~218; headline block y~70..185; subtitle y~205..232; speech bubble body x~567..742 y~257..365 plus tail to y~380; top-right chips search circle x~1248 to profile chip x~1643, y~13..83; mission card x~858..1641 y~101..427; stepper row x~852..1635 y~452..525; Maths Galaxy card x~250..683 y~725..880; Literacy/Science/Goals cards y~582..872 spanning x~745..1383; Nova's Promise card x~1411..1648 y~552..887; tagline strip x~552..1145 y~905..922; bottom-right planet x~1597..1645 y~904..931. No bottom navigation dock exists on this desktop layout - navigation is the left rail, which is fully covered."
+}

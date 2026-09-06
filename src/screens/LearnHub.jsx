@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Home, Lock, ArrowRight, ShieldCheck, Heart, Star } from 'lucide-react'
@@ -8,7 +8,6 @@ import { TopBar } from '../components/TopBar.jsx'
 import { Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
-import Dock from '../components/Dock.jsx'
 import { Ring, Tilt } from '../components/Widgets.jsx'
 import { WORLDS } from '../data/catalog.js'
 import { sfx } from '../lib/sound.js'
@@ -17,13 +16,12 @@ import { useAccent } from '../lib/accent.js'
 
 export default function LearnHub() {
   const nav = useNavigate()
-  const [board, setBoard] = useState('CBSE')
   const ac = useAccent()
   return (
     <Page>
       <Scene name="learn" />
       <Child screen="learn" delay={0.3} amp={5} />
-      <TopBar logo="planet" />
+      <TopBar logo="planet" back="/home" backLabel="Home" />
       <div className="absolute left-[345px] top-[420px] z-20"><SpeechBubble tail="left" text="Fractions will unlock the next Maths world. ✨" delay={0.3} className="w-[175px] text-[16px] px-4 py-3" /></div>
 
       <Stack className="absolute left-[545px] top-[80px]" start={0.2}>
@@ -31,9 +29,6 @@ export default function LearnHub() {
         <Item><h1 className="font-display font-extrabold text-[60px] leading-tight text-ink">Choose your next world</h1></Item>
         <Item className="text-[21px] font-semibold text-ink-3">Explore, learn and grow with Nova by your side.</Item>
       </Stack>
-      <motion.div className="absolute left-[1372px] top-[130px] pill h-[58px] p-1" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-        {['CBSE', 'ICSE'].map(b => <button key={b} className={cn('relative h-full w-[120px] rounded-full font-display font-extrabold text-[19px]', board === b ? 'text-white' : 'text-ink')} onClick={() => { sfx.select(); setBoard(b) }}>{board === b && <motion.span layoutId="board-toggle" className="absolute inset-0 rounded-full" style={{ background: 'var(--grad-primary)' }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} />}<span className="relative z-10">{b}</span></button>)}
-      </motion.div>
 
       <Stack className="absolute left-[530px] top-[236px] flex items-end gap-[16px]" start={0.5} delay={0.08}>
         {WORLDS.map((w, i) => {
@@ -41,7 +36,7 @@ export default function LearnHub() {
           return (
             <Item key={w.id} v="pop">
               <Tilt max={6}>
-                <Card hover={!w.locked} className={cn('relative flex flex-col items-center text-center px-4 pb-4', f ? 'w-[250px] h-[500px] pt-8' : 'w-[200px] h-[462px] pt-7', f && 'card-selected')} onClick={() => !w.locked && nav(w.id === 'maths' ? '/learn/topics/fractions' : '/journey')}>
+                <Card hover={!w.locked} className={cn('relative flex flex-col items-center text-center px-4 pb-4', f ? 'w-[250px] h-[500px] pt-8' : 'w-[200px] h-[462px] pt-7', f && 'card-selected')} onClick={() => !w.locked && nav(`/learn/topics/${w.id}`)}>
                   {f && <motion.span className="absolute -top-[22px] left-1/2 -translate-x-1/2 h-[42px] px-4 rounded-full text-white font-display font-extrabold text-[16px] flex items-center gap-2 whitespace-nowrap" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18, delay: 0.3 }}><Star size={16} fill="currentColor" className="text-gold" /> Next: {w.next}</motion.span>}
                   {w.locked && <span className="absolute top-3 right-3 icon-orb w-[40px] h-[40px]"><Lock size={20} /></span>}
                   <motion.img src={w.img} alt="" className={cn('object-contain', f ? 'w-[176px] h-[176px]' : 'w-[142px] h-[142px]', w.locked && 'opacity-80 saturate-50')} animate={{ y: [0, -10, 0], rotate: [0, 3, 0, -3, 0] }} transition={{ duration: 6 + i, repeat: Infinity, ease: 'easeInOut' }} style={{ filter: 'drop-shadow(0 18px 24px rgba(60,40,160,.35))' }} />
@@ -66,7 +61,6 @@ export default function LearnHub() {
           <div key={t} className="flex items-center gap-4"><span className="icon-orb w-[50px] h-[50px]" style={{ color: c, background: `${c}1f` }}><I size={26} strokeWidth={2.2} /></span><span className="leading-tight"><span className="block font-extrabold text-[17px] text-ink">{t}</span><span className="block text-[14px] font-semibold text-ink-3">{s}</span></span></div>
         ))}
       </motion.div>
-      <Dock spread className="w-[1440px]" style={{ bottom: 12 }} />
     </Page>
   )
 }

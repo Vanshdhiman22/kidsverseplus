@@ -1,0 +1,25 @@
+{
+  "file": "67_avatar_light.png",
+  "chars": [
+    [594, 150, 832, 670],
+    [843, 282, 1058, 604]
+  ],
+  "ui": [
+    [24, 20, 340, 98],
+    [498, 32, 1176, 86],
+    [1492, 34, 1658, 84],
+    [78, 110, 612, 168],
+    [78, 166, 478, 200],
+    [70, 208, 336, 800],
+    [838, 164, 1066, 282],
+    [364, 558, 498, 668],
+    [412, 694, 496, 774],
+    [968, 694, 1054, 774],
+    [1114, 132, 1660, 802],
+    [1070, 780, 1660, 912],
+    [70, 800, 822, 922]
+  ],
+  "erase": [],
+  "flat": false,
+  "describe": "Light desktop avatar-picker screen. Backdrop is an illustrated pastel futuristic city skyline behind a glossy lavender floor with a glowing circular platform; not flat. Centre-left the cartoon boy in a blue explorer jacket stands on the platform (hair top y150, shoes bottom y662, jacket right x821); to his right floats the white-and-blue robot Nova holding a magnifying glass, antenna ball at y291 and its cyan hover rings ending near y598, so its box runs to y604. UI to erase: Kidsverse+ logo, 4-step progress stepper, English chip, headline plus subtitle, left avatar thumbnail rail with 'More avatars coming soon' chip, Nova speech bubble (x851-1054, y172-273), Rotate hint card, two circular carousel arrows (left circle x423-487, right circle x982-1043, both y705-763), the large right-hand outfit/hair/accessories card which runs to x1634 and y897 behind the Back and THIS IS ME buttons, and the bottom trust bar whose card bottom edge reaches y912."
+}

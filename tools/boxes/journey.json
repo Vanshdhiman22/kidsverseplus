@@ -1,0 +1,29 @@
+{
+  "file": "64_journey_light.png",
+  "chars": [
+    [916, 240, 1280, 580]
+  ],
+  "ui": [
+    [16, 8, 378, 866],
+    [32, 24, 334, 96],
+    [46, 124, 488, 308],
+    [46, 313, 322, 382],
+    [38, 391, 364, 574],
+    [38, 582, 364, 817],
+    [1192, 18, 1430, 88],
+    [1436, 12, 1654, 94],
+    [740, 98, 918, 184],
+    [1172, 140, 1343, 224],
+    [692, 321, 880, 430],
+    [1281, 400, 1511, 531],
+    [1262, 530, 1541, 590],
+    [688, 542, 922, 668],
+    [787, 688, 1022, 803],
+    [138, 822, 1538, 918]
+  ],
+  "erase": [
+    [1256, 522, 1280, 580]
+  ],
+  "flat": false,
+  "describe": "Illustrated fantasy learning-map backdrop: floating grassy islands with waterfalls, a glowing dotted purple/blue path winding between them, a crystal spire city and pastel sky-city skyline on the right, a small ringed planet upper right, big soft clouds, and a large curved white window arch framing the left side. The child Aarav and the white-and-blue robot Nova ride a glowing white hover-car in the centre."
+}

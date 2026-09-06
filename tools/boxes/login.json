@@ -1,0 +1,17 @@
+{
+  "file": "70_login_light.png",
+  "chars": [
+    [208, 350, 592, 792]
+  ],
+  "ui": [
+    [18, 10, 396, 112],
+    [1470, 12, 1672, 100],
+    [114, 142, 656, 312],
+    [114, 314, 552, 360],
+    [48, 790, 852, 918],
+    [884, 58, 1592, 908]
+  ],
+  "erase": [],
+  "flat": false,
+  "describe": "Login screen on an illustrated futuristic pastel city backdrop with domed towers, floating planets and a glowing reflective plaza floor. One character group at left-centre: a curly-haired boy in a blue jacket holding hands with the white-and-blue robot Nova, both standing on a glowing circular platform (platform is backdrop). Character group measures x 213-583, y 356-785, so the box is 208,350,592,792. UI to erase: the Kidsverse+ logo lockup top-left (icon plus wordmark and LEARN GROW ACHIEVE tagline), the English language pill top-right (runs to the right edge), the two-line headline 'Welcome back, grown-up' with its sparkle in its own box, the subtitle line 'See the learning. Guide the journey.', the three-column trust card strip along the bottom-left, and the full glassy sign-in panel on the right (outer glow ring 903-1573 x 72-882: PARENT ZONE badge, heading, subheading, email and password fields, forgot-password link, login button, 'or continue with' divider, Google/Apple/Microsoft buttons, kid-login row and the create-account footer). No bottom navigation dock or side rails on this screen."
+}
