@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { GameProvider } from './state/GameProvider.jsx'
 import BackButton from './components/BackButton.jsx'
+import { useTrailRecorder } from './lib/nav.js'
 import Stage from './components/Stage.jsx'
 import Cosmos from './components/Cosmos.jsx'
 import NovaIsland from './components/NovaIsland.jsx'
@@ -13,6 +14,7 @@ import Landing from './screens/Landing.jsx'
 
 const lazyScreen = p => lazy(p)
 const ParentLogin = lazyScreen(() => import('./screens/ParentLogin.jsx'))
+const CreateAccount = lazyScreen(() => import('./screens/CreateAccount.jsx'))
 const CreateChild = lazyScreen(() => import('./screens/CreateChild.jsx'))
 const LearningSetup = lazyScreen(() => import('./screens/LearningSetup.jsx'))
 const Avatar = lazyScreen(() => import('./screens/Avatar.jsx'))
@@ -49,7 +51,7 @@ const ParentPlan = lazyScreen(() => import('./screens/ParentPlan.jsx'))
 
 /* Route list, kept as the single place the screen order is written down. */
 export const SCREENS = [
-  ['/', '01 Landing'], ['/parent/login', '02 Parent Login'], ['/onboarding/child', '03 Create Child'], ['/onboarding/grade-board', '04 Learning Setup'],
+  ['/', '01 Landing'], ['/parent/login', '02 Parent Login'], ['/parent/create-account', '02b Create Account'], ['/onboarding/child', '03 Create Child'], ['/onboarding/grade-board', '04 Learning Setup'],
   ['/onboarding/avatar', '05 Avatar'], ['/onboarding/interests', '06 Interests'], ['/onboarding/goals', '07 Goals'], ['/onboarding/nova', '08 Meet Nova'],
   ['/welcome', '09 First Welcome'], ['/home', '10 Home'], ['/learn', '11 Learn Hub'], ['/journey', '12 Journey Map'], ['/learn/topics/maths', '13 Topic'],
   ['/missions/fractions', '14 Lesson · Discover'], ['/missions/fractions/spot-mistake', '16 Spot the Mistake'], ['/missions/fractions/complete', '17 Mission Complete'],
@@ -123,6 +125,7 @@ function usePrefetch() {
 
 function Routed() {
   const location = useLocation()
+  useTrailRecorder()
   usePrefetch()
   /* No `mode="wait"`: the arriving screen starts drawing immediately and the
      old one fades out underneath it, so a click reads as instant. */
@@ -132,6 +135,7 @@ function Routed() {
         <Routes location={location}>
           <Route path="/" element={<Landing />} />
           <Route path="/parent/login" element={<ParentLogin />} />
+          <Route path="/parent/create-account" element={<CreateAccount />} />
           <Route path="/onboarding/child" element={<CreateChild />} />
           <Route path="/onboarding/grade-board" element={<LearningSetup />} />
           <Route path="/onboarding/avatar" element={<Avatar />} />

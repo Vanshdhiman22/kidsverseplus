@@ -14,7 +14,7 @@ const initial = {
   settings: { theme: 'light', sound: true, music: true, voice: true, motion: true, lang: 'en', readAloud: true, screenFit: 'auto', zoom: 1 },
   /* `worldDone` is lessons finished per world; the Journey map turns it into which
      station the child is parked at, so finishing a mission drives the car forward. */
-  progress: { lessonStage: 1, missionsDone: 0, mastery: 68, world: 'maths', worldDone: {}, journeySeen: {} },
+  progress: { lessonStage: 1, quizzesDone: 0, mastery: 68, world: 'maths', worldDone: {}, journeySeen: {} },
   /* The family. `profile` is whichever child is signed in; the rest wait here
      with their own progress so switching does not overwrite anyone. */
   children: [
@@ -51,6 +51,8 @@ function reducer(state, a) {
     case 'profile': return { ...state, profile: { ...state.profile, ...a.patch } }
     case 'settings': return { ...state, settings: { ...state.settings, ...a.patch } }
     case 'progress': return { ...state, progress: { ...state.progress, ...a.patch } }
+    case 'quiz':
+      return { ...state, progress: { ...state.progress, quizzesDone: state.progress.quizzesDone + 1 } }
     case 'journeySeen':
       return { ...state, progress: { ...state.progress, journeySeen: { ...state.progress.journeySeen, [a.world]: a.index } } }
     case 'advanceStation': {
@@ -113,6 +115,8 @@ export function GameProvider({ children }) {
     advanceStation: ({ world, base, per, total } = {}) => dispatch({ type: 'advanceStation', world, base, per, total }),
     addXp: (amount, label) => dispatch({ type: 'xp', amount, label }),
     bumpStreak: () => dispatch({ type: 'streak' }),
+    /* One finished test. Home's progress panel counts these. */
+    finishQuiz: () => dispatch({ type: 'quiz' }),
     clearToast: id => dispatch({ type: 'clearToast', id }),
     clearFlash: () => dispatch({ type: 'clearFlash' }),
     notice: message => dispatch({ type: 'notice', message }),

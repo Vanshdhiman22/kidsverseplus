@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useBackTrail } from '../lib/nav.js'
+import { useBack } from '../lib/nav.js'
 import { motion } from 'motion/react'
 import { ArrowLeft, BookOpen, Box, Trophy, Check, Lock, Loader, Pencil, ClipboardCheck, Rocket, Star } from 'lucide-react'
 import Scene, { Cutout, Child } from '../components/Scene.jsx'
@@ -22,7 +22,7 @@ export default function Topic() {
   const { world = 'maths' } = useParams()
   /* Back goes where the child came from. This said "Back to Learn" and always went to the
      Learn Hub, which is wrong for the common path now: most children arrive from Home. */
-  const goBack = useBackTrail()
+  const goBack = useBack()
   const T = topicFor(world)
   /* The headline column is 500px and the tracks below start at a fixed y, so a long
      title must shrink rather than wrap -- two lines pushed the description down behind

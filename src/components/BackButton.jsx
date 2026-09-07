@@ -2,7 +2,7 @@ import React from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ArrowLeft } from 'lucide-react'
-import { useBackTrail, needsFloatingBack } from '../lib/nav.js'
+import { useBack, needsFloatingBack } from '../lib/nav.js'
 import { sfx } from '../lib/sound.js'
 
 /**
@@ -19,7 +19,7 @@ import { sfx } from '../lib/sound.js'
  */
 export default function BackButton() {
   const { pathname } = useLocation()
-  const back = useBackTrail()
+  const back = useBack()
   if (!needsFloatingBack(pathname)) return null
   return (
     <motion.button

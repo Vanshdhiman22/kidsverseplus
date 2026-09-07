@@ -13,10 +13,14 @@ export const SPRING_BOUNCE = { type: 'spring', stiffness: 380, damping: 14 }
 export const LEAD = 0.3
 export const lead = (d = 0) => Math.min(d * 0.34, LEAD)
 
+/* The outgoing screen stays mounted through the cross-fade — there is no `mode="wait"`,
+   so the arriving screen draws at once instead of waiting its turn. That means both are
+   briefly on top of each other, and the one on its way out must stop taking clicks or a
+   tap meant for the new screen can land on the old one's controls. */
 export const page = {
   initial: { opacity: 0, scale: 0.995 },
-  animate: { opacity: 1, scale: 1, transition: { duration: 0.24, ease: EASE } },
-  exit: { opacity: 0, transition: { duration: 0.16, ease: [0.4, 0, 1, 1] } },
+  animate: { opacity: 1, scale: 1, pointerEvents: 'auto', transition: { duration: 0.24, ease: EASE } },
+  exit: { opacity: 0, pointerEvents: 'none', transition: { duration: 0.16, ease: [0.4, 0, 1, 1] } },
 }
 
 export const stagger = (delay = 0.08, start = 0.05) => ({

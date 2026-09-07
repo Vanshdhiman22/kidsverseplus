@@ -78,7 +78,7 @@ export default function ParentLogin() {
               <ArrowRight size={24} strokeWidth={2.6} className="text-primary-ink" />
             </button>
           </Item>
-          <Item v="soft" className="text-center text-[18px] font-bold text-ink-3">New to Kidsverse? <button className="text-primary-ink font-extrabold hover:underline" onClick={() => nav('/onboarding/child')}>Create your account</button></Item>
+          <Item v="soft" className="text-center text-[18px] font-bold text-ink-3">New to Kidsverse? <button className="text-primary-ink font-extrabold hover:underline" onClick={() => nav('/parent/create-account')}>Create your account</button></Item>
         </Stack>
       </Panel>
     </Page>

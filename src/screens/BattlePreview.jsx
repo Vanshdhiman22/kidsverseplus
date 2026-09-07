@@ -35,7 +35,16 @@ export default function BattlePreview() {
       <Scene name="preview" />
       <TopBar logo="plus" center={<Dock items={DOCK_ITEMS} compact className="relative left-0 translate-x-0" style={{ bottom: 'auto', position: 'relative' }} active="challenge" />} right={<><StatPill kind="bolt" value={xp.toLocaleString()} /><UserChip name={name} sub={`Level ${g.level}`} face={face} /></>} showControls={false} />
       <Child screen="preview" delay={0.4} amp={6} />
-      <Cutout id="preview-1" delay={0.19} amp={10} />
+      {/* The opponent, not a fixed picture of Robo. preview-1 is Robo's cutout, so every
+          battle showed his face under whichever name the headline announced -- wrong for
+          three opponents out of four. `bot.cut` is a transparent figure of the bot the
+          child actually picked; it is drawn bottom-aligned in the same slot so all four
+          stand on one ground line despite differing heights. */}
+      <motion.img key={bot.id} src={bot.cut} alt="" draggable={false}
+        className="absolute left-[1090px] top-[193px] w-[405px] h-[567px] object-contain object-bottom pointer-events-none"
+        style={{ filter: 'drop-shadow(0 26px 34px rgba(40,30,140,.4))' }}
+        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1, y: [0, -10, 0] }}
+        transition={{ opacity: { delay: 0.19 }, scale: { type: 'spring', stiffness: 200, damping: 18, delay: 0.19 }, y: { duration: 3.8, repeat: Infinity, ease: 'easeInOut' } }} />
       <Cutout id="preview-2" delay={0.3} amp={8} />
 
       <Stack className="absolute left-[500px] top-[110px] w-[680px] text-center" start={0.2}>

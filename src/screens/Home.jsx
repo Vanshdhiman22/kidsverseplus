@@ -9,8 +9,8 @@ import {
 import Scene, { Cutout, Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { Ring, Bar, Counter } from '../components/Widgets.jsx'
-import { WORLDS } from '../data/catalog.js'
-import { useGame } from '../state/GameProvider.jsx'
+import { WORLDS, lessonProgress } from '../data/catalog.js'
+import { useGame, XP_PER_LEVEL } from '../state/GameProvider.jsx'
 import { openSettings } from '../components/SettingsSheet.jsx'
 import ParentGate from '../components/ParentGate.jsx'
 import { bleedL, bleedR, bleedX, safeB } from '../components/Stage.jsx'
@@ -80,8 +80,14 @@ export default function Home() {
   const nav = useNavigate()
   const g = useGame()
   const { name, face } = g.state.profile
-  const { streak } = g.state.stats
+  const { streak, xp } = g.state.stats
   const level = g.level
+  /* Every number in the progress panel is read from state. It was a set of design
+     literals -- 65%, 12/20, 8/15, 4/10 -- that never moved, while Level in the same
+     header did, so the panel visibly contradicted itself after a mission. */
+  const lessons = lessonProgress(g.state.progress.worldDone)
+  const quizzes = { done: g.state.progress.quizzesDone ?? 0, total: 15 }
+  const toNext = XP_PER_LEVEL - (xp % XP_PER_LEVEL)
   /* The grown-up area sits behind a four-digit code, set on first use. */
   const [gate, setGate] = useState(false)
 
@@ -206,14 +212,19 @@ export default function Home() {
           <span className="ml-auto font-display font-extrabold text-[17px] text-primary-ink">Level {level}</span>
         </div>
         <div className="mt-3 flex items-center gap-4">
-          <Ring size={132} stroke={14} value={0.65} id="home-ring" delay={lead(0.7)} track="#e8e6ff">
+          <Ring size={132} stroke={14} value={lessons.pct / 100} id="home-ring" delay={lead(0.7)} track="#e8e6ff">
             <div className="text-center leading-none">
-              <div className="font-display font-extrabold text-[30px] text-primary-ink"><Counter to={65} delay={lead(0.7)} />%</div>
+              <div className="font-display font-extrabold text-[30px] text-primary-ink"><Counter to={lessons.pct} delay={lead(0.7)} />%</div>
               <div className="mt-1 text-[11px] font-bold text-ink-3">Overall Progress</div>
             </div>
           </Ring>
           <div className="flex-1 flex flex-col gap-[10px]">
-            {[[BookOpen, '#3b82f6', '12/20 Lessons', 0.6], [Trophy, '#f59e0b', '8/15 Quizzes', 0.53], [Lightbulb, '#a855f7', '4/10 Projects', 0.4]].map(([I, c, t, v]) => (
+            {/* "Projects" is gone: nothing in the app ever creates one, so that row could
+                only ever be a fixed number. XP toward the next level is real and moves on
+                every mission, quiz and challenge. */}
+            {[[BookOpen, '#3b82f6', `${lessons.done}/${lessons.total} Lessons`, lessons.done / lessons.total],
+              [Trophy, '#f59e0b', `${quizzes.done}/${quizzes.total} Quizzes`, quizzes.done / quizzes.total],
+              [Lightbulb, '#a855f7', `${XP_PER_LEVEL - toNext}/${XP_PER_LEVEL} XP to Level ${level + 1}`, (XP_PER_LEVEL - toNext) / XP_PER_LEVEL]].map(([I, c, t, v]) => (
               <div key={t} className="rounded-[14px] bg-[var(--lavender)]/60 px-3 py-2 flex items-center gap-3">
                 <span className="w-[30px] h-[30px] rounded-[10px] grid place-items-center bg-[var(--surface-2)] shrink-0" style={{ color: c }}><I size={17} /></span>
                 <span className="flex-1">

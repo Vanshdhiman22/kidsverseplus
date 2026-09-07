@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useBackTrail, parentOf, NO_BACK } from '../lib/nav.js'
+import { useBack, parentOf, NO_BACK } from '../lib/nav.js'
 import { AnimatePresence, motion } from 'motion/react'
 import { ChevronDown, Globe, Sun, Moon, Volume2, VolumeX, Flame, Star, Zap, Gem, Settings, Check, ArrowLeft } from 'lucide-react'
 import Logo from './Logo.jsx'
@@ -20,7 +20,7 @@ import { bleedX, safeT } from './Stage.jsx'
 export function TopBar({ logo = 'plus', center, right, className, showControls = true, back, backLabel = 'Back' }) {
   const nav = useNavigate()
   const { pathname } = useLocation()
-  const goBack = useBackTrail()
+  const goBack = useBack()
   const auto = !NO_BACK.has(pathname) && parentOf(pathname) != null
   const showBack = back === false ? false : (back != null || auto)
   const onBack = () => { sfx.tap(); back === true || back == null ? goBack() : nav(back) }

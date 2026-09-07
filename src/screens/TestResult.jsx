@@ -16,7 +16,7 @@ import { sfx } from '../lib/sound.js'
 export default function TestResult() {
   const nav = useNavigate()
   const g = useGame(); const { name, face, grade } = g.state.profile
-  useEffect(() => { const t = setTimeout(() => sfx.success(), 500); const t2 = setTimeout(() => g.addXp(40, 'Test complete'), 1600); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const t = setTimeout(() => sfx.success(), 500); const t2 = setTimeout(() => { g.addXp(40, 'Test complete'); g.finishQuiz() }, 1600); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Page>
       <Scene name="result" />

@@ -65,6 +65,16 @@ export function deriveStations(worldId, done = 0, total = 20) {
 }
 export const WORLD_DONE = { literacy: 14, maths: 12, evs: 9, computer: 6, general: 4 }
 
+/* Lessons finished across every world, against everything there is to finish.
+   Home's progress panel used to hardcode 65% / 12-of-20 and never read state at all, so
+   a child could finish a mission, watch their Level go up in the same panel header, and
+   see the progress ring sit exactly where it was. */
+export const lessonProgress = (worldDone = {}) => {
+  const done = WORLDS.reduce((n, w) => n + (worldDone[w.id] ?? WORLD_DONE[w.id] ?? 0), 0)
+  const total = WORLDS.length * STATION_TOTAL
+  return { done: Math.round(done), total, pct: Math.round((done / total) * 100) }
+}
+
 export const FACES = [1, 2, 3, 4].map(n => ({ id: n, thumb: `/art/kid${n}-face.webp`, sm: `/art/kid${n}-face-sm.webp` }))
 export const OUTFITS = [
   { id: 'explorer', name: "Explorer's Jacket", blurb: 'Ready for every adventure, near or far.', thumb: '/art/avatar/body-explorer.webp', colors: ['#7c5cff', '#fbbf24', '#e5e7eb'] },
