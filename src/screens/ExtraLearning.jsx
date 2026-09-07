@@ -7,7 +7,6 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import SideRail from '../components/SideRail.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock from '../components/Dock.jsx'
 import { Tilt, Sparkles } from '../components/Widgets.jsx'
 import { sfx } from '../lib/sound.js'
 
@@ -55,7 +54,6 @@ export default function ExtraLearning() {
           </Tilt></Item>
         ))}
       </Stack>
-      <Dock spread className="w-[1400px]" style={{ bottom: 18, left: 'calc(50% + 108px)' }} active="test" />
     </Page>
   )
 }

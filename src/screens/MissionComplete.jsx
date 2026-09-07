@@ -8,9 +8,14 @@ import { TopBar, UserChip } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
-import Dock from '../components/Dock.jsx'
 import { Ring, Counter, Bar, Confetti, Sparkles } from '../components/Widgets.jsx'
 import { WORLD_DONE, STATION_PER, STATION_TOTAL } from '../data/catalog.js'
+
+/* This screen is the end of the Fractions mission, which belongs to Maths. It used to
+   credit `progress.world` -- whatever the Journey map's subject switcher was last left
+   on -- so a child who browsed the Literacy map and then finished Fractions advanced
+   Literacy instead. */
+const MISSION_WORLD = 'maths'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { useAccent } from '../lib/accent.js'
@@ -22,15 +27,15 @@ const Chunky = ({ children, className, delay = 0 }) => (
 
 export default function MissionComplete() {
   const nav = useNavigate()
-  const g = useGame(); const { name, face } = g.state.profile; const level = g.level
+  const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats; const level = g.level
   const ac = useAccent()
-  useEffect(() => { const t = setTimeout(() => sfx.unlock(), 300); const t2 = setTimeout(() => { g.addXp(20, 'Fractions mission'); g.advanceStation({ base: WORLD_DONE[g.state.progress.world] ?? 0, per: STATION_PER, total: STATION_TOTAL }) }, 1400); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const t = setTimeout(() => sfx.unlock(), 300); const t2 = setTimeout(() => { g.addXp(20, 'Fractions mission'); g.advanceStation({ world: MISSION_WORLD, base: WORLD_DONE[MISSION_WORLD] ?? 0, per: STATION_PER, total: STATION_TOTAL }) }, 1400); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Page>
       <Scene name="complete" />
       <Child screen="complete" delay={0.6} amp={7} />
       <Confetti />
-      <TopBar back={false} logo="planet" right={<><UserChip name={`Hi, ${name}! 👋`} sub={`Explorer Level ${level}`} face={face} /><span className="pill h-[68px] px-6 gap-3 font-display font-extrabold text-[24px] text-ink"><Star size={28} className="text-gold" fill="currentColor" /> <Counter to={320} from={300} delay={0.3} /> XP</span></>} showControls={false} />
+      <TopBar back={false} logo="planet" right={<><UserChip name={`Hi, ${name}! 👋`} sub={`Explorer Level ${level}`} face={face} /><span className="pill h-[68px] px-6 gap-3 font-display font-extrabold text-[24px] text-ink"><Star size={28} className="text-gold" fill="currentColor" /> <Counter to={xp} from={xp - 20} delay={0.3} /> XP</span></>} showControls={false} />
       <div className="absolute left-[150px] top-[120px] w-[700px] text-center">
         <Chunky className="text-[112px] leading-[0.9]" delay={0.2}>MISSION</Chunky>
         <Chunky className="text-[112px] leading-[0.9] -mt-2" delay={0.35}>COMPLETE!</Chunky>
@@ -60,7 +65,6 @@ export default function MissionComplete() {
         <Item v="pop" className="grid grid-cols-2 gap-5"><Button size="md" arrow icon={<Rocket size={24} />} className="h-[70px] uppercase text-[22px]" sound="whoosh" onClick={() => nav('/journey')}>Nova's next step</Button><Button variant="outline" size="md" icon={<Trophy size={24} />} className="h-[70px] uppercase text-[20px]" onClick={() => nav('/challenge')}>Try a challenge</Button></Item>
         <Item v="pop" className="mt-4"><Button variant="ghost" size="md" icon={<Home size={22} />} className="w-full h-[58px] text-[20px]" onClick={() => nav('/journey')}>Back to Journey</Button></Item>
       </Stack>
-      <Dock sub spread className="w-[1440px]" style={{ bottom: 12 }} active="learn" />
     </Page>
   )
 }

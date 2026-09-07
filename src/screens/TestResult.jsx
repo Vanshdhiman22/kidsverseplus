@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Star, Clock, Target, TrendingUp, Rocket, Gamepad2, Check, RefreshCw, ChevronRight, Award } from 'lucide-react'
 import Scene, { Child } from '../components/Scene.jsx'
@@ -7,7 +7,6 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock from '../components/Dock.jsx'
 import { Ring, Counter, Confetti, Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { gradeLabel } from '../data/catalog.js'
@@ -16,6 +15,20 @@ import { sfx } from '../lib/sound.js'
 export default function TestResult() {
   const nav = useNavigate()
   const g = useGame(); const { name, face, grade } = g.state.profile
+  /* The run's real numbers, handed over by TestQuestion. Opened directly (a bookmark, a
+     refresh) there is no run to report, so the score reads as not-taken rather than as a
+     confident 8 / 10 nobody earned. */
+  const run = useLocation().state
+  const score = run ? `${run.correct} / ${run.total}` : '—'
+  const pct = run && run.total ? Math.round((run.correct / run.total) * 100) : 0
+  const mins = run ? Math.max(1, Math.round(run.seconds / 60)) : null
+  const timeTaken = mins ? `${mins} min` : '—'
+  /* The breakdown bar read 8 correct / 2 attempted / 2 incorrect out of a 12 that matched
+     nothing, directly under the real score. It is the same run, counted. */
+  const breakdown = [
+    ['#22c55e', 'Correct', run ? run.correct : 0],
+    ['#ef4444', 'Incorrect', run ? run.total - run.correct : 0],
+  ]
   useEffect(() => { const t = setTimeout(() => sfx.success(), 500); const t2 = setTimeout(() => { g.addXp(40, 'Test complete'); g.finishQuiz() }, 1600); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Page>
@@ -31,10 +44,10 @@ export default function TestResult() {
       <Sparkles n={8} seed={21} className="left-[120px] top-[280px] w-[600px] h-[500px]" />
 
       <motion.div className="absolute left-[695px] top-[175px]" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 18, delay: 0.17 }}>
-        <Ring size={340} stroke={22} value={0.8} id="res" delay={0.3}><div className="text-center leading-none"><motion.span className="inline-block text-gold" animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}><Star size={54} fill="currentColor" /></motion.span><div className="mt-2 font-display font-extrabold text-[84px] text-ink leading-none"><Counter to={80} delay={0.3} />%</div><div className="mt-1 font-display font-extrabold text-[26px] text-primary-ink uppercase tracking-wide">Mastery</div><div className="mt-1 text-[18px] font-bold text-ink-3">Keep it up! ✨</div></div></Ring>
+        <Ring size={340} stroke={22} value={pct / 100} id="res" delay={0.3}><div className="text-center leading-none"><motion.span className="inline-block text-gold" animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}><Star size={54} fill="currentColor" /></motion.span><div className="mt-2 font-display font-extrabold text-[84px] text-ink leading-none"><Counter to={pct} delay={0.3} />%</div><div className="mt-1 font-display font-extrabold text-[26px] text-primary-ink uppercase tracking-wide">Mastery</div><div className="mt-1 text-[18px] font-bold text-ink-3">Keep it up! ✨</div></div></Ring>
       </motion.div>
       <Panel className="absolute left-[650px] top-[560px] w-[405px] h-[130px] px-4 grid grid-cols-3 items-center divide-x divide-[var(--line)]" initial="hidden" animate="show">
-        {[[Clock, '6 min', 'Time Taken', '#7c5cff'], [Target, '8 / 10', 'Score', '#8b5cf6'], [TrendingUp, '+40 XP', 'Earned', '#22c55e']].map(([I, v, l, c]) => <div key={l} className="flex flex-col items-center leading-tight"><I size={28} style={{ color: c }} /><span className="mt-1 font-display font-extrabold text-[24px] text-ink">{v}</span><span className="text-[14px] font-bold text-ink-3">{l}</span></div>)}
+        {[[Clock, timeTaken, 'Time Taken', '#7c5cff'], [Target, score, 'Score', '#8b5cf6'], [TrendingUp, '+40 XP', 'Earned', '#22c55e']].map(([I, v, l, c]) => <div key={l} className="flex flex-col items-center leading-tight"><I size={28} style={{ color: c }} /><span className="mt-1 font-display font-extrabold text-[24px] text-ink">{v}</span><span className="text-[14px] font-bold text-ink-3">{l}</span></div>)}
       </Panel>
       {/* The right-hand column starts at x=1075, so this row has to finish before it:
           the wider version ran to 1280 and sat on the Nova Recommends card. */}
@@ -53,9 +66,9 @@ export default function TestResult() {
       <Panel className="absolute left-[1075px] top-[395px] w-[495px] p-6" initial="hidden" animate="show">
         <div className="label-caps text-[14px]">Visual Question Breakdown</div>
         <div className="mt-4 flex h-[22px] rounded-full overflow-hidden bg-[var(--lavender-2)]">
-          {[['#22c55e', 8], ['#facc15', 2], ['#ef4444', 2]].map(([c, v], i) => <motion.div key={c} style={{ background: c }} initial={{ width: 0 }} animate={{ width: `${(v / 12) * 100}%` }} transition={{ duration: 1, delay: 0.1 + i * 0.2, ease: [0.16, 1, 0.3, 1] }} />)}
+          {breakdown.map(([c, , v], i) => <motion.div key={c} style={{ background: c }} initial={{ width: 0 }} animate={{ width: `${run && run.total ? (v / run.total) * 100 : 0}%` }} transition={{ duration: 1, delay: 0.1 + i * 0.2, ease: [0.16, 1, 0.3, 1] }} />)}
         </div>
-        <div className="mt-4 flex justify-between text-[17px] font-bold text-ink-2">{[['#22c55e', 'Correct', 8], ['#facc15', 'Attempted', 2], ['#ef4444', 'Incorrect', 2]].map(([c, l, v]) => <span key={l} className="flex items-center gap-2"><span className="w-[14px] h-[14px] rounded-full" style={{ background: c }} />{l} <span className="font-extrabold text-ink ml-1">{v}</span></span>)}</div>
+        <div className="mt-4 flex justify-between text-[17px] font-bold text-ink-2">{breakdown.map(([c, l, v]) => <span key={l} className="flex items-center gap-2"><span className="w-[14px] h-[14px] rounded-full" style={{ background: c }} />{l} <span className="font-extrabold text-ink ml-1">{v}</span></span>)}</div>
       </Panel>
       <Panel className="absolute left-[1075px] top-[555px] w-[495px] p-6" initial="hidden" animate="show">
         <div className="label-caps text-[14px]">Nova Recommends</div>
@@ -65,7 +78,6 @@ export default function TestResult() {
           <ChevronRight size={28} className="text-primary-ink" />
         </Card>
       </Panel>
-      <Dock spread className="w-[1440px]" style={{ bottom: 12 }} />
     </Page>
   )
 }

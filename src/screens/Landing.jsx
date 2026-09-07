@@ -65,7 +65,7 @@ export default function Landing() {
           </div>
         </div>
         <Stack className="mt-9 flex flex-col gap-5" start={0.7}>
-          <Item v="pop"><Button size="lg" arrow icon={<Rocket size={30} strokeWidth={2.4} />} className="w-full uppercase text-[30px]" sound="whoosh" onClick={() => { g.setAuthIntent('play'); nav('/parent/login') }}>Get Started</Button></Item>
+          <Item v="pop"><Button size="lg" arrow icon={<Rocket size={30} strokeWidth={2.4} />} className="w-full uppercase text-[30px]" sound="whoosh" onClick={() => { g.setAuthIntent('play'); nav('/parent/create-account') }}>Get Started</Button></Item>
           <Item v="pop"><Button variant="outline" size="md" icon={<User size={24} strokeWidth={2.4} />} className="w-full h-[68px] uppercase text-[21px]" onClick={() => { g.setAuthIntent('play'); nav('/parent/login') }}>I already have an account</Button></Item>
           <Item v="pop">
             <button className="card w-full h-[68px] px-6 flex items-center gap-4 text-left card-hover" onClick={() => { sfx.tap(); g.setAuthIntent('parent'); nav('/parent/login') }}>

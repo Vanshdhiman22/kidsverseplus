@@ -8,7 +8,6 @@ import Logo from '../components/Logo.jsx'
 import { UserChip } from '../components/TopBar.jsx'
 import { Panel, Card, Check } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock from '../components/Dock.jsx'
 import { Tilt } from '../components/Widgets.jsx'
 import { BOTS } from '../data/battle.jsx'
 import { useTint } from '../lib/accent.js'
@@ -70,7 +69,6 @@ export default function BattleOpponents() {
           <Button variant="ghost" size="md" icon={<ArrowLeft size={18} />} className="h-[44px] text-[16px]" onClick={() => nav('/challenge')}>Back to Challenge</Button>
         </div>
       </Panel>
-      <Dock className="w-[860px]" spread style={{ bottom: 14 }} />
     </Page>
   )
 }

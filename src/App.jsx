@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { GameProvider } from './state/GameProvider.jsx'
 import BackButton from './components/BackButton.jsx'
+import NavDrawer from './components/NavDrawer.jsx'
 import { useTrailRecorder } from './lib/nav.js'
 import Stage from './components/Stage.jsx'
 import Cosmos from './components/Cosmos.jsx'
@@ -183,7 +184,7 @@ export default function App() {
         <MotionConfig reducedMotion="user">
           <Cosmos lite />
           <MusicPlayer />
-          <Stage><Routed /><BackButton /><Overlays /></Stage>
+          <Stage><Routed /><NavDrawer /><BackButton /><Overlays /></Stage>
         </MotionConfig>
       </GameProvider>
     </BrowserRouter>

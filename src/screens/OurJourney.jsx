@@ -7,7 +7,6 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip, IconPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock from '../components/Dock.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Counter, Sparkles } from '../components/Widgets.jsx'
 import { STATS, MILESTONES } from './Profile.jsx'
@@ -38,7 +37,6 @@ export default function OurJourney() {
         <Stack className="mt-3 grid grid-cols-4 gap-8" start={0.8} delay={0.12}>{MILESTONES.map(([I, c, t, s], i) => <Item key={t} v="pop"><Card hover className="relative h-[240px] p-4 pt-8 flex flex-col items-center text-center"><span className="absolute -top-4 -left-3 w-[42px] h-[42px] rounded-full grid place-items-center text-white font-display font-extrabold text-[20px]" style={{ background: 'var(--grad-primary)' }}>{i + 1}</span><span className="icon-orb w-[110px] h-[110px]" style={{ color: c, background: `${c}1f` }}><I size={56} /></span><span className="mt-3 text-[17px] font-extrabold text-ink leading-tight">{t}</span><span className="mt-1 text-[13px] font-semibold text-ink-3 leading-tight">{s}</span></Card></Item>)}</Stack>
         <div className="relative mt-5 mx-[100px] h-[4px] rounded-full bg-[var(--lavender-2)]"><motion.div className="absolute inset-y-0 left-0 rounded-full" style={{ background: 'var(--grad-primary)' }} initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 1.4, delay: 0.3 }} />{[0, 1, 2, 3].map(i => <motion.span key={i} className="absolute -top-[8px] w-[20px] h-[20px] rounded-full border-4 border-[var(--primary)] bg-white" style={{ left: `calc(${i * 33.3}% - 10px)` }} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1 + i * 0.3 }} />)}</div>
       </Panel>
-      <Dock sub className="left-[30px] translate-x-0 w-[1070px]" spread style={{ bottom: 40 }} active="profile" />
       <motion.div className="absolute left-[1155px] top-[805px]" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="lg" arrow className="w-[455px] h-[84px] uppercase text-[24px]" sound="whoosh" onClick={() => nav('/journey')}>Continue our journey</Button></motion.div>
     </Page>
   )

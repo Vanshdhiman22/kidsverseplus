@@ -7,7 +7,6 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip, StatPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock from '../components/Dock.jsx'
 import { Bar, Counter, Confetti, Sparkles } from '../components/Widgets.jsx'
 import { BOTS } from '../data/battle.jsx'
 import { useGame } from '../state/GameProvider.jsx'
@@ -64,7 +63,6 @@ export default function BattleResult() {
         <Card hover className="mt-2 h-[80px] px-4 flex items-center gap-3" onClick={() => nav('/missions/fractions')}><span className="icon-orb w-[46px] h-[46px] text-orange-500" style={{ background: '#ffedd5' }}><Timer size={24} /></span><span className="flex-1 leading-tight"><span className="block font-extrabold text-[17px] text-primary-ink">5-minute Fraction Mission</span><span className="block text-[13px] font-semibold text-ink-3">Sharpen your fraction skills.</span></span><Chev size={22} className="text-ink-3" /></Card>
         <div className="mt-5 flex flex-col gap-3"><Button size="md" arrow className="w-full h-[58px] uppercase text-[20px]" sound="whoosh" onClick={() => nav('/missions/fractions')}><img src="/art/22-novahead.webp" alt="" className="w-[34px]" /> Train with Nova</Button><Button variant="ghost" size="md" icon={<CalendarDays size={20} />} className="w-full h-[52px] uppercase text-[17px]" onClick={() => nav('/challenge')}>Rematch later</Button></div>
       </Panel>
-      <Dock spread className="w-[1430px]" style={{ bottom: 18 }} />
     </Page>
   )
 }

@@ -32,14 +32,26 @@ export default function ParentLogin() {
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
   const [show, setShow] = useState(false)
+  const [err, setErr] = useState('')
   /* Where signing in leads depends on which door was used on the landing page:
      a parent who asked for the Parent Zone lands there, everyone else carries
      on into the child's setup. */
+  /* Signing in lands where the account actually is: straight into the app for a single
+     child, the child picker when the account holds more than one, and only onto the
+     onboarding steps when there is no child yet. It used to send every sign-in to the
+     Create Child screen, so returning families were asked to name a child they had
+     already made. */
   const signIn = () => {
-    if (!email.trim() || !pw.trim()) { g.notice('Enter your email and password to continue.'); return }
+    if (!email.trim() || !pw.trim()) {
+      /* g.notice renders through NovaIsland, which this route excludes, so the guard was
+         silent: the button played its sound and nothing else happened. */
+      setErr('Enter your email and password to continue.'); sfx.wrong?.(); return
+    }
+    setErr('')
     const parent = g.state.authIntent === 'parent'
+    const kids = g.state.children ?? []
     g.setAuthIntent('play')
-    nav(parent ? '/parent' : '/onboarding/child')
+    nav(parent ? '/parent' : kids.length === 0 ? '/onboarding/child' : kids.length > 1 ? '/switch' : '/home')
   }
   return (
     <Page>
@@ -64,6 +76,7 @@ export default function ParentLogin() {
             <Field label="Password" icon={Lock} type={show ? 'text' : 'password'} placeholder="Enter your password" value={pw} onChange={e => setPw(e.target.value)} right={<button onClick={() => setShow(s => !s)} className="text-ink-3 hover:text-primary-ink">{show ? <EyeOff size={24} /> : <Eye size={24} />}</button>} />
             <div className="text-right mt-1"><button className="text-[16px] font-bold text-primary-ink hover:underline">Forgot password?</button></div>
           </Item>
+          {err && <Item v="soft"><div className="text-[17px] font-bold text-red-500">{err}</div></Item>}
           <Item v="pop"><Button size="md" arrow icon={<Lock size={24} strokeWidth={2.4} />} className="w-full h-[62px] uppercase text-[21px]" sound="whoosh" onClick={signIn}>Login to Kidsverse</Button></Item>
           <Item v="soft" className="flex items-center gap-4 text-[17px] font-bold text-ink-3"><span className="hairline flex-1" />or continue with<span className="hairline flex-1" /></Item>
           <Item v="soft" className="grid grid-cols-3 gap-4">
@@ -78,7 +91,6 @@ export default function ParentLogin() {
               <ArrowRight size={24} strokeWidth={2.6} className="text-primary-ink" />
             </button>
           </Item>
-          <Item v="soft" className="text-center text-[18px] font-bold text-ink-3">New to Kidsverse? <button className="text-primary-ink font-extrabold hover:underline" onClick={() => nav('/parent/create-account')}>Create your account</button></Item>
         </Stack>
       </Panel>
     </Page>

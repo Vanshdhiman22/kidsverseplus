@@ -109,11 +109,15 @@ export const outfitPath = (charId, outfit) => `/art/avatar/full-kid${charById(ch
 /* The cutouts a character needs before they can carry the whole journey.
    Screens that only show a head crop are excluded (the face art already exists
    for all four), as is the avatar podium (the outfit sprites cover it). */
-export const REQUIRED = Object.values(SLOTS)
-  .filter(s => (s.layer === 'solo' || s.layer === 'fused') && !s.outfits && !s.exception)
-  .map(s => ({ cutout: s.cutout, pose: s.pose }))
+export const REQUIRED = Object.entries(SLOTS)
+  .filter(([, s]) => (s.layer === 'solo' || s.layer === 'fused') && !s.outfits && !s.exception)
+  .map(([screenKey, s]) => ({ screenKey, cutout: s.cutout, pose: s.pose, layer: s.layer }))
 
-const key = (slot, charId) => `${slot.pose}/${slot.cutout}--${charId}`
+/* One render per (pose, character): the same standing girl serves every screen that
+   uses the standing pose. This was keyed per screen as well, which would have meant 28
+   near-identical files per child instead of 12 -- the per-screen difference is where the
+   figure sits, not what it is, and that lives in pose-boxes.json. */
+const key = (slot, charId) => `${slot.pose}/${charId}`
 const has = (slot, charId) => produced.includes(key(slot, charId))
 
 /* Which cutouts each character still owes. */
@@ -135,10 +139,19 @@ export function coverage() {
  * `?poses=partial` in the URL relaxes this for previewing work in progress. */
 const PARTIAL = typeof location !== 'undefined' && /(\?|&)poses=partial\b/.test(location.search)
 
+/* Nova is baked into the child's own cutout on 25 of the 28 screens. Swapping the child
+   there draws a child-only render and takes her with the boy she was fused to, so the
+   swap is held until she can be drawn as her own layer. The library is imported, named
+   and verified; flip this to false once Nova exists separately and the swap goes live
+   with no other change. See tools/pose-spec.md. */
+const HELD_FOR_NOVA = true
+
 export function characterReady(face) {
   const c = charByFace(face)
   if (c.master) return true
-  return PARTIAL ? true : REQUIRED.every(s => has(s, c.id))
+  if (PARTIAL) return true
+  if (HELD_FOR_NOVA) return false
+  return REQUIRED.every(s => has(s, c.id))
 }
 
 /* (character, screen) -> the image to draw. The character comes from

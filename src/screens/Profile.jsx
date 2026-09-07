@@ -7,7 +7,6 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip, IconPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock from '../components/Dock.jsx'
 import { Counter, Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { gradeLabel } from '../data/catalog.js'
@@ -32,6 +31,10 @@ export default function Profile() {
       <Panel soft className="absolute left-[115px] top-[95px] w-[665px] h-[465px] p-8" initial="hidden" animate="show">
         <Sparkles n={5} seed={31} />
         <button className="flex items-center gap-3 text-[16px] font-bold text-ink" onClick={() => { sfx.tap(); nav('/home') }}><ArrowLeft size={20} /> Back to Home</button>
+        {/* Our Journey had no inbound link from anywhere in the app -- the screen existed
+            and was routed, but only a typed URL could reach it. It belongs to the profile,
+            so it is opened from here. */}
+        <button className="ml-5 flex items-center gap-2 text-[16px] font-extrabold text-primary-ink hover:underline" onClick={() => { sfx.tap(); nav('/profile/journey') }}>Our Journey <ChevronRight size={18} strokeWidth={2.6} /></button>
         <h1 className="mt-3 font-display font-extrabold text-[72px] leading-none text-ink uppercase">{name}</h1>
         <div className="mt-1 flex items-center gap-2 text-[22px] font-bold text-ink-2">{gradeLabel(grade)} • {board} <ShieldCheck size={22} className="text-sky-500" /></div>
         <Card className="absolute left-6 bottom-6 w-[280px] h-[92px] px-5 flex items-center gap-4"><img src="/art/22-novahead.webp" alt="" className="w-[54px] floaty" /><span className="leading-tight"><span className="block font-display font-extrabold text-[22px] text-ink uppercase">Nova</span><span className="block text-[14px] font-semibold text-ink-3">Your learning buddy</span></span></Card>
@@ -55,7 +58,6 @@ export default function Profile() {
         <div className="mt-3 flex items-center gap-4">{BADGES.map((c, i) => <motion.span key={c} className="w-[76px] h-[80px] grid place-items-center" style={{ color: onColor(c), background: `linear-gradient(160deg, ${c}, ${c}99)`, clipPath: 'polygon(50% 0, 100% 15%, 100% 65%, 50% 100%, 0 65%, 0 15%)' }} initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.1 + i * 0.1, type: 'spring', stiffness: 300, damping: 14 }} whileHover={{ scale: 1.12, rotate: 6 }}>{[<Star size={30} fill="currentColor" />, <BookOpen size={30} />, <span className="font-display font-extrabold text-[26px]">10</span>, <Flame size={30} fill="currentColor" />, <Mic size={30} />, <Trophy size={30} />][i]}</motion.span>)}<Card className="w-[76px] h-[80px] grid place-items-center text-center leading-tight"><span><span className="block font-display font-extrabold text-[22px] text-ink">+{Math.max(0, badges - 6)}</span><span className="text-[11px] font-bold text-ink-3">More badges</span></span></Card></div>
       </Panel>
       <MyCardSection className="left-[815px] top-[762px] w-[775px] h-[88px]" />
-      <Dock spread className="w-[1020px]" style={{ bottom: 14 }} />
     </Page>
   )
 }

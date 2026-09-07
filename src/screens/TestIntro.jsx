@@ -7,8 +7,8 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip, LangPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock from '../components/Dock.jsx'
 import { Switch, Sparkles } from '../components/Widgets.jsx'
+import { QUESTIONS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 
 function Portal({ x, y, size }) {
@@ -28,7 +28,7 @@ export default function TestIntro() {
     <Page>
       <Scene name="intro" />
       <Child screen="intro" delay={0.4} />
-      <TopBar logo="planet" center={<span className="pill h-[56px] pl-7 pr-2 gap-4 font-display font-extrabold text-[24px] text-ink uppercase tracking-wide">19. Test Intro <img src="/art/planet-sm.webp" alt="" className="w-[52px] floaty" /></span>} right={<><LangPill /><UserChip name={`Hi, ${name}! 👋`} sub={<span className="flex items-center gap-2">Explorer Level 3 <span className="w-[70px] h-[8px] rounded-full bg-[var(--lavender-2)] inline-block overflow-hidden"><span className="block h-full w-[70%] rounded-full" style={{ background: 'var(--grad-primary)' }} /></span></span>} face={face} /></>} showControls={false} />
+      <TopBar logo="planet" center={<span className="pill h-[56px] pl-7 pr-2 gap-4 font-display font-extrabold text-[24px] text-ink uppercase tracking-wide">19. Test Intro <img src="/art/planet-sm.webp" alt="" className="w-[52px] floaty" /></span>} right={<><LangPill /><UserChip name={`Hi, ${name}! 👋`} sub={<span className="flex items-center gap-2">Explorer Level {g.level} <span className="w-[70px] h-[8px] rounded-full bg-[var(--lavender-2)] inline-block overflow-hidden"><span className="block h-full rounded-full" style={{ width: `${g.levelPct}%`, background: 'var(--grad-primary)' }} /></span></span>} face={face} /></>} showControls={false} />
 
       <Panel className="absolute left-[880px] top-[118px] w-[750px] p-10" initial="hidden" animate="show">
         <Sparkles n={4} seed={3} />
@@ -38,7 +38,7 @@ export default function TestIntro() {
           <img src="/art/planet-sm.webp" alt="" className="ml-auto w-[80px] floaty" />
         </div>
         <Stack className="mt-8 grid grid-cols-3 gap-5" start={0.7} delay={0.1}>
-          {[[HelpCircle, '10', 'Questions'], [Clock, 'About', '8 minutes'], [Lightbulb, 'Hints', 'limited']].map(([I, a, b]) => <Item key={b} v="pop"><Card className="h-[92px] px-5 flex items-center gap-4"><span className="icon-orb w-[50px] h-[50px]"><I size={26} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[22px] text-ink">{a}</span><span className="block text-[16px] font-semibold text-ink-3">{b}</span></span></Card></Item>)}
+          {[[HelpCircle, String(QUESTIONS.length), 'Questions'], [Clock, 'About', '8 minutes'], [Lightbulb, 'Hints', 'limited']].map(([I, a, b]) => <Item key={b} v="pop"><Card className="h-[92px] px-5 flex items-center gap-4"><span className="icon-orb w-[50px] h-[50px]"><I size={26} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[22px] text-ink">{a}</span><span className="block text-[16px] font-semibold text-ink-3">{b}</span></span></Card></Item>)}
         </Stack>
         <motion.div className="mt-6 flex items-center gap-5" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
           <span className="w-[110px] h-[110px] rounded-full grid place-items-center pill shrink-0"><img src="/art/nova/head.webp" alt="" className="w-[86px] floaty" /></span>
@@ -50,7 +50,6 @@ export default function TestIntro() {
           <Item v="pop" className="flex justify-center"><span className="pill h-[54px] px-6 gap-4 text-[18px] font-bold text-ink-2"><Volume2 size={22} className="text-primary-ink" /> Read instructions aloud <Switch on={readAloud} onChange={v => g.setSettings({ readAloud: v })} /></span></Item>
         </Stack>
       </Panel>
-      <Dock sub spread className="w-[1440px]" style={{ bottom: 12 }} />
     </Page>
   )
 }

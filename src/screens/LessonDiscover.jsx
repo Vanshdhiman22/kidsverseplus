@@ -6,7 +6,6 @@ import { Child } from '../components/Scene.jsx'
 import Page from '../components/Page.jsx'
 import { Panel } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock, { DOCK_EXPLORE } from '../components/Dock.jsx'
 import { LessonRail } from '../components/Stepper.jsx'
 import { Pizza } from '../components/LessonModels.jsx'
 import { useGame } from '../state/GameProvider.jsx'
@@ -179,7 +178,12 @@ export default function LessonDiscover() {
                   {open ? <Lightbulb size={14} className="text-gold" /> : <Lock size={13} className="text-ink-3" />}
                   <span className={cn('font-display font-extrabold text-[15px]', open ? 'text-primary-ink' : 'text-ink-2')}>Hint {i + 1}</span>
                 </div>
-                <p className={cn('mt-1 text-[13px] font-semibold leading-snug', open ? 'text-ink-2' : 'text-ink-3')}>{h}</p>
+                {/* The text used to render regardless of `open`, so the lock, the disabled
+                    state and the Hint button were all theatre -- every hint was readable
+                    from the first paint. */}
+                <p className={cn('mt-1 text-[13px] font-semibold leading-snug', open ? 'text-ink-2' : 'text-ink-3')}>
+                  {open ? h : next ? 'Tap to reveal' : `Tap hint ${i} first`}
+                </p>
               </motion.button>
             )
           })}
@@ -201,7 +205,6 @@ export default function LessonDiscover() {
       </motion.button>
       <Button variant="outline" size="sm" icon={<Lightbulb size={19} className="text-gold" />} className="absolute left-[360px] bottom-[26px] h-[56px] px-6 text-[18px]" onClick={() => setOpened(o => Math.min(HINTS.length, o + 1))}>Hint</Button>
       <Button variant="outline" size="sm" icon={<Headphones size={19} />} className="absolute left-[500px] bottom-[26px] h-[56px] px-6 text-[18px]" sound="tap" onClick={() => sfx.success()}>Listen</Button>
-      <Dock items={DOCK_EXPLORE} active="learn" className="left-[648px] translate-x-0" style={{ bottom: 22 }} compact />
     </Page>
   )
 }

@@ -7,7 +7,6 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock, { DOCK_JOURNEY } from '../components/Dock.jsx'
 import { deriveStations, STATION_SPOTS, WORLD_DONE, WORLDS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR } from '../components/Stage.jsx'
@@ -188,7 +187,7 @@ export default function Journey() {
       {stations.map((n, i) => <Node key={subject + n.id} n={n} i={i} />)}
       <motion.div key={subject} className="absolute z-10 left-[1268px] top-[535px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="sm" arrow className="h-[52px] px-6 text-[18px] uppercase" sound="whoosh" onClick={() => nav(`/learn/topics/${subject}`)}>Continue {stations.find(s => s.state === 'here')?.sub ?? 'Fractions'}</Button></motion.div>
 
-      <TopBar right={<><div className="pill h-[60px] px-5 gap-4 text-[20px] font-extrabold text-ink"><span className="flex items-center gap-2 text-orange-500"><Flame size={22} fill="currentColor" /> <span className="text-ink">{xp.toLocaleString()}</span></span><span className="w-px h-6 bg-[var(--line)]" /><span className="flex items-center gap-2 text-gold"><Star size={22} fill="currentColor" /> <span className="text-ink">28</span></span></div><UserChip name={name} face={face} /></>} showControls={false} />
+      <TopBar right={<><div className="pill h-[60px] px-5 gap-4 text-[20px] font-extrabold text-ink"><span className="flex items-center gap-2 text-orange-500"><Flame size={22} fill="currentColor" /> <span className="text-ink">{xp.toLocaleString()}</span></span><span className="w-px h-6 bg-[var(--line)]" /><span className="flex items-center gap-2 text-gold"><Star size={22} fill="currentColor" /> <span className="text-ink">{g.state.stats.badges}</span></span></div><UserChip name={name} face={face} /></>} showControls={false} />
       <Stack className="absolute top-[125px] w-[330px]" style={bleedL(55)} start={0.25}>
         <Item><h1 className="font-display font-extrabold text-[50px] leading-[1.05] text-ink">My Journey —<br /><span className="grad-text">{name} + Nova</span></h1></Item>
         <Item className="mt-1 font-display font-extrabold text-[34px] text-primary-ink">{worldName} World</Item>
@@ -206,7 +205,6 @@ export default function Journey() {
           {[[Flag, 'Raise the Flag', '#ef4444', () => g.notice('Flag raised! Your grown-up will see it.')], [BookOpen, 'Read Together', '#8b5cf6', () => g.notice('Reading together is coming soon.')], [Mic, 'Talk with Nova', '#3b82f6', () => window.dispatchEvent(new Event('kv:agent'))]].map(([I, l, c, fn]) => <Item key={l} v="soft"><Card hover className="h-[50px] px-4 flex items-center gap-3 text-[17px] font-extrabold text-ink" onClick={() => { sfx.tap(); fn() }}><I size={22} style={{ color: c }} />{l}<ChevronRight size={20} className="ml-auto text-ink-3" /></Card></Item>)}
         </Stack>
       </Panel>
-      <Dock items={DOCK_JOURNEY} compact />
     </Page>
   )
 }

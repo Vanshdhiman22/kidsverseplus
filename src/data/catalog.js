@@ -221,7 +221,7 @@ export const TOPIC_STEPS = TOPICS.maths.steps
 export const TESTS = [
   { id: 'quick', name: 'Quick Test', desc: '10 quick questions to warm up your brain.', time: '5 min', icon: 'ico-rocket' },
   { id: 'topic', name: 'Topic Test', desc: "Test any topic you're learning.", time: '10–15 min', icon: 'ico-book2' },
-  { id: 'mixed', name: 'Mixed Concepts', desc: 'Mix of topics and concepts to level up your thinking.', time: 'About 8 min', q: '10 Questions', icon: 'ico-puzzle', recommended: true },
+  { id: 'mixed', name: 'Mixed Concepts', desc: 'Mix of topics and concepts to level up your thinking.', time: 'About 8 min', icon: 'ico-puzzle', recommended: true },
   { id: 'subject', name: 'Subject Test', desc: 'Test by subject and strengthen what you know.', time: '15–20 min', icon: 'ico-cap' },
   { id: 'higher', name: 'Higher Order', desc: 'Challenge your thinking with high-level questions.', time: '15 min', icon: 'ico-brain' },
   { id: 'competition', name: 'Competition Practice', desc: 'Practice like a champion with timed tests.', time: '20 min', icon: 'ico-trophy' },

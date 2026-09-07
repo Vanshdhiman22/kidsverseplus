@@ -8,7 +8,6 @@ import Logo from '../components/Logo.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
-import Dock, { DOCK_EXPLORE } from '../components/Dock.jsx'
 import { Bar } from '../components/Widgets.jsx'
 import { MODELS } from '../components/LessonModels.jsx'
 import { useGame } from '../state/GameProvider.jsx'
@@ -151,7 +150,6 @@ export default function SpotMistake() {
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => hints < 3 && (sfx.unlock(), setHints(hints + 1))}><Lightbulb size={22} className="text-gold" fill="currentColor" /> Hint</button>
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => sfx.tap()}><Headphones size={22} className="text-primary-ink" /> Listen</button>
       </motion.div>
-      <Dock items={DOCK_EXPLORE} active="learn" tiles className="left-[640px]" style={{ bottom: 20 }} />
       <motion.div className="absolute" style={{ ...bleedR(24), ...safeB(69) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[24px]" disabled={!correct} sound="whoosh" onClick={() => nav('/missions/fractions/complete')}>Continue</Button></motion.div>
     </Page>
   )

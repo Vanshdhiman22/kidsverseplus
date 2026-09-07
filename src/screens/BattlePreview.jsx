@@ -7,7 +7,6 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip, StatPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock, { DOCK_ITEMS } from '../components/Dock.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Bar, Sparkles } from '../components/Widgets.jsx'
 import { BOTS } from '../data/battle.jsx'
@@ -33,7 +32,7 @@ export default function BattlePreview() {
   return (
     <Page>
       <Scene name="preview" />
-      <TopBar logo="plus" center={<Dock items={DOCK_ITEMS} compact className="relative left-0 translate-x-0" style={{ bottom: 'auto', position: 'relative' }} active="challenge" />} right={<><StatPill kind="bolt" value={xp.toLocaleString()} /><UserChip name={name} sub={`Level ${g.level}`} face={face} /></>} showControls={false} />
+      <TopBar logo="plus" right={<><StatPill kind="bolt" value={xp.toLocaleString()} /><UserChip name={name} sub={`Level ${g.level}`} face={face} /></>} showControls={false} />
       <Child screen="preview" delay={0.4} amp={6} />
       {/* The opponent, not a fixed picture of Robo. preview-1 is Robo's cutout, so every
           battle showed his face under whichever name the headline announced -- wrong for

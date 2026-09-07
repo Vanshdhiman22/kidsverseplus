@@ -8,7 +8,6 @@ import Logo from '../components/Logo.jsx'
 import { UserChip, StatPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock from '../components/Dock.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Bar, Fraction } from '../components/Widgets.jsx'
 import { Vs } from './BattlePreview.jsx'
@@ -58,7 +57,7 @@ export default function Battle() {
   const submit = () => {
     if (pick == null) return
     if (done) {
-      if (round + 1 >= 4) { sfx.whoosh(); nav(`/challenge/result?bot=${bot.id}&me=${score[0]}&bot_s=${score[1]}`); return }
+      if (round + 1 >= BATTLE_QS.length) { sfx.whoosh(); nav(`/challenge/result?bot=${bot.id}&me=${score[0]}&bot_s=${score[1]}`); return }
       setRound(round + 1); setPick(null); setDone(false); setSecs(22); return
     }
     const right = pick === q.answer; setDone(true)
@@ -71,7 +70,7 @@ export default function Battle() {
       <motion.button className="absolute left-[30px] top-[100px] pill h-[44px] px-4 text-[15px] font-bold text-ink" style={bleedL(30)} onClick={() => { sfx.tap(); nav('/challenge') }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.14 }}><ChevronLeft size={18} /> Back to Battle</motion.button>
       <Stack className="absolute left-[560px] top-[30px] w-[560px] text-center" start={0.2}>
         <Item className="font-display font-extrabold text-[40px] leading-none grad-text uppercase flex items-center justify-center gap-4"><Star size={26} className="text-gold" fill="currentColor" /> Live Battle Arena <Star size={26} className="text-gold" fill="currentColor" /></Item>
-        <Item className="mt-2 font-display font-extrabold text-[22px] text-ink-2 uppercase tracking-wide">Round {round + 7} / 10</Item>
+        <Item className="mt-2 font-display font-extrabold text-[22px] text-ink-2 uppercase tracking-wide">Round {round + 1} / {BATTLE_QS.length}</Item>
       </Stack>
       <motion.div className="absolute flex items-center gap-3" style={{ ...bleedR(24), ...safeT(22) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><StatPill kind="bolt" value="120" /><StatPill kind="xp" value={xp.toLocaleString()} /><UserChip name={name} face={face} /></motion.div>
 
@@ -82,7 +81,7 @@ export default function Battle() {
       <motion.div className="absolute left-[725px] top-[325px] pill h-[62px] px-6 gap-3 font-display font-extrabold text-[30px] text-ink tabular-nums" animate={secs <= 5 ? { scale: [1, 1.06, 1], color: ['#1b1a5e', '#ef4444', '#1b1a5e'] } : {}} transition={{ duration: 0.8, repeat: Infinity }} initial={{ opacity: 0, y: 20 }}><Timer size={28} className="text-primary-ink" /> 00:{String(secs).padStart(2, '0')}</motion.div>
 
       <Strengths title={`${name} strengths`} rows={[['Maths', 4], ['Literacy', 2], ['Speed', 3]]} className="left-[105px] top-[420px]" />
-      <Strengths title={`${bot.name} strengths`} rows={[['Maths', 4], ['Logic', 3], ['Speed', 2]]} className="left-[1285px] top-[420px]" />
+      <Strengths title={`${bot.name} strengths`} rows={bot.strengths} className="left-[1285px] top-[420px]" />
       <Panel className="absolute left-[105px] top-[640px] w-[285px] h-[140px] p-4 flex items-center gap-3" initial="hidden" animate="show"><img src="/art/hd/nova-v2.webp" alt="" className="w-[80px] floaty" /><div><div className="text-[14px] font-extrabold text-ink uppercase tracking-wide">Nova's Coach Tip</div><div className="mt-1 card px-3 py-2 text-[14px] font-bold text-ink-2 leading-snug">Focus on accuracy over speed! 🎯</div></div></Panel>
       <Panel className="absolute left-[1285px] top-[640px] w-[285px] h-[140px] p-4 flex items-center gap-3" initial="hidden" animate="show"><img src="/art/hd/nova-v2.webp" alt="" className="w-[80px] floaty" /><p className="text-[15px] font-bold text-ink-2 leading-snug">That was close. {bot.name} got us on fraction word problems.</p></Panel>
 
@@ -98,9 +97,8 @@ export default function Battle() {
               <Fraction n={n} d={d} size={36} />
             </Card></Item>) })}
         </Stack>
-        <div className="mt-5 flex justify-center"><Button size="md" arrow className="w-[525px] h-[62px] uppercase text-[24px]" disabled={pick == null} sound="whoosh" onClick={submit}>{done ? (round + 1 >= 4 ? 'See result' : 'Next round') : 'Submit answer'}</Button></div>
+        <div className="mt-5 flex justify-center"><Button size="md" arrow className="w-[525px] h-[62px] uppercase text-[24px]" disabled={pick == null} sound="whoosh" onClick={submit}>{done ? (round + 1 >= BATTLE_QS.length ? 'See result' : 'Next round') : 'Submit answer'}</Button></div>
       </Panel>
-      <Dock spread className="w-[1620px]" style={{ bottom: 14 }} />
     </Page>
   )
 }

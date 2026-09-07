@@ -31,8 +31,11 @@ export default function ReadingFluency() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
   const [live, setLive] = useState(false)
-  const [idx, setIdx] = useState(4)
-  const [secs, setSecs] = useState(84)
+  /* The session used to mount pre-advanced -- four words already greyed as read and the
+     clock showing 01:24 -- before the mic was ever held. Restart reset to zero, so the
+     first read was the only one that ever started mid-way. */
+  const [idx, setIdx] = useState(0)
+  const [secs, setSecs] = useState(0)
   useEffect(() => { if (!live) return; const id = setInterval(() => { setIdx(i => Math.min(WORDS.length - 1, i + 1)); setSecs(s => s + 1) }, 420); return () => clearInterval(id) }, [live])
   const mm = String(Math.floor(secs / 60)).padStart(2, '0'), ss = String(secs % 60).padStart(2, '0')
   return (

@@ -9,7 +9,6 @@ import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import Character from '../components/Character.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
-import Dock from '../components/Dock.jsx'
 import { Fraction } from '../components/Widgets.jsx'
 import { QUESTIONS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
@@ -25,6 +24,10 @@ export default function TestQuestion() {
   const [pick, setPick] = useState(null)
   const [submitted, setSubmitted] = useState(false)
   const [secs, setSecs] = useState(8 * 60 + 15)
+  /* The result screen used to invent every number it showed. The run's own answers and
+     clock are carried out of here instead. */
+  const START = 8 * 60 + 15
+  const [correct, setCorrect] = useState(0)
   const q = QUESTIONS[qi]
   /* Was `total = 10, shown = qi + 3` -- staged for the design render. The child now
      arrives here straight from the daily mission, so the count has to be the real one. */
@@ -34,16 +37,21 @@ export default function TestQuestion() {
   const submit = () => {
     if (pick == null) return
     if (submitted) {
-      if (qi + 1 >= QUESTIONS.length) { sfx.whoosh(); nav('/tests/mixed/result'); return }
+      if (qi + 1 >= QUESTIONS.length) {
+        sfx.whoosh()
+        nav('/tests/mixed/result', { state: { correct, total: QUESTIONS.length, seconds: START - secs } })
+        return
+      }
       setQi(qi + 1); setPick(null); setSubmitted(false); sfx.tap(); return
     }
-    setSubmitted(true); pick === q.answer ? sfx.success() : sfx.wrong()
+    setSubmitted(true)
+    if (pick === q.answer) { setCorrect(c => c + 1); sfx.success() } else sfx.wrong()
   }
   return (
     <Page>
       <Scene name="question" />
       <TopBar right={<motion.div className="pill h-[84px] px-6 gap-4" animate={secs < 60 ? { scale: [1, 1.04, 1] } : {}} transition={{ duration: 1, repeat: Infinity }}><span className="icon-orb w-[50px] h-[50px]"><AlarmClock size={28} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[36px] text-ink tabular-nums leading-none">{mm}:{ss}</span><span className="label-caps">Time remaining</span></span></motion.div>} showControls={false} />
-      <motion.div className="absolute left-[360px] top-[36px] pl-6 border-l-2 border-[var(--line)]" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}><div className="eyebrow text-[15px]">Test Mode</div><div className="font-display font-extrabold text-[26px] leading-none text-ink uppercase">20 Test Question</div><div className="text-[15px] font-semibold text-ink-3">Focused assessment. You've got this! 🚀</div></motion.div>
+      <motion.div className="absolute left-[360px] top-[36px] pl-6 border-l-2 border-[var(--line)]" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}><div className="eyebrow text-[15px]">Test Mode</div><div className="font-display font-extrabold text-[26px] leading-none text-ink uppercase">Mixed Concept Test</div><div className="text-[15px] font-semibold text-ink-3">Focused assessment. You've got this! 🚀</div></motion.div>
       <motion.div className="absolute left-[795px] top-[50px] flex items-center gap-5" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <span className="pill h-[50px] px-5 font-display font-extrabold text-[19px] text-primary-ink uppercase">Question {shown} / {total}</span>
         <div className="relative w-[270px] h-[12px] rounded-full bg-[var(--lavender-2)] overflow-hidden"><motion.div className="absolute left-0 top-0 h-full rounded-full" style={{ background: 'var(--grad-primary)' }} animate={{ width: `${(shown / total) * 100}%` }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} /></div>
@@ -76,7 +84,6 @@ export default function TestQuestion() {
       <motion.div className="absolute left-[530px] top-[665px]" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <Button size="lg" arrow className="w-[600px] h-[112px] uppercase text-[32px]" sub={submitted ? (qi + 1 >= QUESTIONS.length ? 'See your results' : 'Next question') : 'Review your choice and submit'} disabled={pick == null} sound="whoosh" onClick={submit}>{submitted ? (qi + 1 >= QUESTIONS.length ? 'Finish Test' : 'Next Question') : 'Submit Answer'}</Button>
       </motion.div>
-      <Dock spread className="w-[1440px]" style={{ bottom: 12 }} />
     </Page>
   )
 }

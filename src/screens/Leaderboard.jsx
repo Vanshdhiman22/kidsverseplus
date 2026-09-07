@@ -7,7 +7,6 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import Logo from '../components/Logo.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock, { DOCK_ITEMS } from '../components/Dock.jsx'
 import { Bar } from '../components/Widgets.jsx'
 import { LEAGUE } from '../data/battle.jsx'
 import { useGame } from '../state/GameProvider.jsx'
@@ -26,7 +25,6 @@ export default function Leaderboard() {
     <Page>
       <Scene name="league" />
       <motion.div className="absolute" style={{ ...bleedL(20), ...safeT(20) }} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}><Logo variant="plus" /></motion.div>
-      <Dock items={DOCK_ITEMS} tiles className="flex-col w-[100px] top-[110px] rounded-[30px]" style={{ left: 'calc(25px - var(--bleed, 0px))', bottom: 'auto' }} active="challenge" />
       <motion.div className="absolute pill h-[64px] px-4 gap-3" style={{ ...bleedL(20), ...safeB(30) }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><span className="icon-orb w-[42px] h-[42px] text-gold" style={{ background: '#fef3c7' }}><Award size={22} /></span><span className="leading-tight"><span className="block font-extrabold text-[16px] text-ink">Explorer</span><span className="block text-[13px] font-bold text-ink-3">Level {g.level}</span><Bar value={g.levelPct / 100} h={5} className="mt-1 w-[80px]" /></span></motion.div>
       <Child screen="league" delay={0.5} amp={7} />
 

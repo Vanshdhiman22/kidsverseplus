@@ -13,6 +13,7 @@ import { WORLDS, lessonProgress } from '../data/catalog.js'
 import { useGame, XP_PER_LEVEL } from '../state/GameProvider.jsx'
 import { openSettings } from '../components/SettingsSheet.jsx'
 import ParentGate from '../components/ParentGate.jsx'
+import NavDrawer from '../components/NavDrawer.jsx'
 import { bleedL, bleedR, bleedX, safeB } from '../components/Stage.jsx'
 import { lead } from '../lib/motion.js'
 import { sfx } from '../lib/sound.js'
@@ -95,48 +96,9 @@ export default function Home() {
     <Page>
       <Scene name="nhome" wings="stretch" />
 
-      {/* ---------- left rail ---------- */}
-      <motion.aside className="absolute top-0 bottom-0 z-20 flex flex-col px-4 pt-6"
-        style={{ left: 'calc(0px - var(--bleed, 0px))', width: 'calc(205px + var(--bleed, 0px))', paddingLeft: 'calc(16px + var(--bleed, 0px))', paddingBottom: 78, background: FRAME }}
-        initial={{ x: -60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 220, damping: 26 }}>
-        <div className="flex items-center gap-3">
-          <span className="w-[46px] h-[46px] rounded-[15px] grid place-items-center shrink-0" style={{ background: 'linear-gradient(140deg,#8b5cf6,#5b6cff)', boxShadow: '0 10px 24px -10px rgba(124,92,255,.9)' }}>
-            <span className="w-[19px] h-[19px] rounded-full border-[4px] border-white/95" />
-          </span>
-          <span className="leading-none">
-            <span className="block font-display font-extrabold text-[21px] text-white">Kidsverse<span className="text-sky-300">+</span></span>
-            <span className="block mt-1 text-[8px] font-extrabold tracking-[0.18em] text-indigo-200/80">LEARN • GROW • ACHIEVE</span>
-          </span>
-        </div>
-
-        <nav className="mt-7 flex flex-col gap-[6px]">
-          {NAV.map((it, i) => {
-            const on = it.label === 'Home'
-            return (
-              <motion.button key={it.label}
-                className={cn('relative h-[50px] rounded-[15px] flex items-center gap-3 px-4 font-display font-bold text-[17px] transition-colors',
-                  on ? 'text-white' : 'text-indigo-200/85 hover:text-white')}
-                onClick={() => { sfx.tap(); it.label === 'Parent Zone' ? setGate(true) : it.to ? nav(it.to) : openSettings() }}
-                initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: lead(0.3) + i * 0.03 }}>
-                {on && <span className="absolute inset-0 rounded-[15px]" style={{ background: 'linear-gradient(100deg,#7c5cff,#5b6cff)', boxShadow: '0 10px 24px -12px rgba(124,92,255,1)' }} />}
-                <span className="relative z-10 grid place-items-center"><it.icon size={21} strokeWidth={on ? 2.5 : 2} /></span>
-                <span className="relative z-10">{it.label}</span>
-              </motion.button>
-            )
-          })}
-        </nav>
-
-        <motion.div className="mt-auto rounded-[20px] p-4 text-center" style={{ background: CARD_DARK, border: '1px solid rgba(150,170,255,.22)' }}
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: lead(0.6) }}>
-          <img src="/art/hd/nova-v2.webp" alt="" className="w-[96px] mx-auto floaty" />
-          <div className="mt-1 font-display font-extrabold text-[19px] text-white">Nova</div>
-          <div className="text-[12px] font-semibold text-indigo-200/85 leading-tight">Your AI Learning Buddy</div>
-          <button className="mt-3 w-full h-[36px] rounded-full text-white text-[13px] font-extrabold flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(100deg,#6d3ae0,#2f6fe0)' }} onClick={() => { sfx.tap(); window.dispatchEvent(new Event('kv:agent')) }}>
-            Chat with Nova <ArrowRight size={14} strokeWidth={3} />
-          </button>
-        </motion.div>
-      </motion.aside>
+      {/* The rail, shared with every other screen -- pinned open here because Home is
+          where it belongs in the layout. */}
+      <NavDrawer pinned />
 
       {/* ---------- top bar ---------- */}
       <motion.div className="absolute top-[22px] flex items-center gap-4 z-20" style={bleedR(24)}
@@ -189,9 +151,14 @@ export default function Home() {
           </Item>
         ))}
         <Item v="pop">
+          {/* "Games, Quizzes and Beyond" is Extra Learning, not the Challenge arena. This
+              pointed at /challenge, which left /extra with no inbound link at all once
+              Home's subject cards moved to the syllabus pages -- orphaning Reading Fluency
+              and Confidence with Nova. Challenge is still one tap away on the dock every
+              other screen carries. */}
           <motion.button className="w-[300px] h-[124px] rounded-[20px] px-5 flex items-center gap-4 text-left"
             style={{ background: FRAME, boxShadow: '0 16px 34px -16px rgba(20,15,80,.8)' }}
-            whileHover={{ y: -5 }} whileTap={{ scale: 0.97 }} onClick={() => { sfx.whoosh(); nav('/challenge') }}>
+            whileHover={{ y: -5 }} whileTap={{ scale: 0.97 }} onClick={() => { sfx.whoosh(); nav('/extra') }}>
             <span className="w-[46px] h-[46px] rounded-[14px] grid place-items-center bg-white/15 text-sky-300 shrink-0"><LayoutGrid size={24} /></span>
             <span className="flex-1 leading-tight">
               <span className="block font-display font-extrabold text-[19px] text-white">✦ Explore More</span>

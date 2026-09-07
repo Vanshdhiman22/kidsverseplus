@@ -38,7 +38,7 @@ export default function ConfidenceMission() {
       <Cutout id="confidence-1" delay={0.24} amp={11} />
 
       <Panel className="absolute left-[645px] top-[20px] w-[405px] h-[90px] px-6 flex items-center justify-between" initial="hidden" animate="show">
-        <div><div className="font-display font-extrabold text-[20px] text-ink uppercase">24 Confidence Mission</div><div className="mt-2 flex gap-2">{[0, 1, 2, 3, 4, 5, 6].map(i => <span key={i} className="h-[7px] w-[28px] rounded-full" style={{ background: i === 0 ? 'var(--grad-primary)' : 'var(--lavender-2)' }} />)}</div></div>
+        <div><div className="font-display font-extrabold text-[20px] text-ink uppercase">Confidence Mission</div><div className="mt-2 flex gap-2">{[0, 1, 2, 3, 4, 5, 6].map(i => <span key={i} className="h-[7px] w-[28px] rounded-full" style={{ background: i === 0 ? 'var(--grad-primary)' : 'var(--lavender-2)' }} />)}</div></div>
         <img src="/art/planet-sm.webp" alt="" className="w-[52px] floaty" />
       </Panel>
       <motion.div className="absolute flex items-center gap-3" style={{ ...bleedR(24), ...safeT(22) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>

@@ -7,7 +7,6 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import Dock from '../components/Dock.jsx'
 import { Tilt, Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 
@@ -51,7 +50,6 @@ export default function ChallengeHome() {
         <motion.img src="/art/crops/dragon.webp" alt="" className="h-[120px] rounded-[18px]" animate={{ y: [0, -8, 0] }} transition={{ duration: 3.2, repeat: Infinity }} />
         <Button size="md" className="h-[60px] px-9 text-[20px] uppercase" sound="whoosh" onClick={() => nav('/tests/mixed/intro')}>Solve now <HelpCircle size={22} /></Button>
       </Panel>
-      <Dock spread className="w-[1580px]" style={{ bottom: 20 }} />
     </Page>
   )
 }
