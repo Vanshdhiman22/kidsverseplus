@@ -108,7 +108,10 @@ function usePrefetch() {
       () => import('./screens/Avatar.jsx'), () => import('./screens/MeetNova.jsx'), () => import('./screens/CreateChild.jsx'),
       () => import('./screens/LearningSetup.jsx'), () => import('./screens/ParentLogin.jsx'),
     ]
-    const scenes = ['home', 'learn', 'arena', 'challenge', 'profile', 'journey', 'topic', 'discover', 'explain', 'spot',
+    /* 'nhome', not 'home' -- Home.jsx renders <Scene name="nhome">. The list was warming the
+       one background the app never draws and leaving the real one to load cold. 'explain' went
+       with screen 15. */
+    const scenes = ['nhome', 'learn', 'arena', 'challenge', 'profile', 'journey', 'topic', 'discover', 'spot',
       'complete', 'intro', 'question', 'result', 'extra', 'reading', 'confidence', 'opponents', 'preview', 'battle',
       'bresult', 'league', 'ourjourney', 'switch', 'parent', 'evidence', 'plan', 'welcome', 'interests', 'goals',
       'avatar', 'nova', 'child', 'setup', 'login', 'landing']

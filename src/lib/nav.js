@@ -59,7 +59,17 @@ export const HEADERLESS = new Set([
   '/parent', '/parent/evidence', '/parent/plan',
 ])
 
-export const needsFloatingBack = path => !NO_BACK.has(path) && HEADERLESS.has(path)
+/* Headerless is not the same as cornerless. These screens draw a 215px rail whose logo
+   fills the top-left, so a button pinned to that corner lands on top of the wordmark --
+   it read as broken even though it worked. They carry the back inside the rail instead,
+   the same way every other screen carries it inside its TopBar. */
+export const OWN_RAIL = new Set([
+  '/home', '/welcome', '/extra', '/switch', '/parent', '/parent/evidence', '/parent/plan',
+])
+export const hasOwnRail = path => OWN_RAIL.has(path)
+
+export const needsFloatingBack = path =>
+  !NO_BACK.has(path) && HEADERLESS.has(path) && !hasOwnRail(path)
 
 /* ── the trail ──────────────────────────────────────────────────────────────
    One trail for the whole app, held at module scope rather than in a hook.

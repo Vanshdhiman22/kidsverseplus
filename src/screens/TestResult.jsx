@@ -25,9 +25,12 @@ export default function TestResult() {
   const timeTaken = mins ? `${mins} min` : '—'
   /* The breakdown bar read 8 correct / 2 attempted / 2 incorrect out of a 12 that matched
      nothing, directly under the real score. It is the same run, counted. */
+  /* Raw #22c55e measured 2.20:1 against this panel in light mode -- below the 3:1 floor
+     for a non-text swatch, so the Correct dot and its bar were barely there on white. The
+     tokens carry a per-theme pair (4.85:1 light, 13.03:1 dark) and flip on their own. */
   const breakdown = [
-    ['#22c55e', 'Correct', run ? run.correct : 0],
-    ['#ef4444', 'Incorrect', run ? run.total - run.correct : 0],
+    ['var(--success-ink)', 'Correct', run ? run.correct : 0],
+    ['var(--danger-ink)', 'Incorrect', run ? run.total - run.correct : 0],
   ]
   useEffect(() => { const t = setTimeout(() => sfx.success(), 500); const t2 = setTimeout(() => { g.addXp(40, 'Test complete'); g.finishQuiz() }, 1600); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
   return (
@@ -47,7 +50,7 @@ export default function TestResult() {
         <Ring size={340} stroke={22} value={pct / 100} id="res" delay={0.3}><div className="text-center leading-none"><motion.span className="inline-block text-gold" animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}><Star size={54} fill="currentColor" /></motion.span><div className="mt-2 font-display font-extrabold text-[84px] text-ink leading-none"><Counter to={pct} delay={0.3} />%</div><div className="mt-1 font-display font-extrabold text-[26px] text-primary-ink uppercase tracking-wide">Mastery</div><div className="mt-1 text-[18px] font-bold text-ink-3">Keep it up! ✨</div></div></Ring>
       </motion.div>
       <Panel className="absolute left-[650px] top-[560px] w-[405px] h-[130px] px-4 grid grid-cols-3 items-center divide-x divide-[var(--line)]" initial="hidden" animate="show">
-        {[[Clock, timeTaken, 'Time Taken', '#7c5cff'], [Target, score, 'Score', '#8b5cf6'], [TrendingUp, '+40 XP', 'Earned', '#22c55e']].map(([I, v, l, c]) => <div key={l} className="flex flex-col items-center leading-tight"><I size={28} style={{ color: c }} /><span className="mt-1 font-display font-extrabold text-[24px] text-ink">{v}</span><span className="text-[14px] font-bold text-ink-3">{l}</span></div>)}
+        {[[Clock, timeTaken, 'Time Taken', '#7c5cff'], [Target, score, 'Score', '#8b5cf6'], [TrendingUp, '+40 XP', 'Earned', 'var(--success-ink)']].map(([I, v, l, c]) => <div key={l} className="flex flex-col items-center leading-tight"><I size={28} style={{ color: c }} /><span className="mt-1 font-display font-extrabold text-[24px] text-ink">{v}</span><span className="text-[14px] font-bold text-ink-3">{l}</span></div>)}
       </Panel>
       {/* The right-hand column starts at x=1075, so this row has to finish before it:
           the wider version ran to 1280 and sat on the Nova Recommends card. */}

@@ -13,6 +13,7 @@
 
 import produced from '../../public/art/chars/pose-manifest.json'
 import boxes from '../../public/art/chars/pose-boxes.json'
+import novaBoxes from '../../public/art/chars/nova-boxes.json'
 
 /* The four children. `face` is what GameProvider already stores in profile.face. */
 export const CHARACTERS = [
@@ -74,22 +75,24 @@ export const SLOTS = {
      the other 28 screens are not held back by it. */
   nova: { screen: '08', cutout: 'nova-0', pose: 'P06', layer: 'fused', exception: 'needs a 3/4 profile head' },
   welcome: { screen: '09', cutout: 'welcome-0', pose: 'P08', layer: 'fused' },
-  home: { screen: '10', cutout: 'home-0', pose: 'P07', layer: 'fused' },
   nhome: { screen: '10', cutout: 'nhome-0', pose: 'P07', layer: 'fused' },
   learn: { screen: '11', cutout: 'learn-0', pose: 'P05', layer: 'fused' },
   topic: { screen: '12', cutout: 'topic-0', pose: 'P09', layer: 'solo' },
   journey: { screen: '13', cutout: null, pose: 'P10', layer: 'none' },
   discover: { screen: '14', cutout: 'discover-0', pose: 'P09', layer: 'fused' },
-  explain: { screen: '15', cutout: 'explain-0', pose: 'P09', layer: 'fused' },
   spot: { screen: '16', cutout: 'spot-0', pose: 'P09', layer: 'fused' },
   complete: { screen: '17', cutout: 'complete-0', pose: 'P11', layer: 'fused' },
   arena: { screen: '18', cutout: 'arena-0', pose: 'P07', layer: 'fused' },
   intro: { screen: '19', cutout: 'intro-0', pose: 'P03', layer: 'fused' },
-  question: { screen: '20', cutout: 'question-0', pose: 'P12', layer: 'fused' },
+  /* The design bakes Nova into question-0, but the screen draws her as her own
+     element, so the child here is genuinely solo. `master` names the child-only art
+     the screen already used; without it the master would fall back to the fused
+     question-0 and Nova would appear twice. */
+  question: { screen: '20', cutout: 'question-0', pose: 'P12', layer: 'solo', master: '/art/hd/q-boy.webp' },
   result: { screen: '21', cutout: 'result-0', pose: 'P13', layer: 'fused' },
   extra: { screen: '22', cutout: null, pose: 'P17', layer: 'none', cards: ['P17', 'P18', 'P19'] },
   reading: { screen: '23', cutout: 'reading-0', pose: 'P09', layer: 'fused' },
-  confidence: { screen: '24', cutout: 'confidence-0', pose: 'P09', layer: 'solo' },
+  confidence: { screen: '24', cutout: 'confidence-0', pose: 'P09', layer: 'fused' },
   challenge: { screen: '25', cutout: 'challenge-0', pose: 'P13', layer: 'fused' },
   opponents: { screen: '26', cutout: 'opponents-0', pose: 'P07', layer: 'fused' },
   preview: { screen: '27', cutout: 'preview-0', pose: 'P14', layer: 'solo' },
@@ -139,19 +142,40 @@ export function coverage() {
  * `?poses=partial` in the URL relaxes this for previewing work in progress. */
 const PARTIAL = typeof location !== 'undefined' && /(\?|&)poses=partial\b/.test(location.search)
 
-/* Nova is baked into the child's own cutout on 25 of the 28 screens. Swapping the child
-   there draws a child-only render and takes her with the boy she was fused to, so the
-   swap is held until she can be drawn as her own layer. The library is imported, named
-   and verified; flip this to false once Nova exists separately and the swap goes live
-   with no other change. See tools/pose-spec.md. */
-const HELD_FOR_NOVA = true
+/* Nova is baked into the child's own cutout on most screens. Drawing a child-only render
+   there takes her with the boy she was fused to -- which is exactly what happened the
+   first time the swap went live, and she vanished from the app.
+ *
+ * tools/novasplit.py lifts her back out where the art allows it, writing her own sprite
+ * and her own box per screen. A screen is safe to swap on when either no Nova is baked
+ * into it, or she has been lifted out of it. That replaced a hand-set hold flag: the gate
+ * is now the thing it was standing in for, so it opens by itself as screens are covered
+ * and can never be flipped while she would still disappear. */
+export const novaLifted = cutout => Object.prototype.hasOwnProperty.call(novaBoxes, cutout)
+export const novaSafe = slot => slot.layer !== 'fused' || novaLifted(slot.cutout)
+
+/* Her sprite and where to draw it, for a screen that has been covered. */
+export function novaLayer(screenKey) {
+  const slot = SLOTS[screenKey]
+  const box = slot && slot.cutout ? novaBoxes[slot.cutout] : null
+  return box ? { src: `/art/chars/nova/${slot.cutout}.webp`, box } : null
+}
 
 export function characterReady(face) {
   const c = charByFace(face)
   if (c.master) return true
   if (PARTIAL) return true
-  if (HELD_FOR_NOVA) return false
-  return REQUIRED.every(s => has(s, c.id))
+  return REQUIRED.every(s => has(s, c.id) && novaSafe(s))
+}
+
+/* What still stands between a character and going live, screen by screen. */
+export function blockers(face) {
+  const c = charByFace(face)
+  if (c.master) return []
+  return REQUIRED.filter(s => !has(s, c.id) || !novaSafe(s)).map(s => ({
+    screen: s.screenKey, cutout: s.cutout, pose: s.pose,
+    missingPose: !has(s, c.id), missingNova: !novaSafe(s),
+  }))
 }
 
 /* (character, screen) -> the image to draw. The character comes from
@@ -161,10 +185,14 @@ export function childSrc(face, screenKey, { outfit } = {}) {
   const slot = SLOTS[screenKey]
   if (!slot || !slot.cutout) return null
   const c = charByFace(face)
-  if (c.master) return `/art/chars/${slot.cutout}.webp`
+  /* A few screens draw a different file than the design's cutout -- see `master` on the
+     slot. Both the master branch and the not-ready fallback have to honour it, or the
+     screen silently swaps art the moment a character is picked. */
+  const approved = slot.master ?? `/art/chars/${slot.cutout}.webp`
+  if (c.master) return approved
   if (slot.outfits && outfit) return outfitPath(c.id, outfit)
   if (characterReady(face) && has(slot, c.id)) return `/art/chars/pose/${key(slot, c.id)}.webp`
-  return `/art/chars/${slot.cutout}.webp`
+  return approved
 }
 
 /* Hair that sits taller or wider than the master's needs a bigger canvas, so

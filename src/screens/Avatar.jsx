@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useMotionValue, useSpring, useTransform, animate } from 'motion/react'
-import { Shirt, Scissors, Glasses, RotateCw, ArrowLeft, ArrowRight, Rocket, Star, ShieldCheck, Heart, Users } from 'lucide-react'
+import { Shirt, Scissors, Glasses, RotateCw, ArrowLeft, ArrowRight, Rocket, Star, ShieldCheck, Heart, Users, Lock } from 'lucide-react'
 import Scene, { Cutout } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
@@ -35,7 +35,6 @@ export default function Avatar() {
   const nav = useNavigate()
   const g = useGame()
   const { face, outfit, name } = g.state.profile
-  const [tab, setTab] = useState('Outfit')
   const rot = useMotionValue(0)
   const srot = useSpring(rot, { stiffness: 120, damping: 18 })
   const scaleX = useTransform(srot, r => { const m = ((r % 360) + 360) % 360; return m > 90 && m < 270 ? -1 : 1 })
@@ -44,12 +43,16 @@ export default function Avatar() {
   const turn = d => { sfx.whoosh(); animate(rot, rot.get() + d, { type: 'spring', stiffness: 90, damping: 16 }) }
   const current = OUTFITS.find(o => o.id === outfit)
   const sprite = spriteFor(outfit, face)
-  const isDefault = outfit === 'explorer' && face === 1
 
   return (
     <Page>
       <Scene name="avatar" />
-      {isDefault && <Cutout id="avatar-0" delay={0.35} />}
+      {/* The default look used to draw the designer's flat avatar-0 cutout instead of the
+          sprite, with the sprite hidden behind opacity:0. The cutout sits outside the
+          rotating wrapper, so on the state every child lands in, the big Rotate button and
+          the drag both turned an invisible figure. The sprite is the same boy in the same
+          jacket at the same spot, so there is one figure now and rotate works from the
+          first frame. */}
       <Cutout id="avatar-1" delay={0.2} amp={10} />
       <TopBar back={false} center={<MiniSteps steps={['Avatar', 'Interests', 'Goals', 'Switch Student']} current={0} />} />
       <Stack className="absolute left-[85px] top-[115px]" start={0.2}>
@@ -71,7 +74,7 @@ export default function Avatar() {
 
       {/* Podium + sprite with drag-to-rotate */}
       <motion.div className="absolute left-[590px] top-[165px] w-[300px] h-[535px] flex items-end justify-center cursor-grab active:cursor-grabbing" drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.05} onDrag={(e, info) => rot.set(rot.get() + info.delta.x * 0.8)} initial={{ opacity: 0, y: 120 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20, delay: 0.35 }}>
-        <motion.div className="relative w-full flex justify-center" style={{ scaleX, skewY: skew, opacity: isDefault ? 0 : 1 }}>
+        <motion.div className="relative w-full flex justify-center" style={{ scaleX, skewY: skew }}>
           <motion.img key={sprite} src={sprite} alt="" className="h-[535px] object-contain pointer-events-none" style={{ filter: 'drop-shadow(0 24px 30px rgba(40,20,120,.3))' }} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1, y: [0, -8, 0] }} transition={{ opacity: { duration: 0.4 }, scale: { type: 'spring', stiffness: 200 }, y: { duration: 3.8, repeat: Infinity, ease: 'easeInOut' } }} />
         </motion.div>
       </motion.div>
@@ -86,11 +89,20 @@ export default function Avatar() {
 
       <Panel className="absolute left-[1130px] top-[145px] w-[495px] h-[615px] p-7" initial="hidden" animate="show">
         <Sparkles n={4} seed={11} />
+        {/* Hair and Accessories moved the highlight but showed the outfit grid underneath
+            either way -- three tabs, one panel. There is no hair or accessory art yet, so
+            they are marked locked rather than left looking live. */}
         <div className="pill h-[56px] p-1 gap-0 w-full">
-          {[['Outfit', Shirt], ['Hair', Scissors], ['Accessories', Glasses]].map(([t, I]) => (
-            <button key={t} className={cn('relative flex-1 h-full rounded-full flex items-center justify-center gap-2 font-display font-bold text-[18px] transition-colors', tab === t ? 'text-primary-ink' : 'text-ink-3')} onClick={() => { sfx.tap(); setTab(t) }}>
-              {tab === t && <motion.span layoutId="avatar-tab" className="absolute inset-0 rounded-full bg-[var(--lavender)] border border-[var(--line)]" transition={{ type: 'spring', stiffness: 400, damping: 30 }} />}
-              <span className="relative z-10 flex items-center gap-2"><I size={20} /> {t}</span>
+          {[['Outfit', Shirt, false], ['Hair', Scissors, true], ['Accessories', Glasses, true]].map(([t, I, locked]) => (
+            <button key={t} type="button" disabled={locked} aria-disabled={locked}
+              title={locked ? `${t} is coming soon` : undefined}
+              className={cn('relative flex-1 h-full rounded-full flex items-center justify-center gap-2 font-display font-bold text-[18px]',
+                locked ? 'text-ink-3/55 cursor-not-allowed' : 'text-primary-ink')}
+              onClick={locked ? undefined : () => sfx.tap()}>
+              {!locked && <span className="absolute inset-0 rounded-full bg-[var(--lavender)] border border-[var(--line)]" />}
+              <span className="relative z-10 flex items-center gap-2">
+                {locked ? <Lock size={17} strokeWidth={2.6} /> : <I size={20} />} {t}
+              </span>
             </button>
           ))}
         </div>

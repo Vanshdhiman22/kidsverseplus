@@ -26,11 +26,19 @@ export const NAV_ITEMS = [
 const FRAME = 'linear-gradient(180deg,rgba(22,26,78,.88) 0%,rgba(17,21,62,.9) 55%,rgba(12,15,44,.93) 100%)'
 const CARD_DARK = 'linear-gradient(160deg,#1e2a72,#16205a)'
 
-/* Signed-out and onboarding screens have nowhere to navigate to yet. */
-/* No handle where a slide-out makes no sense: the signed-out and onboarding screens have
-   nowhere to navigate to yet, and Home pins this same rail open in its own layout -- a
-   handle there would offer to slide out a menu that is already on screen. */
-const HIDDEN = p => p === '/' || p === '/home' || p.startsWith('/parent/login') || p.startsWith('/parent/create-account') || p.startsWith('/onboarding')
+/* No handle where a slide-out makes no sense.
+ *
+ * Two reasons a screen opts out. Either it has nowhere to navigate to yet -- signed out,
+ * or mid-onboarding -- or it already draws a rail of its own, and a second one sliding
+ * over the first is the bug this list exists to prevent. Home pins this very component
+ * open; Welcome, Switch Student, Extra Learning and the whole Parent Zone each carry
+ * their own; Journey's Switch Subject panel starts at y=400, exactly where the handle
+ * sits, so the handle landed on top of it.
+ *
+ * Keep this in step with the screens that render <SideRail> or <ParentRail>. */
+const OWN_RAIL = ['/home', '/welcome', '/switch', '/extra', '/journey']
+const HIDDEN = p =>
+  p === '/' || OWN_RAIL.includes(p) || p.startsWith('/parent') || p.startsWith('/onboarding')
 
 function Panel({ pinned, onNavigate, onGate }) {
   const nav = useNavigate()
@@ -125,8 +133,11 @@ export default function NavDrawer({ pinned = false }) {
     <>
       {/* the handle: a slim tab on the left edge, clear of every corner control */}
       <motion.button type="button" aria-label="Open menu" aria-expanded={open}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-40 w-[26px] h-[92px] rounded-r-[14px] grid place-items-center text-white/90"
-        style={{ background: FRAME, boxShadow: '0 10px 26px -10px rgba(20,15,80,.9)' }}
+        className="absolute left-0 top-1/2 z-40 w-[26px] h-[92px] rounded-r-[14px] grid place-items-center text-white/90"
+        /* centred with a margin, not -translate-y-1/2: motion writes its own inline
+           transform for the slide-in and wipes the Tailwind one, which left the handle
+           sitting 46px below centre. */
+        style={{ marginTop: -46, background: FRAME, boxShadow: '0 10px 26px -10px rgba(20,15,80,.9)' }}
         initial={{ x: -26, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }}
         whileHover={{ width: 32 }}
         onClick={() => { sfx.tap(); setOpen(o => !o) }}>
@@ -136,8 +147,10 @@ export default function NavDrawer({ pinned = false }) {
       <AnimatePresence>
         {open && (
           <>
-            <motion.div className="absolute inset-0 z-40 bg-black/35" onClick={() => setOpen(false)}
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} />
+            {/* Nothing visual. The screen behind stays exactly as it was -- no wash, no
+                blur -- because the drawer sliding over it is already the whole signal that
+                a menu opened. This layer exists only so a tap anywhere outside closes it. */}
+            <div className="absolute inset-0 z-40" onClick={() => setOpen(false)} />
             <motion.aside className="absolute top-0 bottom-0 left-0 z-40"
               initial={{ x: -215 }} animate={{ x: 0 }} exit={{ x: -215 }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}>

@@ -19,8 +19,12 @@ const initial = {
      with their own progress so switching does not overwrite anyone. */
   children: [
     { id: 'aarav', name: 'Aarav', grade: '4', board: 'CBSE', face: 1, outfit: 'explorer', img: '/art/crops/aarav-card.webp', xp: 1250, streak: 7, mastery: 72 },
-    { id: 'mira', name: 'Mira', grade: '2', board: 'CBSE', face: 2, outfit: 'sprint', img: '/art/crops/mira.webp', xp: 640, streak: 3, mastery: 48 },
-    { id: 'vihaan', name: 'Vihaan', grade: '1', board: 'CBSE', face: 3, outfit: 'ranger', img: '/art/crops/vihaan.webp', xp: 310, streak: 2, mastery: 36 },
+    /* face has to match the child's own card art, or the parent opens Mira's page and
+       finds a boy's portrait beside her name. kid4 is the bob-and-headband girl in
+       mira.webp; kid2 is the remaining boy face for Vihaan. kid3 is a girl and was
+       sitting on him. */
+    { id: 'mira', name: 'Mira', grade: '2', board: 'CBSE', face: 4, outfit: 'sprint', img: '/art/crops/mira.webp', xp: 640, streak: 3, mastery: 48 },
+    { id: 'vihaan', name: 'Vihaan', grade: '1', board: 'CBSE', face: 2, outfit: 'ranger', img: '/art/crops/vihaan.webp', xp: 310, streak: 2, mastery: 36 },
   ],
   activeChildId: 'aarav',
   parentLock: { pin: null },

@@ -25,7 +25,7 @@ export default function Interests() {
     <Page>
       <Scene name="interests" />
       <Child screen="interests" delay={0.35} />
-      <TopBar center={<div className="flex items-center gap-5"><button className="pill w-[46px] h-[46px] justify-center text-ink" onClick={() => nav(-1)}><ChevronLeft size={24} strokeWidth={2.8} /></button><Segments total={8} current={2} /><img src="/art/planet-sm.webp" alt="" className="w-[50px] floaty" /></div>} />
+      <TopBar back={false} center={<div className="flex items-center gap-5"><button className="pill w-[46px] h-[46px] justify-center text-ink" onClick={() => nav(-1)}><ChevronLeft size={24} strokeWidth={2.8} /></button><Segments total={8} current={2} /><img src="/art/planet-sm.webp" alt="" className="w-[50px] floaty" /></div>} />
       <Stack className="absolute left-[545px] top-[110px] w-[980px] text-center" start={0.2}>
         <Item><h1 className="font-display font-extrabold text-[66px] leading-tight text-ink">What makes you curious?</h1></Item>
         <Item className="mt-1 text-[22px] font-semibold text-ink-3">Choose <span className="text-primary-ink font-extrabold">three or more</span>. Nova will weave them into your missions.</Item>

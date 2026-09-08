@@ -3,7 +3,7 @@ import { motion } from 'motion/react'
 import manifest from '../../public/art/chars/manifest.json'
 import { lead } from '../lib/motion.js'
 import { useGame } from '../state/GameProvider.jsx'
-import { SLOTS, childSrc, childBox } from '../data/poses.js'
+import { SLOTS, childSrc, childBox, novaLayer } from '../data/poses.js'
 
 /* Scene: the designer's own backdrop for a screen, with the UI and characters
    painted out (tools/scene.py). Pinned to the 1672x941 canvas; on wider windows
@@ -57,6 +57,18 @@ export function Child({ screen, ...rest }) {
   const { profile } = useGame().state
   const slot = SLOTS[screen]
   if (!slot?.cutout) return null
-  return <Cutout id={slot.cutout} src={childSrc(profile.face, screen, { outfit: profile.outfit })}
-    box={childBox(profile.face, screen)} {...rest} />
+  const src = childSrc(profile.face, screen, { outfit: profile.outfit })
+  /* The pose path is only ever returned when a substitute is actually being drawn, so it
+     is the exact signal for "the approved fused art is no longer on screen" -- and that is
+     the only moment Nova has to be put back as her own layer. */
+  const swapped = typeof src === 'string' && src.includes('/chars/pose/')
+  const nova = swapped ? novaLayer(screen) : null
+  return (
+    <>
+      {/* behind the child, where the design has her */}
+      {nova && <Cutout id={`nova:${slot.cutout}`} src={nova.src} box={nova.box}
+        {...rest} amp={(rest.amp ?? 8) * 0.7} dur={(rest.dur ?? 3.8) * 1.15} />}
+      <Cutout id={slot.cutout} src={src} box={childBox(profile.face, screen)} {...rest} />
+    </>
+  )
 }

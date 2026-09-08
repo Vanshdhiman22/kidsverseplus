@@ -11,6 +11,7 @@ import Character from '../components/Character.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Fraction } from '../components/Widgets.jsx'
 import { QUESTIONS } from '../data/catalog.js'
+import { childSrc } from '../data/poses.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
@@ -19,7 +20,7 @@ const LETTERS = ['A', 'B', 'C', 'D']
 
 export default function TestQuestion() {
   const nav = useNavigate()
-  const g = useGame(); const { name } = g.state.profile
+  const g = useGame(); const { name, face } = g.state.profile
   const [qi, setQi] = useState(0)
   const [pick, setPick] = useState(null)
   const [submitted, setSubmitted] = useState(false)
@@ -58,7 +59,10 @@ export default function TestQuestion() {
         <span className="font-display font-extrabold text-[20px] text-ink">{Math.round((shown / total) * 100)}%</span>
       </motion.div>
 
-      <Character src="/art/hd/q-boy.webp" w={260} x={95} y={170} delay={0.14} podium />
+      {/* Was the master boy hardcoded, so this screen alone kept showing him after a
+          child picked someone else. The src comes from the slot now; the podium and
+          the placement stay exactly as designed. */}
+      <Character src={childSrc(face, 'question')} w={260} x={95} y={170} delay={0.14} podium />
       <motion.div className="absolute left-[55px] top-[725px] pill h-[80px] px-5 gap-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><span className="icon-orb w-[50px] h-[50px] text-gold" style={{ background: 'rgba(251,191,36,.16)' }}><Star size={26} fill="currentColor" /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[22px] text-ink">{name}</span><span className="block text-[15px] font-semibold text-primary-ink">Explorer in Learning</span></span></motion.div>
       <Character src="/art/hd/q-nova.webp" w={230} x={1395} y={370} delay={0.17} amp={10} />
       <div className="absolute left-[1355px] top-[190px]"><SpeechBubble tail="bottom" text="Read the question aloud if you need, Explorer. ✨" delay={0.3} className="w-[200px] text-[17px]" /></div>

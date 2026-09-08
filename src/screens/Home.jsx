@@ -154,8 +154,8 @@ export default function Home() {
           {/* "Games, Quizzes and Beyond" is Extra Learning, not the Challenge arena. This
               pointed at /challenge, which left /extra with no inbound link at all once
               Home's subject cards moved to the syllabus pages -- orphaning Reading Fluency
-              and Confidence with Nova. Challenge is still one tap away on the dock every
-              other screen carries. */}
+              and Confidence with Nova. Challenge is still one tap away in the
+              slide-out menu every other screen carries. */}
           <motion.button className="w-[300px] h-[124px] rounded-[20px] px-5 flex items-center gap-4 text-left"
             style={{ background: FRAME, boxShadow: '0 16px 34px -16px rgba(20,15,80,.8)' }}
             whileHover={{ y: -5 }} whileTap={{ scale: 0.97 }} onClick={() => { sfx.whoosh(); nav('/extra') }}>

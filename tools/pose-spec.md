@@ -52,40 +52,42 @@ It borrows the neutral standing shot cropped at the waist, and the standalone No
 composites in beside it. Framing is right; only `P01` was genuinely wrong, and that is
 covered below.
 
-**4. Three contact poses, drawn with Nova in the same frame, for every character.**
+**4. Nova, cut out alone, on the twelve screens she could not be lifted from.**
 
-This is what unblocks the swap. On 25 of the 28 screens the design bakes Nova into the
-child's own cutout, so swapping the child draws a child-only render and takes her with the
-boy she was fused to.
+`tools/novasplit.py` lifts Nova out of the child's cutout wherever the art allows it, and
+writes her own sprite and her own box per screen. She keeps that screen's exact pose,
+lighting and scale, which no stand-in would.
 
-The earlier version of this file asked for Nova as five separate green-screen renders.
-That ask was too large. `public/art/hd/nova-guide.webp` is already a clean, separate,
-full-body Nova on transparency (567x900, waving, front-facing), and it covers every pose
-where she only stands beside the child without touching -- `P02` `P03` `P05` `P07` `P08`
-`P09` `P12` `P13`, eight of the twelve. Those compose in code from art we already hold.
-`P14` has no Nova at all.
+Covered automatically, 10 screens: `child-0`, `complete-0`, `discover-0`, `goals-0`, `interests-0`, `intro-0`, `learn-0`, `nhome-0`, `reading-0`, `spot-0`.
 
-So only the three poses where the child's hand actually meets Nova's have to be drawn, and
-they are better drawn as one frame containing both figures than as two renders to be
-aligned afterwards -- the contact point cannot be composited:
+The gate is now structural. A screen may swap when either no Nova is baked into it, or she
+has been lifted out of it; a character goes live only when every screen they need passes.
+That replaced a hand-set hold flag, so it opens by itself as screens are covered and can
+never be switched on while she would still vanish.
 
-| app id | name | what the frame must contain |
-|---|---|---|
-| `P01` | Hand-hold with Nova | child and Nova holding hands, Nova on the child's left |
-| `P11` | High-five celebration | child's open hand meeting Nova's raised hand |
-| `P16` | Fist-bump with Nova | child three-quarter turned, fists meeting |
+Twelve screens resist the cut. Each needs the same thing: **Nova alone on that screen's
+pose, transparent PNG, same size as the screen's own cutout**.
 
-Three files per character, and `boy_02`/`girl_01` already include theirs in their twelve.
-So the outstanding total is 30 files, not 48.
+| cutout | why the cut fails |
+|---|---|
+| `arena-0` | she overlaps the child inside a single shape, so there is no seam |
+| `challenge-0` | she overlaps the child inside a single shape, so there is no seam |
+| `confidence-0` | she overlaps the child inside a single shape, so there is no seam |
+| `league-0` | she overlaps the child inside a single shape, so there is no seam |
+| `login-0` | she overlaps the child inside a single shape, so there is no seam |
+| `opponents-0` | she overlaps the child inside a single shape, so there is no seam |
+| `ourjourney-0` | she overlaps the child inside a single shape, so there is no seam |
+| `setup-0` | she overlaps the child inside a single shape, so there is no seam |
+| `welcome-0` | she overlaps the child inside a single shape, so there is no seam |
+| `nova-0` | her body is occluded by a panel in the design; only the head and one hand survive |
+| `profile-0` | her neck falls in a gap, so the head comes away floating |
+| `result-0` | a violet banner is welded to her feet |
 
-Still to build on this side: drawing Nova as her own layer on the 25 fused screens. Her
-per-screen box is not derived yet -- on 14 screens she is a disjoint shape in the fused
-cutout and connected components will find her, on the other 11 (landing, login, setup,
-welcome, home, question, challenge, opponents, bresult, league, ourjourney) she overlaps
-the child and the box has to be estimated from her colour instead. This work does not
-depend on the artwork and can go in parallel.
+Plus the two where their hands interlock -- `landing-0` and `bresult-0` -- which need the
+paired child-and-Nova renders described above rather than a Nova cut on her own.
 
-A stakeholder-facing version of all this is `docs/Kidsverse-Character-Art-Requirement.pdf`.
+Until those arrive the app stays on the approved master art everywhere, which is correct:
+half a swap is worse than none, and Nova is never missing.
 
 ## Library poses the app has no screen for
 

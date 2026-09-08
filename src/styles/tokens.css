@@ -52,10 +52,6 @@
   --surface-2: #ffffff;
   --bubble: rgba(255,255,255,.9);
   --bubble-ink: #1b1a5e;
-  --dock-bg: rgba(255,255,255,.78);
-  --dock-active: #ece6ff;
-  --dock-ink: #5a5990;
-  --dock-active-ink: #6d4de8;
   --input-bg: rgba(255,255,255,.85);
   --sky-top: #d9e2ff;
   --sky-mid: #eee9ff;
@@ -112,10 +108,6 @@
      gold) to fight a light surface and lose. Dark bubble, light ink. */
   --bubble: rgba(30, 24, 92, 0.94);
   --bubble-ink: #f4f2ff;
-  --dock-bg: rgba(16, 12, 58, 0.72);
-  --dock-active: rgba(124, 92, 255, 0.28);
-  --dock-ink: #b3aee6;
-  --dock-active-ink: #e9e3ff;
   --input-bg: rgba(12, 9, 45, 0.6);
   --sky-top: #05041a;
   --sky-mid: #120e46;

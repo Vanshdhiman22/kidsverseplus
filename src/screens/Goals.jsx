@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import Scene, { Child } from '../components/Scene.jsx'
-import Page, { Stack, Item, BackButton } from '../components/Page.jsx'
+import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
 import { Card, Check } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
@@ -16,10 +16,13 @@ import { cn } from '../lib/utils.js'
 /* Constellation: the five goals orbit a star; the chosen one lights up. */
 const NODES = [
   { id: 'school', x: 300, y: 60, label: 'Master school\ntopics' },
-  { id: 'confidence', x: 120, y: 135, label: 'Build\nconfidence' },
-  { id: 'competition', x: 470, y: 135, label: 'Prepare for\ncompetitions' },
-  { id: 'reading', x: 40, y: 310, label: 'Read more\nfluently' },
-  { id: 'explore', x: 530, y: 310, label: 'Explore beyond\nclass' },
+  { id: 'confidence', x: 95, y: 92, label: 'Build\nconfidence' },
+  { id: 'competition', x: 495, y: 92, label: 'Prepare for\ncompetitions' },
+  /* x is the tile's centre minus 40, and the tile is 160 wide. The child cutout fills
+     1005..1445, so a tile landing between those lines is drawn on top of him. These two
+     did -- 'Explore beyond class' sat on Nova's head. Pushed outward to clear him. */
+  { id: 'reading', x: -35, y: 300, label: 'Read more\nfluently' },
+  { id: 'explore', x: 605, y: 300, label: 'Explore beyond\nclass' },
 ]
 const CENTER = { x: 300, y: 240 }
 
@@ -30,7 +33,7 @@ function Constellation({ chosen, onPick }) {
         {NODES.map((n, i) => (
           <motion.line key={n.id} x1={CENTER.x} y1={CENTER.y} x2={n.x + 40} y2={n.y + 40} stroke={chosen.includes(n.id) ? '#8b5cf6' : 'rgba(124,92,255,.4)'} strokeWidth={chosen.includes(n.id) ? 3 : 2} strokeDasharray="6 8" initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 1.2, delay: 0.06 + i * 0.12, ease: [0.16, 1, 0.3, 1] }} style={{ filter: chosen.includes(n.id) ? 'drop-shadow(0 0 6px rgba(139,92,246,.9))' : undefined }} />
         ))}
-        {[[160, 175, 340, 100], [340, 100, 510, 175], [80, 350, 160, 175], [510, 175, 570, 350]].map(([a, b, c, d], i) => (
+        {[[135, 132, 340, 100], [340, 100, 535, 132], [5, 340, 135, 132], [535, 132, 645, 340]].map(([a, b, c, d], i) => (
           <motion.line key={i} x1={a} y1={b} x2={c} y2={d} stroke="rgba(124,92,255,.3)" strokeWidth={1.5} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: 0.1 + i * 0.1 }} />
         ))}
       </svg>
@@ -68,7 +71,6 @@ export default function Goals() {
     <Page>
       <Scene name="goals" />
       <TopBar center={<Segments total={8} current={5} badge={7} />} />
-      <BackButton className="absolute left-[100px] top-[118px]" />
       <Stack className="absolute left-[100px] top-[175px]" start={0.2}>
         <Item><h1 className="font-display font-extrabold text-[54px] leading-tight text-ink">What should we grow first?</h1></Item>
         <Item className="text-[21px] font-semibold text-ink-3">Pick one or more goals to personalise {name}'s learning journey.</Item>

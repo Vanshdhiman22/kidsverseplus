@@ -43,7 +43,7 @@ export function think(text, ctx = {}) {
       : { state: 'NEUTRAL', text: 'On the lesson board, tap "Show me another" and I will swap the picture.' }
     case 'whatis': { const key = Object.keys(FACTS).find(k => new RegExp(k, 'i').test(text)) ?? 'fraction'; return { state: 'TEACH', text: FACTS[key] } }
     case 'answer': return { state: 'HINT', text: onBoard ? `I won't tell you the answer, but here's a clue: ${hints[0]}` : 'I give clues, not answers. That way it stays yours.' }
-    case 'navigate': return { state: 'NEUTRAL', text: 'Use the dock at the bottom to move around: Home, Learn, Test, Challenge, Profile.' }
+    case 'navigate': return { state: 'NEUTRAL', text: 'Tap the little tab on the left edge to slide the menu out: Home, Learn, Explore, Achievements and more.' }
     default: return { state: 'NEUTRAL', text: onBoard ? 'I can help with this step. Try asking for a hint, or say "I don\'t get it".' : 'I\'m Nova, your learning buddy. Ask me for a hint, what a fraction is, or say "explain another way".' }
   }
 }
