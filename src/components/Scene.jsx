@@ -4,6 +4,7 @@ import manifest from '../../public/art/chars/manifest.json'
 import { lead } from '../lib/motion.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { SLOTS, childSrc, childBox, novaLayer } from '../data/poses.js'
+import { companionLayout } from '../data/companionLayout.js'
 
 /* Scene: the designer's own backdrop for a screen, with the UI and characters
    painted out (tools/scene.py). Pinned to the 1672x941 canvas; on wider windows
@@ -60,21 +61,27 @@ export function Child({ screen, ...rest }) {
   /* The public/login/setup journey introduces the master boy. Avatar selection is the
      boundary: only screens after the picker use the saved choice. */
   const beforeSelection = ['landing', 'login', 'child', 'setup'].includes(screen)
-  const face = beforeSelection ? 1 : profile.face
+  const face = beforeSelection ? 1 : Number(profile.face)
   const src = childSrc(face, screen, { outfit: profile.outfit })
   /* The pose path is only ever returned when a substitute is actually being drawn, so it
      is the exact signal for "the approved fused art is no longer on screen" -- and that is
      the only moment Nova has to be put back as her own layer. */
   const swapped = face !== 1 && typeof src === 'string' && (src.includes('/chars/pose/') || src.includes('/art/avatar/'))
   const nova = swapped ? novaLayer(screen) : null
+  // Welcome's cards begin at x=696 / y=578; its old fused-art box
+  // extends into them. Keep both companions above the cards and below text.
+  const region = screen === 'welcome' ? [290, 330, 390, 375]
+    : screen === 'nova' ? [135, 260, 680, 550]
+    : manifest[slot.cutout]
+  const pair = nova ? companionLayout(region, childBox(face, screen) ?? manifest[slot.cutout], nova.box) : null
   return (
     <>
-      <Cutout id={slot.cutout} src={src} box={childBox(face, screen)} {...rest}
+      <Cutout id={slot.cutout} src={src} box={pair?.child ?? childBox(face, screen)} {...rest}
         style={{ ...rest.style, ...(screen === 'welcome' && face === 4 ? { clipPath: 'inset(10.5% 0 0 0)' } : {}) }} />
       {/* Nova is drawn after the child. Several replacement poses are wider than the
           master and otherwise cover her face/body in lesson sidebars. */}
-      {nova && <Cutout id={`nova:${slot.cutout}`} src={nova.src} box={nova.box}
-        {...rest} className={`${rest.className ?? ''} z-[2]`} amp={(rest.amp ?? 8) * 0.7}
+      {nova && <Cutout id={`nova:${slot.cutout}`} src={nova.src} box={pair.nova}
+        {...rest} amp={(rest.amp ?? 8) * 0.7}
         dur={(rest.dur ?? 3.8) * 1.15} />}
     </>
   )
