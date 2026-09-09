@@ -16,6 +16,7 @@ import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
+import { charByFace } from '../data/poses.js'
 
 const ICONS = { Maths: Calculator, Literacy: BookOpen, Speed: Zap, Logic: Puzzle }
 const COLORS = { Maths: '#3b82f6', Literacy: '#a855f7', Speed: '#22c55e', Logic: '#f59e0b' }
@@ -53,6 +54,10 @@ export default function Battle() {
   const [done, setDone] = useState(false)
   const [secs, setSecs] = useState(22)
   const q = BATTLE_QS[round % BATTLE_QS.length]
+  const selectedCharacter = charByFace(face)
+  const portrait = selectedCharacter.id === 'girl_02'
+    ? '/art/chars/pose/P12/girl_02.webp'
+    : `/art/kid${face}-face.webp`
   useEffect(() => { const id = setInterval(() => setSecs(s => (s > 0 ? s - 1 : 22)), 1000); return () => clearInterval(id) }, [round])
   const submit = () => {
     if (pick == null) return
@@ -74,7 +79,7 @@ export default function Battle() {
       </Stack>
       <motion.div className="absolute flex items-center gap-3" style={{ ...bleedR(24), ...safeT(22) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><StatPill kind="bolt" value="120" /><StatPill kind="xp" value={xp.toLocaleString()} /><UserChip name={name} face={face} /></motion.div>
 
-      <Fighter side="left" name={name} score={score[0]} energy={85} c="#38bdf8" img={<motion.img src="/art/crops/aarav-portrait.webp" alt="" className="h-[210px] rounded-[20px]" animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity }} />} />
+      <Fighter side="left" name={name} score={score[0]} energy={85} c="#38bdf8" img={<motion.img src={portrait} alt="" className="h-[210px] max-w-[230px] object-contain" animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity }} />} />
       <Fighter side="right" name={bot.name} score={score[1]} energy={70} c="#a855f7" img={<span />} />
       <Cutout id="battle-0" delay={0.17} amp={9} />
       <Vs size={130} className="absolute left-[770px] top-[150px]" />

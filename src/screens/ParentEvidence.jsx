@@ -19,13 +19,13 @@ import { useAccent } from '../lib/accent.js'
 
 export default function ParentEvidence() {
   const nav = useNavigate()
-  const g = useGame(); const { name, grade, board } = g.state.profile
+  const g = useGame(); const { name, face, grade, board } = g.state.profile
   const ac = useAccent()
   return (
     <Page>
       <Scene name="evidence" />
       <ParentRail />
-      <motion.div className="absolute flex items-center gap-3" style={{ ...bleedR(30), ...safeT(20) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><IconPill><Search size={22} /></IconPill><IconPill className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill><UserChip name={`Parent of ${name}`} face={2} /></motion.div>
+      <motion.div className="absolute flex items-center gap-3" style={{ ...bleedR(30), ...safeT(20) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><IconPill><Search size={22} /></IconPill><IconPill className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill><UserChip name={`Parent of ${name}`} face={face} /></motion.div>
 
       <Panel soft className="absolute left-[295px] top-[90px] w-[1345px] h-[800px] p-8" initial="hidden" animate="show">
         <div className="flex items-center gap-5">
