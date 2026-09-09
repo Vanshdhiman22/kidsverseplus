@@ -104,7 +104,7 @@ function useRoad(spots) {
  * a car that sets off again every time you glance at the screen reads as decoration,
  * and the movement stops meaning "you got somewhere".
  */
-function Car({ stations, road, seen, onArrive }) {
+function Car({ stations, road, seen, onArrive, face }) {
   const { d, stops } = road
   const hereIndex = Math.max(0, stations.findIndex(s => s.state === 'here'))
   const fromIndex = seen == null || seen > hereIndex ? hereIndex : seen
@@ -143,7 +143,7 @@ function Car({ stations, road, seen, onArrive }) {
       }}
     >
       <motion.img
-        src="/art/chars/journey-0.webp" alt="" draggable={false}
+        src={face === 4 ? '/art/chars/journey-girl-02.webp' : '/art/chars/journey-0.webp'} alt="" draggable={false}
         className="w-full h-full object-contain drop-shadow-[0_20px_30px_rgba(40,30,120,.32)]"
         style={{ scaleX: facing }}
         animate={reduced ? undefined : { y: [0, -6, 0] }}
@@ -183,7 +183,7 @@ export default function Journey() {
   return (
     <Page>
       <Scene name="journey" />
-      <Car key={`car-${subject}`} stations={stations} road={road} seen={g.state.progress.journeySeen?.[subject]} onArrive={i => g.markJourneySeen(subject, i)} />
+      <Car key={`car-${subject}`} face={face} stations={stations} road={road} seen={g.state.progress.journeySeen?.[subject]} onArrive={i => g.markJourneySeen(subject, i)} />
       {stations.map((n, i) => <Node key={subject + n.id} n={n} i={i} />)}
       <motion.div key={subject} className="absolute z-10 left-[1268px] top-[535px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="sm" arrow className="h-[52px] px-6 text-[18px] uppercase" sound="whoosh" onClick={() => nav(`/learn/topics/${subject}`)}>Continue {stations.find(s => s.state === 'here')?.sub ?? 'Fractions'}</Button></motion.div>
 

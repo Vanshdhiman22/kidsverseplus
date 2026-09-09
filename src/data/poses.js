@@ -190,8 +190,12 @@ export function childSrc(face, screenKey, { outfit } = {}) {
      screen silently swaps art the moment a character is picked. */
   const approved = slot.master ?? `/art/chars/${slot.cutout}.webp`
   if (c.master) return approved
+  if (screenKey === 'nova' && c.id === 'girl_02') return '/art/chars/pose/P09/girl_02.webp'
   if (slot.outfits && outfit) return outfitPath(c.id, outfit)
-  if (characterReady(face) && has(slot, c.id)) return `/art/chars/pose/${key(slot, c.id)}.webp`
+  /* Resolve one screen at a time. A complete character set is useful for release
+     reporting, but it must not force an already-produced girl pose back to the
+     master boy just because an unrelated pose is still missing. */
+  if (has(slot, c.id)) return `/art/chars/pose/${key(slot, c.id)}.webp`
   return approved
 }
 
@@ -201,7 +205,7 @@ export function childSrc(face, screenKey, { outfit } = {}) {
 export function childBox(face, screenKey) {
   const slot = SLOTS[screenKey]
   const c = charByFace(face)
-  if (!slot || c.master || !characterReady(face) || !has(slot, c.id)) return null
+  if (!slot || c.master || !has(slot, c.id)) return null
   return boxes[`${slot.cutout}--${c.id}`] ?? null
 }
 
@@ -211,7 +215,7 @@ export function hasSubstitute(face, screenKey) {
   const c = charByFace(face)
   if (!slot) return false
   if (c.master || slot.layer === 'face' || slot.outfits) return true
-  return characterReady(face) && has(slot, c.id)
+  return has(slot, c.id)
 }
 
 /* The production shopping list: one row per render still owed. */
