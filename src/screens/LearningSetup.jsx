@@ -83,7 +83,7 @@ export default function LearningSetup() {
 
       <Panel className="absolute left-[680px] top-[790px] w-[945px] h-[112px] px-6 flex items-center justify-end gap-6" initial="hidden" animate="show" style={{ borderRadius: 30 }}>
         <Button variant="ghost" size="md" icon={<ArrowLeft size={24} strokeWidth={2.6} />} className="h-[72px] px-10 text-[22px]" onClick={() => nav(-1)}>Back</Button>
-        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[440px] uppercase" sound="whoosh" onClick={() => nav('/onboarding/avatar')}>Continue</Button>
+        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[440px] uppercase" sound="whoosh" onClick={() => { g.setProfile({ face: 1, outfit: 'explorer' }); nav('/onboarding/avatar') }}>Continue</Button>
       </Panel>
     </Page>
   )

@@ -57,18 +57,22 @@ export function Child({ screen, ...rest }) {
   const { profile } = useGame().state
   const slot = SLOTS[screen]
   if (!slot?.cutout) return null
-  const src = childSrc(profile.face, screen, { outfit: profile.outfit })
+  /* The public/login/setup journey introduces the master boy. Avatar selection is the
+     boundary: only screens after the picker use the saved choice. */
+  const beforeSelection = ['landing', 'login', 'child', 'setup'].includes(screen)
+  const face = beforeSelection ? 1 : profile.face
+  const src = childSrc(face, screen, { outfit: profile.outfit })
   /* The pose path is only ever returned when a substitute is actually being drawn, so it
      is the exact signal for "the approved fused art is no longer on screen" -- and that is
      the only moment Nova has to be put back as her own layer. */
-  const swapped = typeof src === 'string' && src.includes('/chars/pose/')
+  const swapped = face !== 1 && typeof src === 'string' && (src.includes('/chars/pose/') || src.includes('/art/avatar/'))
   const nova = swapped ? novaLayer(screen) : null
   return (
     <>
       {/* behind the child, where the design has her */}
       {nova && <Cutout id={`nova:${slot.cutout}`} src={nova.src} box={nova.box}
         {...rest} amp={(rest.amp ?? 8) * 0.7} dur={(rest.dur ?? 3.8) * 1.15} />}
-      <Cutout id={slot.cutout} src={src} box={childBox(profile.face, screen)} {...rest} />
+      <Cutout id={slot.cutout} src={src} box={childBox(face, screen)} {...rest} />
     </>
   )
 }

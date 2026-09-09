@@ -12,6 +12,7 @@ import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
+import { spriteFor } from '../data/catalog.js'
 
 /* Car sprite, in design pixels (public/art/chars/journey-0.webp ships at 2x). */
 const CAR = { w: 211, h: 203 }   // 0.62 of the source art: a map token, not a hero
@@ -142,13 +143,15 @@ function Car({ stations, road, seen, onArrive, face }) {
         scale: { type: 'spring', stiffness: 220, damping: 20, delay: 0.25 },
       }}
     >
-      <motion.img
+      {face === 1 || face === 4 ? <motion.img
         src={face === 4 ? '/art/chars/journey-girl-02.webp' : '/art/chars/journey-0.webp'} alt="" draggable={false}
         className="w-full h-full object-contain drop-shadow-[0_20px_30px_rgba(40,30,120,.32)]"
-        style={{ scaleX: facing }}
-        animate={reduced ? undefined : { y: [0, -6, 0] }}
+        style={{ scaleX: facing }} animate={reduced ? undefined : { y: [0, -6, 0] }}
         transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: travel + 0.6 }}
-      />
+      /> : <motion.div className="relative w-full h-full" style={{ scaleX: facing }} animate={reduced ? undefined : { y: [0, -6, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: travel + 0.6 }}>
+        <img src={spriteFor('explorer', face)} alt="" className="absolute left-0 bottom-0 w-[68%] h-full object-contain" />
+        <img src="/art/hd/nova-guide.webp" alt="" className="absolute right-0 bottom-2 w-[42%] h-[76%] object-contain" />
+      </motion.div>}
     </motion.div>
   )
 }

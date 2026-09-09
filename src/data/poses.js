@@ -14,6 +14,7 @@
 import produced from '../../public/art/chars/pose-manifest.json'
 import boxes from '../../public/art/chars/pose-boxes.json'
 import novaBoxes from '../../public/art/chars/nova-boxes.json'
+import charBoxes from '../../public/art/chars/manifest.json'
 
 /* The four children. `face` is what GameProvider already stores in profile.face. */
 export const CHARACTERS = [
@@ -158,7 +159,17 @@ export const novaSafe = slot => slot.layer !== 'fused' || novaLifted(slot.cutout
 export function novaLayer(screenKey) {
   const slot = SLOTS[screenKey]
   const box = slot && slot.cutout ? novaBoxes[slot.cutout] : null
-  return box ? { src: `/art/chars/nova/${slot.cutout}.webp`, box } : null
+  if (box) return { src: `/art/chars/nova/${slot.cutout}.webp`, box }
+  /* Some approved images have the child and Nova fused too tightly to split. When a
+     selected avatar replaces that image, keep Nova in the scene with the clean guide
+     sprite instead of silently dropping the companion. */
+  const child = slot?.cutout ? charBoxes[slot.cutout] : null
+  if (!child || slot.layer !== 'fused') return null
+  const [x, y, w, h] = child
+  return {
+    src: '/art/hd/nova-guide.webp',
+    box: [Math.round(x + w * 0.62), Math.round(y + h * 0.08), Math.round(w * 0.42), Math.round(h * 0.82)],
+  }
 }
 
 export function characterReady(face) {
@@ -196,7 +207,10 @@ export function childSrc(face, screenKey, { outfit } = {}) {
      reporting, but it must not force an already-produced girl pose back to the
      master boy just because an unrelated pose is still missing. */
   if (has(slot, c.id)) return `/art/chars/pose/${key(slot, c.id)}.webp`
-  return approved
+  /* Every avatar offered on the picker must remain that avatar afterwards. Until a
+     bespoke action pose exists, use its complete outfit sprite rather than reverting
+     to the master boy. */
+  return outfitPath(c.id, outfit ?? 'explorer')
 }
 
 /* Hair that sits taller or wider than the master's needs a bigger canvas, so
@@ -205,7 +219,7 @@ export function childSrc(face, screenKey, { outfit } = {}) {
 export function childBox(face, screenKey) {
   const slot = SLOTS[screenKey]
   const c = charByFace(face)
-  if (!slot || c.master || !has(slot, c.id)) return null
+  if (!slot || c.master) return null
   return boxes[`${slot.cutout}--${c.id}`] ?? null
 }
 
@@ -215,7 +229,7 @@ export function hasSubstitute(face, screenKey) {
   const c = charByFace(face)
   if (!slot) return false
   if (c.master || slot.layer === 'face' || slot.outfits) return true
-  return has(slot, c.id)
+  return true
 }
 
 /* The production shopping list: one row per render still owed. */
