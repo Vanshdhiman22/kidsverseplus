@@ -220,6 +220,10 @@ export function childBox(face, screenKey) {
   const slot = SLOTS[screenKey]
   const c = charByFace(face)
   if (!slot || c.master) return null
+  /* Meet Nova's approved box contains both a child and a robot and is almost square.
+     The replacement girl is a tall solo sprite, so using that combined box stretches
+     her face and body horizontally. Give the solo character her own proportional box. */
+  if (screenKey === 'nova') return [135, 175, 385, 730]
   return boxes[`${slot.cutout}--${c.id}`] ?? null
 }
 

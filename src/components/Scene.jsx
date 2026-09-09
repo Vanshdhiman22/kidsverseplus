@@ -42,7 +42,7 @@ export function Cutout({ id, src, box, delay = 0.3, amp = 8, dur = 3.8, float = 
     <motion.div className={className} style={{ position: 'absolute', left: x + dx, top: y + dy, width: w * scale, height: h * scale, ...style }}
       initial={{ opacity: 0, y: 28, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 24, delay: d }}>
       <div className="char-shadow" style={{ width: '70%' }} />
-      <motion.img src={img} alt="" draggable={false} className="block w-full h-full" style={{ filter: 'drop-shadow(0 18px 24px rgba(40,20,120,.28))' }}
+      <motion.img src={img} alt="" draggable={false} className="block w-full h-full object-contain" style={{ filter: 'drop-shadow(0 18px 24px rgba(40,20,120,.28))' }}
         animate={float ? { y: [0, -amp, 0], rotate: [0, 0.5, 0, -0.5, 0] } : undefined} transition={{ duration: dur, repeat: Infinity, ease: 'easeInOut', delay: d + 0.4 }} />
     </motion.div>
   )
@@ -69,10 +69,13 @@ export function Child({ screen, ...rest }) {
   const nova = swapped ? novaLayer(screen) : null
   return (
     <>
-      {/* behind the child, where the design has her */}
+      <Cutout id={slot.cutout} src={src} box={childBox(face, screen)} {...rest}
+        style={{ ...rest.style, ...(screen === 'welcome' && face === 4 ? { clipPath: 'inset(10.5% 0 0 0)' } : {}) }} />
+      {/* Nova is drawn after the child. Several replacement poses are wider than the
+          master and otherwise cover her face/body in lesson sidebars. */}
       {nova && <Cutout id={`nova:${slot.cutout}`} src={nova.src} box={nova.box}
-        {...rest} amp={(rest.amp ?? 8) * 0.7} dur={(rest.dur ?? 3.8) * 1.15} />}
-      <Cutout id={slot.cutout} src={src} box={childBox(face, screen)} {...rest} />
+        {...rest} className={`${rest.className ?? ''} z-[2]`} amp={(rest.amp ?? 8) * 0.7}
+        dur={(rest.dur ?? 3.8) * 1.15} />}
     </>
   )
 }
