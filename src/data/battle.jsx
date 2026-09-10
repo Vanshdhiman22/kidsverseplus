@@ -7,6 +7,11 @@ export const BOTS = [
   { id: 'pixel', name: 'Pixel', subject: 'Logic', level: 3, c: '#f59e0b', bg: 'linear-gradient(180deg,#fef3c7,#fff)', img: '/art/crops/bot-pixel.webp', cut: '/art/chars/opponents-5.webp', spec: 'Patterns • Logic • Critical Thinking', blurb: 'Sees patterns everywhere. Loves riddles and puzzles.', style: 'Pattern Master', styleSub: 'Spots the rule before anyone else!', strengths: [['Maths', 3], ['Literacy', 2], ['Speed', 4]], likes: 'Pattern puzzles', tip: <>Pixel is strong at <b className="text-primary-ink">patterns</b>, but <b className="text-sky-500">word problems</b> trip him up.</> },
 ]
 
+/* What a battle actually pays. The preview screen promised 75 XP for a win while the
+ * result screen paid a flat 30 either way, so a child was told one number and credited
+ * another. Both screens read this now, so they cannot drift apart again. */
+export const BATTLE_XP = { win: 75, draw: 40, loss: 30 }
+
 export const BATTLE_QS = [
   { q: 'What fraction is shown by the shaded part?', shaded: 3, total: 5, options: [[1, 5], [2, 5], [3, 5], [4, 5]], answer: 2 },
   { q: 'What fraction is shown by the shaded part?', shaded: 1, total: 4, options: [[1, 4], [2, 4], [3, 4], [1, 2]], answer: 0 },

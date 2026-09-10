@@ -5,3 +5,9 @@ dist
 .DS_Store
 .snapshots
 .genkit/
+
+# archives and python caches
+*.rar
+*.zip
+__pycache__/
+*.pyc

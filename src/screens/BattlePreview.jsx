@@ -9,7 +9,7 @@ import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Bar, Sparkles } from '../components/Widgets.jsx'
-import { BOTS } from '../data/battle.jsx'
+import { BOTS, BATTLE_XP } from '../data/battle.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 
 const ICONS = { Maths: Calculator, Literacy: BookOpen, Speed: Zap }
@@ -67,7 +67,7 @@ export default function BattlePreview() {
         <Button variant="outline" size="lg" icon={<BookOpen size={28} />} className="h-[84px] px-10 uppercase text-[24px] text-sky-600 border-sky-400" onClick={() => nav('/missions/fractions')}>Practise first</Button>
       </motion.div>
       <Panel className="absolute left-[270px] top-[830px] w-[1100px] h-[92px] px-8 grid grid-cols-3 items-center divide-x divide-[var(--line)]" initial="hidden" animate="show">
-        {[[Award, '#f59e0b', 'Win reward', <span className="text-primary-ink">+75 XP</span>], [Shield, '#3b82f6', 'Fair match', 'Great battle! Even match.'], [Lightbulb, '#f59e0b', 'Tip', 'Keep practising to improve your weak areas!']].map(([I, c, t, s]) => <div key={t} className="flex items-center gap-3 px-4"><span className="icon-orb w-[44px] h-[44px]" style={{ color: c, background: `${c}1f` }}><I size={22} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[17px] text-ink uppercase">{t}</span><span className="block text-[14px] font-semibold text-ink-2">{s}</span></span>{t === 'Fair match' && <Info size={18} className="ml-auto text-ink-3" />}</div>)}
+        {[[Award, '#f59e0b', 'Win reward', <span className="text-primary-ink">+{BATTLE_XP.win} XP</span>], [Shield, '#3b82f6', 'Fair match', 'Great battle! Even match.'], [Lightbulb, '#f59e0b', 'Tip', 'Keep practising to improve your weak areas!']].map(([I, c, t, s]) => <div key={t} className="flex items-center gap-3 px-4"><span className="icon-orb w-[44px] h-[44px]" style={{ color: c, background: `${c}1f` }}><I size={22} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[17px] text-ink uppercase">{t}</span><span className="block text-[14px] font-semibold text-ink-2">{s}</span></span>{t === 'Fair match' && <Info size={18} className="ml-auto text-ink-3" />}</div>)}
       </Panel>
     </Page>
   )

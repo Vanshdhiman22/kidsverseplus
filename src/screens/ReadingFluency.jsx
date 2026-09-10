@@ -102,7 +102,7 @@ export default function ReadingFluency() {
         <span className="pill h-[56px] px-5 text-[16px] font-bold text-ink"><Headphones size={18} /> Listen</span>
       </motion.div>
       <motion.div className="absolute" style={{ ...bleedR(50), ...safeB(24) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow className="w-[430px] h-[76px] uppercase text-[24px]" sound="whoosh" onClick={() => { g.addXp(25, 'Reading session'); nav('/extra') }}>Finish reading</Button>
+        <Button size="lg" arrow className="w-[430px] h-[76px] uppercase text-[24px]" sound="whoosh" onClick={() => { g.addXp(25, 'Reading session'); g.finishReading(); nav('/extra') }}>Finish reading</Button>
       </motion.div>
     </Page>
   )

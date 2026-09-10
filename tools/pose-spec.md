@@ -52,42 +52,42 @@ It borrows the neutral standing shot cropped at the waist, and the standalone No
 composites in beside it. Framing is right; only `P01` was genuinely wrong, and that is
 covered below.
 
-**4. Nova, cut out alone, on the twelve screens she could not be lifted from.**
+**4. Nova on every screen -- done, with a quality ask left.**
 
-`tools/novasplit.py` lifts Nova out of the child's cutout wherever the art allows it, and
-writes her own sprite and her own box per screen. She keeps that screen's exact pose,
-lighting and scale, which no stand-in would.
+The swap is live for `girl_02`. Two tools cover all 24 fused screens:
 
-Covered automatically, 10 screens: `child-0`, `complete-0`, `discover-0`, `goals-0`, `interests-0`, `intro-0`, `learn-0`, `nhome-0`, `reading-0`, `spot-0`.
+- `tools/novasplit.py` lifts Nova out of the child's cutout where she is her own shape --
+  **10 screens**, exact pose and lighting from the design.
+- `tools/novafill.py` covers the other **14** by placing a clean standalone Nova where the
+  fused art has her face. It finds her face as the largest round dark shape with cyan inside
+  it, in both the fused art and the standalone, and scales the standalone so the two faces
+  coincide. Two screens (`arena-0`, `setup-0`) use face coordinates read off the mask by eye.
+  These are recorded in `public/art/chars/nova-fallback.json`.
 
-The gate is now structural. A screen may swap when either no Nova is baked into it, or she
-has been lifted out of it; a character goes live only when every screen they need passes.
-That replaced a hand-set hold flag, so it opens by itself as screens are covered and can
-never be switched on while she would still vanish.
+On those 14 her pose is the standalone's waving pose rather than the screen's, and on the two
+hand-contact screens (`landing-0`, `bresult-0`) the hands no longer meet. The child's own
+poses are exact everywhere. This was a deliberate call: the robot present on every screen
+beats the master boy on 14 of them.
 
-Twelve screens resist the cut. Each needs the same thing: **Nova alone on that screen's
-pose, transparent PNG, same size as the screen's own cutout**.
+The gate in `src/data/poses.js` is structural -- a character goes live when every screen they
+need has both their pose and a Nova box -- so it opened by itself once the 14 were placed,
+and nothing has to be flipped by hand.
 
-| cutout | why the cut fails |
-|---|---|
-| `arena-0` | she overlaps the child inside a single shape, so there is no seam |
-| `challenge-0` | she overlaps the child inside a single shape, so there is no seam |
-| `confidence-0` | she overlaps the child inside a single shape, so there is no seam |
-| `league-0` | she overlaps the child inside a single shape, so there is no seam |
-| `login-0` | she overlaps the child inside a single shape, so there is no seam |
-| `opponents-0` | she overlaps the child inside a single shape, so there is no seam |
-| `ourjourney-0` | she overlaps the child inside a single shape, so there is no seam |
-| `setup-0` | she overlaps the child inside a single shape, so there is no seam |
-| `welcome-0` | she overlaps the child inside a single shape, so there is no seam |
-| `nova-0` | her body is occluded by a panel in the design; only the head and one hand survive |
-| `profile-0` | her neck falls in a gap, so the head comes away floating |
-| `result-0` | a violet banner is welded to her feet |
+**What would raise quality, in order of payoff:**
 
-Plus the two where their hands interlock -- `landing-0` and `bresult-0` -- which need the
-paired child-and-Nova renders described above rather than a Nova cut on her own.
+| ask | replaces | screens |
+|---|---|---|
+| paired child+Nova renders, hands touching | the two approximations where contact is lost | `landing-0`, `bresult-0` |
+| Nova cut alone in that screen's pose, transparent PNG | the waving stand-in | the other 12 in `nova-fallback.json` |
 
-Until those arrive the app stays on the approved master art everywhere, which is correct:
-half a swap is worse than none, and Nova is never missing.
+Drop a proper cut into `public/art/chars/nova/<cutout>.webp` with its box in `nova-boxes.json`
+and remove its entry from `nova-fallback.json`; novafill leaves covered screens alone.
+
+**5. New pose sheets for `girl_02`** -- four 3x3 green-screen sheets (36 poses, no Nova) were
+shared in chat but are not on disk yet. Save them to `E:/Downloads` (any names) and
+`tools/poselib.py` can split the grids, key the green, name each pose and upgrade the
+stand-ins: real high-five (P11), waist-up (P12), victory (P13), and better P09/P14. They do
+not contain Nova, so they do not change the paired-render ask above.
 
 ## Library poses the app has no screen for
 

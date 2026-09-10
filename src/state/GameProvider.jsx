@@ -10,11 +10,16 @@ export const levelPct = xp => Math.round(((xp % XP_PER_LEVEL) / XP_PER_LEVEL) * 
 
 const initial = {
   profile: { name: 'Aarav', grade: '4', board: 'CBSE', face: 1, outfit: 'explorer', interests: ['space', 'animals', 'art'], goals: ['school'], firstVisit: true },
-  stats: { xp: 1250, xpToday: 240, streak: 7, coins: 320, badges: 12, day: 43 },
+  /* `battles`, `reading` and `bestStreak` exist because the Profile screen was already
+     showing all three as if they were tracked -- 6 battles, 18 reading sessions, a best
+     streak of 12 -- while nothing in the app counted any of them. */
+  stats: { xp: 1250, xpToday: 240, streak: 7, coins: 320, badges: 12, day: 43, battles: 0, reading: 0, bestStreak: 7 },
   settings: { theme: 'light', sound: true, music: true, voice: true, motion: true, lang: 'en', readAloud: true, screenFit: 'auto', zoom: 1 },
   /* `worldDone` is lessons finished per world; the Journey map turns it into which
      station the child is parked at, so finishing a mission drives the car forward. */
-  progress: { lessonStage: 1, quizzesDone: 0, mastery: 68, world: 'maths', worldDone: {}, journeySeen: {} },
+  /* `lastTest` is the run the child just finished. The result screen showed it and threw
+     it away, so the Parent Zone had nothing to report and printed invented scores. */
+  progress: { lessonStage: 1, quizzesDone: 0, mastery: 68, world: 'maths', worldDone: {}, journeySeen: {}, lastTest: null },
   /* The family. `profile` is whichever child is signed in; the rest wait here
      with their own progress so switching does not overwrite anyone. */
   children: [
@@ -55,6 +60,12 @@ function reducer(state, a) {
     case 'profile': return { ...state, profile: { ...state.profile, ...a.patch } }
     case 'settings': return { ...state, settings: { ...state.settings, ...a.patch } }
     case 'progress': return { ...state, progress: { ...state.progress, ...a.patch } }
+    case 'battle':
+      return { ...state, stats: { ...state.stats, battles: state.stats.battles + 1 } }
+    case 'reading':
+      return { ...state, stats: { ...state.stats, reading: state.stats.reading + 1 } }
+    case 'test':
+      return { ...state, progress: { ...state.progress, lastTest: a.run } }
     case 'quiz':
       return { ...state, progress: { ...state.progress, quizzesDone: state.progress.quizzesDone + 1 } }
     case 'journeySeen':
@@ -121,6 +132,9 @@ export function GameProvider({ children }) {
     bumpStreak: () => dispatch({ type: 'streak' }),
     /* One finished test. Home's progress panel counts these. */
     finishQuiz: () => dispatch({ type: 'quiz' }),
+    recordTest: run => dispatch({ type: 'test', run }),
+    finishBattle: () => dispatch({ type: 'battle' }),
+    finishReading: () => dispatch({ type: 'reading' }),
     clearToast: id => dispatch({ type: 'clearToast', id }),
     clearFlash: () => dispatch({ type: 'clearFlash' }),
     notice: message => dispatch({ type: 'notice', message }),

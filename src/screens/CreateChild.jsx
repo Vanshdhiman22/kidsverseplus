@@ -16,7 +16,9 @@ export const ONBOARDING_STEPS = ['Create Child', 'Learning Setup', 'Goals', 'Mee
 export default function CreateChild() {
   const nav = useNavigate()
   const g = useGame()
-  const [name, setName] = useState(g.state.profile.name || '')
+  /* Opened pre-filled with whoever was signed in, so the screen asking who is beginning
+     their adventure answered itself with the previous child's name. */
+  const [name, setName] = useState('')
   const ok = name.trim().length >= 2
   return (
     <Page>

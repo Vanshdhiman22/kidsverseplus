@@ -135,13 +135,6 @@ export const TOPICS = {
       ['Kidsverse Plus', ['Visual models', 'Applications', 'Word problems'], 'In progress', 'progress'],
       ['Competition Edge', ['Higher-order reasoning'], 'Locked', 'locked'],
     ],
-    steps: [
-      { n: 1, name: 'What is a Fraction?', stars: 3, state: 'done' },
-      { n: 2, name: 'Equivalent Fractions', stars: 3, state: 'done' },
-      { n: 3, name: 'Compare & Order', stars: 2, state: 'current' },
-      { n: 4, name: 'Add & Subtract', stars: 0, state: 'locked' },
-      { n: 5, name: 'Word Problems', stars: 0, state: 'locked' },
-    ],
   },
   literacy: {
     title: 'Comprehension', subject: 'Literacy',
@@ -151,13 +144,6 @@ export const TOPICS = {
       ['School Syllabus', ['Main idea and detail', 'New words in context'], 'Completed', 'done'],
       ['Kidsverse Plus', ['Story mapping', 'Inference', 'Retelling'], 'In progress', 'progress'],
       ['Competition Edge', ['Author’s purpose'], 'Locked', 'locked'],
-    ],
-    steps: [
-      { n: 1, name: 'Read for Meaning', stars: 3, state: 'done' },
-      { n: 2, name: 'Main Idea', stars: 3, state: 'done' },
-      { n: 3, name: 'New Words', stars: 2, state: 'current' },
-      { n: 4, name: 'Reading Between Lines', stars: 0, state: 'locked' },
-      { n: 5, name: 'Tell It Again', stars: 0, state: 'locked' },
     ],
   },
   evs: {
@@ -169,13 +155,6 @@ export const TOPICS = {
       ['Kidsverse Plus', ['Habitats', 'Food chains', 'Life cycles'], 'In progress', 'progress'],
       ['Competition Edge', ['Adaptation and survival'], 'Locked', 'locked'],
     ],
-    steps: [
-      { n: 1, name: 'Living or Not?', stars: 3, state: 'done' },
-      { n: 2, name: 'Parts of a Plant', stars: 3, state: 'done' },
-      { n: 3, name: 'Habitats', stars: 2, state: 'current' },
-      { n: 4, name: 'Food Chains', stars: 0, state: 'locked' },
-      { n: 5, name: 'Life Cycles', stars: 0, state: 'locked' },
-    ],
   },
   computer: {
     title: 'Sequences', subject: 'Computer',
@@ -186,13 +165,6 @@ export const TOPICS = {
       ['Kidsverse Plus', ['Step by step', 'Patterns', 'Repeating a step'], 'In progress', 'progress'],
       ['Competition Edge', ['Debugging a sequence'], 'Locked', 'locked'],
     ],
-    steps: [
-      { n: 1, name: 'What is a Step?', stars: 3, state: 'done' },
-      { n: 2, name: 'Right Order', stars: 3, state: 'done' },
-      { n: 3, name: 'Spot the Pattern', stars: 2, state: 'current' },
-      { n: 4, name: 'Repeat It', stars: 0, state: 'locked' },
-      { n: 5, name: 'Fix the Mistake', stars: 0, state: 'locked' },
-    ],
   },
   general: {
     title: 'Our Community', subject: 'General Awareness',
@@ -202,13 +174,6 @@ export const TOPICS = {
       ['School Syllabus', ['People who help us', 'Our country'], 'Completed', 'done'],
       ['Kidsverse Plus', ['Staying safe', 'Money sense', 'Being a good neighbour'], 'In progress', 'progress'],
       ['Competition Edge', ['Current affairs'], 'Locked', 'locked'],
-    ],
-    steps: [
-      { n: 1, name: 'People Who Help', stars: 3, state: 'done' },
-      { n: 2, name: 'My Neighbourhood', stars: 3, state: 'done' },
-      { n: 3, name: 'Staying Safe', stars: 2, state: 'current' },
-      { n: 4, name: 'Money Sense', stars: 0, state: 'locked' },
-      { n: 5, name: 'Helping Out', stars: 0, state: 'locked' },
     ],
   },
 }

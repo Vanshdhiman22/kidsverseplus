@@ -1,0 +1,58 @@
+{
+ "arena-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "bresult-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "challenge-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "confidence-0": {
+  "source": "confidence-nova-hq-cutout.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "landing-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "league-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "login-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "nova-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "opponents-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "ourjourney-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "profile-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "result-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "setup-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ },
+ "welcome-0": {
+  "source": "hd/nova-guide.webp",
+  "note": "standalone placed on the detected face; pose is the sprite's, not the design's"
+ }
+}

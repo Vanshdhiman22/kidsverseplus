@@ -1,0 +1,93 @@
+{
+  "content_id": "fractions-equal-parts",
+  "content_version": "1.0",
+  "subject": "Mathematics",
+  "grade": "4",
+  "board": "CBSE",
+  "topic": "Fractions",
+  "subtopic": "Equal parts",
+  "learning_objective": "Understand fractions as equal parts",
+  "teaching_strategy": "visual",
+  "source_asset_id": "pizza_4_parts",
+
+  "mission": {
+    "code": "14",
+    "title": "Sharing Supersnack!",
+    "emoji": "✨",
+    "subtitle": "Let's explore fractions by sharing equally.",
+    "duration_min": [6, 8],
+    "xp": 20,
+    "rail": { "title": "Fraction Rescue", "blurb": "Help the crew share the supplies equally!" }
+  },
+
+  "discover": {
+    "selected": 0,
+    "contents": [
+      {
+        "content_no": 1,
+        "type": "equal_sharing",
+        "model": { "key": "pizza", "title": "1 Whole Energy Pizza", "caption": "This pizza will be shared equally." },
+        "crew": { "count": 4, "image": "/art/new/astronauts.webp" },
+        "prompt": { "statement": "Four astronauts share one pizza equally.", "question": "What do\nyou notice?" },
+        "think_about": { "text": "If something is shared equally, each person gets the same amount.", "emphasis": "equally" },
+        "hints": [
+          "Look at the pizza. How many equal parts could we make?",
+          "If we cut it into 4 equal parts, what fraction does each astronaut get?",
+          "Each astronaut gets one part out of four equal parts."
+        ],
+        "easier": { "enabled": true, "crew_count": 2, "statement": "Two astronauts share one pizza equally.", "label": "Sharing between 2" },
+        "nova": {
+          "speech": "Let's find equal parts! Look closely and share fairly. 👀",
+          "voice": "Let's find equal parts. Look closely at the pizza and share it fairly."
+        }
+      }
+    ]
+  },
+
+  "check": {
+    "selected": 0,
+    "questions": [
+      {
+        "question_id": "q_fraction_001",
+        "type": "visual_yes_no",
+        "title": "Spot the Mistake!",
+        "instruction": "Look carefully.\nAre these four parts equal?",
+        "split": [1, 1, 1, 1],
+        "models": [
+          { "key": "pizza", "label": "Pizza",
+            "hints": ["Check the size of each part.", "Look at the crust lengths.", "Compare the toppings area."],
+            "feedback_wrong": "Hmm, look again at the crust. Is every slice the same size? 🔍" },
+          { "key": "bar", "label": "Chocolate bar",
+            "hints": ["Check the size of each chunk.", "Look along the top edge.", "Compare the widest chunk with the narrowest."],
+            "feedback_wrong": "Hmm, look again at the chunks. Is every chunk the same width? 🔍" },
+          { "key": "line", "label": "Number line",
+            "hints": ["Check the size of each jump.", "Look at the gaps between the marks.", "Compare the longest jump with the shortest."],
+            "feedback_wrong": "Hmm, look again at the jumps. Is every jump the same length? 🔍" }
+        ],
+        "options": [
+          { "key": "yes", "label": "YES", "sub": "They are equal" },
+          { "key": "no",  "label": "NO",  "sub": "They are not equal" }
+        ],
+        "answer": "no",
+        "feedback_correct": "Great observation! Not all four slices are the same. ✦",
+        "xp_on_correct": 10,
+        "nova": { "speech": "I'm checking every slice! 🔍", "voice": "Look carefully. Are these four parts equal?" }
+      }
+    ]
+  },
+
+  "complete": {
+    "topic_label": "Fractions as equal parts",
+    "encouragement": "Great job! Keep it up!",
+    "nova": { "speech": "Awesome work, {name}! You're building real skills! 🌟" },
+    "outcomes": [
+      { "kind": "understood", "heading": "You understood", "skill": "Equal parts",
+        "description": "You can identify and understand equal parts with confidence." },
+      { "kind": "improved", "heading": "You improved", "skill": "Visual fractions",
+        "description": "You're getting better at representing fractions visually." },
+      { "kind": "next", "heading": "Next", "skill": "Fraction word problems",
+        "description": "Ready to apply your skills to real-world word problems?" }
+    ],
+    "next_step": "/journey"
+  }
+}

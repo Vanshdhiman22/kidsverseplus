@@ -155,11 +155,18 @@ const PARTIAL = typeof location !== 'undefined' && /(\?|&)poses=partial\b/.test(
 export const novaLifted = cutout => Object.prototype.hasOwnProperty.call(novaBoxes, cutout)
 export const novaSafe = slot => slot.layer !== 'fused' || novaLifted(slot.cutout)
 
+/* The Nova layers are generated files that get overwritten in place when the tools are
+   re-run, at the same path. The browser has no way to know the bytes changed, and served
+   a first, wrong cut of welcome-0 -- a ghost of the boy, shoes included -- long after the
+   file on disk was clean. The box is baked into the URL: a regenerated layer almost always
+   moves, and when it does not, bump NOVA_ART_V. */
+const NOVA_ART_V = 2
+
 /* Her sprite and where to draw it, for a screen that has been covered. */
 export function novaLayer(screenKey) {
   const slot = SLOTS[screenKey]
   const box = slot && slot.cutout ? novaBoxes[slot.cutout] : null
-  if (box) return { src: `/art/chars/nova/${slot.cutout}.webp`, box }
+  if (box) return { src: `/art/chars/nova/${slot.cutout}.webp?v=${NOVA_ART_V}-${box.join('.')}`, box }
   /* Some approved images have the child and Nova fused too tightly to split. When a
      selected avatar replaces that image, keep Nova in the scene with the clean guide
      sprite instead of silently dropping the companion. */

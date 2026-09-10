@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, Heart, BarChart3, Smile, ArrowRight } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, Heart, BarChart3 } from 'lucide-react'
 import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
@@ -83,13 +83,6 @@ export default function ParentLogin() {
             <Social label="Google"><svg width="24" height="24" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.4z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.8 9.4 6 12 6z"/></svg></Social>
             <Social label="Apple"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.8 1.3 10.3.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8s2 .8 3.4.8 2.3-1.3 3.1-2.5c1-1.4 1.4-2.8 1.4-2.9-.1 0-2.7-1-2.7-4.2zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg></Social>
             <Social label="Microsoft"><svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" fill="#F25022"/><rect x="13" y="2" width="9" height="9" fill="#7FBA00"/><rect x="2" y="13" width="9" height="9" fill="#00A4EF"/><rect x="13" y="13" width="9" height="9" fill="#FFB900"/></svg></Social>
-          </Item>
-          <Item v="soft">
-            <button className="card card-hover w-full h-[60px] px-6 flex items-center gap-4" style={{ borderColor: 'var(--primary)' }} onClick={() => { sfx.whoosh(); g.setAuthIntent('play'); nav(g.state.children?.length > 1 ? '/switch' : '/home') }}>
-              <Smile size={28} strokeWidth={2.2} className="text-primary-ink" />
-              <span className="text-[21px] font-extrabold text-primary-ink flex-1 text-left">Kid login</span>
-              <ArrowRight size={24} strokeWidth={2.6} className="text-primary-ink" />
-            </button>
           </Item>
         </Stack>
       </Panel>

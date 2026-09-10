@@ -6,22 +6,12 @@ import { Child } from '../components/Scene.jsx'
 import Page from '../components/Page.jsx'
 import { Panel } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import { LessonRail } from '../components/Stepper.jsx'
 import { Pizza } from '../components/LessonModels.jsx'
 import { useGame } from '../state/GameProvider.jsx'
+import { useContent, discoverContent } from '../content/index.js'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 
-export const LESSON_STEPS = [
-  { key: 'discover', label: 'DISCOVER', icon: Search }, { key: 'learn', label: 'LEARN', icon: BookOpen }, { key: 'interact', label: 'INTERACT', icon: Hand },
-  { key: 'think', label: 'THINK', icon: Lightbulb }, { key: 'practise', label: 'PRACTISE', icon: Pencil }, { key: 'apply', label: 'APPLY', icon: Rocket },
-]
-
-const HINTS = [
-  'Look at the pizza. How many equal parts could we make?',
-  'If we cut it into 4 equal parts, what fraction does each astronaut get?',
-  'Each astronaut gets one part out of four equal parts.',
-]
 
 export default function LessonDiscover() {
   const nav = useNavigate()
@@ -31,7 +21,13 @@ export default function LessonDiscover() {
      two is the case a child can usually see without counting, so it is the way back
      in when four parts will not land. */
   const [easier, setEasier] = React.useState(false)
-  const crew = easier ? 2 : 4
+  /* Everything this screen says comes from the learning package; the JSX is the template. */
+  const pkg = useContent('fractions-equal-parts')
+  const C = discoverContent(pkg)
+  const M = pkg.mission
+  const HINTS = C.hints
+  const crew = easier && C.easier?.enabled ? C.easier.crew_count : C.crew.count
+  const numberWord = n => ({ 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six' })[n] ?? String(n)
 
   return (
     <Page>
@@ -55,18 +51,17 @@ export default function LessonDiscover() {
         <div className="mt-6 px-5 flex items-start gap-3">
           <img src="/art/planet-sm.webp" alt="" className="w-[42px] shrink-0 floaty" style={{ filter: 'hue-rotate(150deg) saturate(1.4)' }} />
           <div className="leading-tight">
-            <div className="font-display font-extrabold text-[21px] text-ink uppercase">Fraction Rescue</div>
-            <div className="mt-0.5 font-display font-extrabold text-[14px] text-primary-ink uppercase tracking-wide">Stage 1 of 5</div>
+            <div className="font-display font-extrabold text-[21px] text-ink uppercase">{M.rail.title}</div>
           </div>
         </div>
-        <p className="mt-3 px-5 text-[15px] font-semibold text-ink-2 leading-snug">Help the crew share the supplies equally!</p>
+        <p className="mt-3 px-5 text-[15px] font-semibold text-ink-2 leading-snug">{M.rail.blurb}</p>
 
         <div className="mt-4 mx-4 card p-4">
           <div className="flex items-center justify-between">
             <span className="font-display font-extrabold text-[19px] text-primary-ink">Nova</span>
             <button className="text-primary-ink" onClick={() => sfx.success()} aria-label="Hear Nova"><Volume2 size={20} /></button>
           </div>
-          <p className="mt-1 text-[15px] font-bold text-ink-2 leading-snug">Let&apos;s find equal parts! Look closely and share fairly. &#128064;</p>
+          <p className="mt-1 text-[15px] font-bold text-ink-2 leading-snug">{C.nova.speech}</p>
         </div>
 
         {/* The cutout's own box already sits in this column, so it needs no offset. */}
@@ -86,7 +81,6 @@ export default function LessonDiscover() {
       </Panel>
 
       {/* top row: the six steps, then the child's own numbers */}
-      <LessonRail steps={LESSON_STEPS} current={1} className="absolute left-[324px] top-[46px]" compact />
       <motion.div className="absolute left-[1275px] top-[36px] pill h-[46px] px-4 gap-2" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
         <Star size={20} fill="currentColor" className="text-gold" />
         <span className="font-display font-extrabold text-[18px] text-ink">{xp.toLocaleString()} XP</span>
@@ -105,15 +99,15 @@ export default function LessonDiscover() {
       {/* the mission itself */}
       <Panel className="absolute left-[324px] top-[134px] w-[1085px] h-[671px] p-7">
         <div className="flex items-start gap-4">
-          <span className="w-[52px] h-[52px] rounded-[16px] grid place-items-center font-display font-extrabold text-[24px] text-white shrink-0" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }}>14</span>
+          <span className="w-[52px] h-[52px] rounded-[16px] grid place-items-center font-display font-extrabold text-[24px] text-white shrink-0" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }}>{M.code}</span>
           <div className="leading-tight">
             <div className="text-[13px] font-extrabold tracking-[0.14em] text-primary-ink">LEARNING MISSION</div>
-            <div className="mt-0.5 font-display font-extrabold text-[34px] text-ink">Sharing Supersnack! <span className="text-gold">&#10024;</span></div>
-            <div className="mt-1 text-[17px] font-semibold text-ink-2">Let&apos;s explore fractions by sharing equally.</div>
+            <div className="mt-0.5 font-display font-extrabold text-[34px] text-ink">{M.title} <span className="text-gold">{M.emoji}</span></div>
+            <div className="mt-1 text-[17px] font-semibold text-ink-2">{M.subtitle}</div>
           </div>
           <div className="ml-auto flex items-center gap-3 pt-1">
-            <span className="pill h-[50px] px-4 gap-2 text-[17px] font-bold text-ink-2"><Clock size={20} className="text-primary-ink" /> 6&ndash;8 min</span>
-            <span className="pill h-[50px] px-4 gap-2 text-[17px] font-extrabold text-primary-ink"><Star size={20} fill="currentColor" className="text-gold" /> +20 XP</span>
+            <span className="pill h-[50px] px-4 gap-2 text-[17px] font-bold text-ink-2"><Clock size={20} className="text-primary-ink" /> {M.duration_min[0]}&ndash;{M.duration_min[1]} min</span>
+            <span className="pill h-[50px] px-4 gap-2 text-[17px] font-extrabold text-primary-ink"><Star size={20} fill="currentColor" className="text-gold" /> +{M.xp} XP</span>
           </div>
         </div>
 
@@ -122,8 +116,8 @@ export default function LessonDiscover() {
           <div className="absolute left-[28px] top-[26px] w-[510px]">
             <motion.div key={crew} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
               <div className="mx-auto w-[330px] card px-5 py-3 text-center">
-                <div className="font-display font-extrabold text-[21px] text-ink uppercase"><span className="text-gold">&#10022;</span> 1 Whole Energy Pizza <span className="text-gold">&#10022;</span></div>
-                <div className="text-[15px] font-semibold text-ink-2">This pizza will be shared equally.</div>
+                <div className="font-display font-extrabold text-[21px] text-ink uppercase"><span className="text-gold">&#10022;</span> {C.model.title} <span className="text-gold">&#10022;</span></div>
+                <div className="text-[15px] font-semibold text-ink-2">{C.model.caption}</div>
               </div>
               <div className="mt-2"><Pizza parts={easier ? 2 : 1} /></div>
             </motion.div>
@@ -139,8 +133,8 @@ export default function LessonDiscover() {
           {/* The crew is one drawing of four, so the easier framing clips it to the
               two on the left rather than letting the words promise a crew of two
               beside a picture of four. */}
-          <motion.img src="/art/new/astronauts.webp" alt="" className="absolute right-[42px] top-[16px] w-[330px]"
-            style={{ clipPath: crew === 2 ? 'inset(0 50% 0 0)' : 'none' }}
+          <motion.img src={C.crew.image} alt="" className="absolute right-[42px] top-[16px] w-[330px]"
+            style={{ clipPath: crew < C.crew.count ? `inset(0 ${Math.round((1 - crew / C.crew.count) * 100)}% 0 0)` : 'none' }}
             initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0, y: [0, -6, 0] }}
             transition={{ x: { type: 'spring', stiffness: 150, damping: 20, delay: 0.25 }, opacity: { delay: 0.25 }, y: { duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 } }} />
           <motion.div className="absolute right-[30px] top-[152px] w-[352px] card p-5 text-center" initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
@@ -148,15 +142,15 @@ export default function LessonDiscover() {
                 picture that is still fading in on the other side of the arrow. */}
             <motion.p key={crew} className="text-[19px] font-bold text-ink-2 leading-snug"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
-              {crew === 2 ? 'Two' : 'Four'} astronauts share one pizza equally.
+              {easier && C.easier?.enabled ? C.easier.statement : C.prompt.statement}
             </motion.p>
-            <p className="mt-2 font-display font-extrabold text-[31px] leading-tight text-primary-ink">What do<br />you notice?</p>
+            <p className="mt-2 font-display font-extrabold text-[31px] leading-tight text-primary-ink">{C.prompt.question.split('\n').map((l, i) => <React.Fragment key={i}>{i > 0 && <br />}{l}</React.Fragment>)}</p>
           </motion.div>
         </div>
 
         <div className="mt-4 rounded-[20px] border-[1.5px] border-[var(--line)] bg-[var(--glass)] h-[62px] px-5 flex items-center gap-3">
           <span className="icon-orb w-[36px] h-[36px] shrink-0"><Lightbulb size={20} /></span>
-          <p className="text-[17px] font-semibold text-ink-2">Think about: If something is shared <span className="font-extrabold text-primary-ink">equally</span>, each person gets the same amount.</p>
+          <p className="text-[17px] font-semibold text-ink-2">Think about: {C.think_about.text.split(C.think_about.emphasis).map((part, i, arr) => <React.Fragment key={i}>{part}{i < arr.length - 1 && <span className="font-extrabold text-primary-ink">{C.think_about.emphasis}</span>}</React.Fragment>)}</p>
           <Button size="sm" arrow className="ml-auto h-[46px] px-6 uppercase text-[17px]" sound="whoosh" onClick={() => nav('/missions/fractions/spot-mistake')}>Continue</Button>
         </div>
       </Panel>
@@ -192,8 +186,8 @@ export default function LessonDiscover() {
         <div className="mt-auto">
           <div className="font-display font-extrabold text-[15px] text-ink">Still not sure?</div>
           <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug">Try an easier example to understand better.</p>
-          <Button variant="outline" size="sm" icon={<BarChart3 size={17} />} className="mt-2 w-full h-[46px] text-[15px]" onClick={() => { sfx.tap(); setEasier(e => !e) }}>{easier ? 'Back to four' : 'Easier Example'}</Button>
-          {easier && <div className="mt-1.5 text-center text-[12px] font-bold text-ink-3">Sharing between 2</div>}
+          {C.easier?.enabled && <Button variant="outline" size="sm" icon={<BarChart3 size={17} />} className="mt-2 w-full h-[46px] text-[15px]" onClick={() => { sfx.tap(); setEasier(e => !e) }}>{easier ? `Back to ${numberWord(C.crew.count).toLowerCase()}` : 'Easier Example'}</Button>}
+          {easier && C.easier?.enabled && <div className="mt-1.5 text-center text-[12px] font-bold text-ink-3">{C.easier.label}</div>}
         </div>
       </Panel>
 
