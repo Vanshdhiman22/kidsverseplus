@@ -24,7 +24,7 @@ const SPLIT = [0.34, 0.19, 0.29, 0.18]
 export default function SpotMistake() {
   const nav = useNavigate()
   const g = useGame(); const { streak, xpToday } = g.state.stats
-  const [pick, setPick] = useState(null)
+  const [picks, setPicks] = useState([])
   const [hints, setHints] = useState(1)
   const [wrong, setWrong] = useState(0)
   /* Offered right on the question, not a screen further on: a child who cannot see
@@ -36,10 +36,28 @@ export default function SpotMistake() {
   const Q = checkQuestion(pkg)
   const QM = Q.models[model % Q.models.length]
   const HINTS = QM.hints
-  const correct = pick === Q.answer
+  const answers = Array.isArray(Q.answer) ? Q.answer : [Q.answer]
+  const multi = Q.type === 'multi_select' || Q.type === 'pick_n' || Array.isArray(Q.answer)
+  const requiredCount = Q.required_count ?? answers.length
+  const answered = multi ? picks.length === requiredCount : picks.length === 1
+  const correct = answered && picks.length === answers.length && picks.every(v => answers.includes(v))
   const choose = v => {
-    setPick(v)
-    if (v === Q.answer) { sfx.success(); if (pick !== Q.answer) g.addXp(Q.xp_on_correct, 'Spot the mistake') } else { sfx.wrong(); setWrong(w => w + 1) }
+    if (!multi) {
+      const wasCorrect = correct
+      setPicks([v])
+      if (answers.includes(v)) { sfx.success(); if (!wasCorrect) g.addXp(Q.xp_on_correct, Q.title) } else { sfx.wrong(); setWrong(w => w + 1) }
+      return
+    }
+
+    const next = picks.includes(v)
+      ? picks.filter(key => key !== v)
+      : picks.length < requiredCount ? [...picks, v] : picks
+    setPicks(next)
+    if (next.length === requiredCount) {
+      const right = next.length === answers.length && next.every(key => answers.includes(key))
+      if (right) { sfx.success(); if (!correct) g.addXp(Q.xp_on_correct, Q.title) }
+      else { sfx.wrong(); setWrong(w => w + 1) }
+    } else sfx.tap()
   }
   return (
     <Page>
@@ -67,25 +85,27 @@ export default function SpotMistake() {
         </div>
         {/* Tucked into the corner beside NO rather than sitting between the picture
             and the answers, where it read as a third thing to choose. */}
-        <div className="absolute right-[26px] bottom-[26px] w-[182px] h-[150px] flex flex-col items-center justify-center gap-2">
-          <Button variant="outline" size="sm" icon={<RefreshCw size={17} />} className="w-full h-[62px] px-3 text-[15px] leading-tight"
-            onClick={() => { sfx.tap(); setModel(m => (m + 1) % Q.models.length) }}>Show it another way</Button>
-          <span className="text-[13px] font-bold text-ink-3 text-center">Showing: {QM.label}</span>
-        </div>
-        <div className="absolute left-[58px] bottom-[26px] flex gap-7">
+        {Q.models.length > 1 && (
+          <div className="absolute right-[26px] bottom-[26px] w-[182px] h-[150px] flex flex-col items-center justify-center gap-2">
+            <Button variant="outline" size="sm" icon={<RefreshCw size={17} />} className="w-full h-[62px] px-3 text-[15px] leading-tight"
+              onClick={() => { sfx.tap(); setModel(m => (m + 1) % Q.models.length) }}>Show it another way</Button>
+            <span className="text-[13px] font-bold text-ink-3 text-center">Showing: {QM.label}</span>
+          </div>
+        )}
+        <div className={cn('absolute left-[58px] bottom-[26px] grid gap-4', Q.options.length > 4 ? 'grid-cols-3 w-[704px]' : 'grid-cols-2 w-[688px]')}>
           {Q.options.map(({ key: v, label: big, sub }) => {
-            const on = pick === v
+            const on = picks.includes(v)
             /* A wrong pick should not leave the child guessing which one was right:
                once they have answered, NO carries its green tick and colour whether
                or not it was the card they tapped. Nothing is coloured before that. */
-            const right = v === Q.answer && pick !== null
-            const wrong = on && v !== Q.answer
+            const right = answered && answers.includes(v)
+            const wrong = answered && on && !answers.includes(v)
             /* `selected` paints its own lavender, which would sit on top of the green
                and make a right answer look merely picked, so once a card is marked
                right or wrong that colour is the one left to read. */
             return (
               <Card key={v} hover selected={on && !right && !wrong}
-                className={cn('relative w-[330px] h-[150px] flex flex-col items-center justify-center transition-colors', right && 'bg-[var(--success-bg)]', wrong && 'bg-[var(--danger-bg)]')}
+                className={cn('relative flex flex-col items-center justify-center text-center px-5 transition-colors', Q.options.length > 2 ? 'h-[104px]' : 'h-[150px]', right && 'bg-[var(--success-bg)]', wrong && 'bg-[var(--danger-bg)]')}
                 style={right ? { boxShadow: '0 0 0 3px #22c55e, 0 20px 44px -16px rgba(34,197,94,.5)' } : wrong ? { boxShadow: '0 0 0 3px #ef4444' } : undefined}
                 onClick={() => choose(v)}>
                 <span className="absolute top-4 right-4">
@@ -96,8 +116,8 @@ export default function SpotMistake() {
                       </motion.span>
                     : <span className="radio" />}
                 </span>
-                <span className={cn('font-display font-extrabold text-[46px] leading-none', right ? 'text-[var(--success-ink)]' : wrong ? 'text-[var(--danger-ink)]' : 'text-ink')}>{big}</span>
-                <span className="mt-1 text-[19px] font-semibold text-ink-2">{sub}</span>
+                <span className={cn('font-display font-extrabold leading-tight', Q.options.length > 2 ? 'text-[25px]' : 'text-[46px]', right ? 'text-[var(--success-ink)]' : wrong ? 'text-[var(--danger-ink)]' : 'text-ink')}>{big}</span>
+                {sub && <span className={cn('mt-1 font-semibold text-ink-2', Q.options.length > 2 ? 'text-[14px]' : 'text-[19px]')}>{sub}</span>}
               </Card>
             )
           })}
@@ -118,7 +138,7 @@ export default function SpotMistake() {
           })}
         </Stack>
         <AnimatePresence>
-          {pick && (
+          {answered && (
             <motion.div className="mt-4 card p-4" initial={{ opacity: 0, y: 20, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
               <div className="flex items-center gap-2"><img src="/art/22-novahead.webp" alt="" className="w-[40px]" /><span className="eyebrow text-[14px]">Nova's Feedback</span></div>
               <p className="mt-2 text-[16px] font-bold text-ink-2 leading-snug">{correct ? Q.feedback_correct : QM.feedback_wrong}</p>

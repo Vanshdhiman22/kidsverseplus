@@ -125,9 +125,23 @@ hints per model, not three per question.
 
 **`{name}`** in any text is replaced with the child's first name on the client.
 
-**Option keys are free-form.** Today the check screen renders 2 options; the template
-accepts 2–4. `answer` is the key of the correct one. Types beyond yes/no (an MCQ over
-fractions, a scenario) need a second question template on the client — not yet built.
+**Option keys and question formats are free-form.** The same answer-card design supports
+yes/no, true/false and ordinary single-choice questions by providing a string `answer`.
+For `multi_select` or `pick_n`, provide an array of answer keys plus `required_count`.
+The screen lays out 2–6 options automatically and enables Continue only when the complete
+answer is correct.
+
+```json
+{
+  "type": "multi_select",
+  "required_count": 4,
+  "options": [
+    { "key": "a", "label": "First fact", "sub": "Optional explanation" },
+    { "key": "b", "label": "Second fact" }
+  ],
+  "answer": ["a", "b", "c", "d"]
+}
+```
 
 **What the engine must not send.** Anything about the child: XP totals, mastery, the
 progress bars on Mission Complete, streaks. The client computes those from the child's
