@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useMotionValue, useSpring, useTransform, animate } from 'motion/react'
 import { Shirt, Scissors, Glasses, RotateCw, ArrowLeft, ArrowRight, Rocket, Star, ShieldCheck, Heart, Users, Lock } from 'lucide-react'
@@ -42,7 +42,9 @@ export default function Avatar() {
   const width = useTransform(srot, r => `${Math.max(0.2, Math.abs(Math.cos((r * Math.PI) / 180))) * 100}%`)
   const turn = d => { sfx.whoosh(); animate(rot, rot.get() + d, { type: 'spring', stiffness: 90, damping: 16 }) }
   const current = OUTFITS.find(o => o.id === outfit)
-  const sprite = spriteFor(outfit, face)
+  const sprite = spriteFor(outfit, face ?? 1)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   return (
     <Page>
@@ -54,7 +56,7 @@ export default function Avatar() {
           jacket at the same spot, so there is one figure now and rotate works from the
           first frame. */}
       <Cutout id="avatar-1" delay={0.2} amp={10} />
-      <TopBar back={false} center={<MiniSteps steps={['Avatar', 'Interests', 'Goals', 'Switch Student']} current={0} />} />
+      <TopBar back={false} center={<MiniSteps steps={['Avatar', 'Interests', 'Goals', 'Meet Nova']} current={0} />} />
       <Stack className="absolute left-[85px] top-[115px]" start={0.2}>
         <Item><h1 className="font-display font-extrabold text-[46px] leading-tight text-ink">Choose your explorer look <span className="text-gold">✦</span></h1></Item>
         <Item className="mt-1 text-[19px] font-semibold text-ink-3">Pick an avatar that looks like you or that you love!</Item>
@@ -130,7 +132,10 @@ export default function Avatar() {
       <TrustRow compact className="absolute left-[85px] top-[812px]" delay={0.3} items={[[ShieldCheck, '#22c55e', 'Safe & Secure', "Your child's data is always protected"], [Heart, '#ec4899', 'Loved by Kids', 'Designed for joy and growth'], [Users, '#3b82f6', 'Trusted by Parents', 'Real progress. Real results.']]} />
       <motion.div className="absolute left-[1085px] top-[795px] flex items-center gap-5" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <Button variant="ghost" size="md" icon={<ArrowLeft size={24} strokeWidth={2.6} />} className="h-[76px] px-9 text-[22px]" onClick={() => nav(-1)}>Back</Button>
-        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[360px] uppercase" sound="whoosh" onClick={() => nav('/onboarding/interests')}>This is me</Button>
+        <div className="flex flex-col items-end gap-1">
+          {error && <span className="max-w-[360px] text-right text-[14px] font-bold text-red-500">{error}</span>}
+          <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[360px] uppercase" sound="whoosh" disabled={!face || busy} onClick={async () => { setError(''); setBusy(true); try { await g.saveAvatar(); nav('/onboarding/interests') } catch (e) { setError(e.message) } finally { setBusy(false) } }}>{busy ? 'Saving…' : 'This is me'}</Button>
+        </div>
       </motion.div>
     </Page>
   )

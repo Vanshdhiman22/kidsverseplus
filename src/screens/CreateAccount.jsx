@@ -41,6 +41,8 @@ export default function CreateAccount() {
   const [show, setShow] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [tried, setTried] = useState(false)
+  const [serverError, setServerError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email.trim())
   const pwOk = pw.length >= 6
@@ -55,14 +57,13 @@ export default function CreateAccount() {
     return null
   }
 
-  const create = () => {
+  const create = async () => {
     setTried(true)
     if (!ready) { sfx.wrong?.(); return }
-    sfx.whoosh()
-    /* Remember who the account belongs to, then hand over to the child steps. */
-    g.setProfile({ parentEmail: email.trim() })
-    g.setAuthIntent?.('parent')
-    nav('/onboarding/child')
+    setServerError(''); setBusy(true)
+    try { nav(await g.signUp(email, pw)) }
+    catch (error) { setServerError(error.message); sfx.wrong?.() }
+    finally { setBusy(false) }
   }
 
   return (
@@ -107,7 +108,8 @@ export default function CreateAccount() {
             {tried && !agreed && <span className="block mt-1 text-[15px] font-bold text-red-500">Please confirm to continue.</span>}
           </Item>
 
-          <Item v="pop"><Button size="md" arrow icon={<User size={24} strokeWidth={2.4} />} className="w-full h-[62px] uppercase text-[21px]" sound="whoosh" onClick={create}>Create account</Button></Item>
+          {serverError && <Item v="soft"><div className="text-[15px] font-bold text-red-500">{serverError}</div></Item>}
+          <Item v="pop"><Button size="md" arrow icon={<User size={24} strokeWidth={2.4} />} className="w-full h-[62px] uppercase text-[21px]" sound="whoosh" disabled={busy} onClick={create}>{busy ? 'Creating…' : 'Create account'}</Button></Item>
           <Item v="soft" className="text-center text-[18px] font-bold text-ink-3">Already have one? <button className="text-primary-ink font-extrabold hover:underline" onClick={() => nav('/parent/login')}>Sign in</button></Item>
         </Stack>
       </Panel>

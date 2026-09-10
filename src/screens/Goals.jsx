@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import Scene, { Child } from '../components/Scene.jsx'
@@ -59,6 +59,8 @@ export default function Goals() {
   const g = useGame()
   const { name } = g.state.profile
   const chosen = g.state.profile.goals ?? []
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
   /* Pick as many as you like. "Let Nova decide" is the one exception: it means
      "I have not chosen", so it clears the rest and any other pick clears it. */
   const pick = id => {
@@ -108,7 +110,8 @@ export default function Goals() {
       <Child screen="goals" delay={0.5} />
       <div className="absolute left-[1462px] top-[560px]"><SpeechBubble tail="left" text="We can change this anytime. ✨" delay={0.3} className="w-[170px] text-[17px]" /></div>
       <motion.div className="absolute left-[945px] top-[798px]" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow className="w-[520px] h-[98px] uppercase text-[30px]" sound="whoosh" onClick={() => nav('/onboarding/nova')}>Continue</Button>
+        {error && <div className="absolute bottom-full right-0 mb-2 w-[520px] text-right text-[14px] font-bold text-red-500">{error}</div>}
+        <Button size="lg" arrow className="w-[520px] h-[98px] uppercase text-[30px]" disabled={!chosen.length || busy} sound="whoosh" onClick={async () => { setError(''); setBusy(true); try { await g.saveGoals(); nav('/onboarding/nova') } catch (e) { setError(e.message) } finally { setBusy(false) } }}>{busy ? 'Saving…' : 'Continue'}</Button>
       </motion.div>
     </Page>
   )

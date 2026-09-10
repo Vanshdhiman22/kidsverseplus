@@ -2,6 +2,9 @@ import React, { createContext, useContext, useEffect, useMemo, useReducer } from
 import { setSoundEnabled } from '../lib/sound.js'
 import { setVoiceEnabled } from '../lib/voice.js'
 
+import { backend, onboardingRoute, saveAvatarChoice, saveGoalKeys, saveInterestKeys } from '../lib/api.js'
+import { emptyProfile, emptyStats, emptyProgress, beginChild, beginRemoteChild, finishChild, hydrateRemoteFamily, selectChild, migrateFamily, loginRoute } from './family.js'
+
 const KEY = 'kidsverse-plus-v2'
 /* A finished mission pays about 45 XP; 400 per level keeps a level within a few sittings. */
 export const XP_PER_LEVEL = 400
@@ -9,29 +12,15 @@ export const levelOf = xp => 1 + Math.floor(xp / XP_PER_LEVEL)
 export const levelPct = xp => Math.round(((xp % XP_PER_LEVEL) / XP_PER_LEVEL) * 100)
 
 const initial = {
-  profile: { name: 'Aarav', grade: '4', board: 'CBSE', face: 1, outfit: 'explorer', interests: ['space', 'animals', 'art'], goals: ['school'], firstVisit: true },
-  /* `battles`, `reading` and `bestStreak` exist because the Profile screen was already
-     showing all three as if they were tracked -- 6 battles, 18 reading sessions, a best
-     streak of 12 -- while nothing in the app counted any of them. */
-  stats: { xp: 1250, xpToday: 240, streak: 7, coins: 320, badges: 12, day: 43, battles: 0, reading: 0, bestStreak: 7 },
+  profile: emptyProfile,
+  stats: emptyStats,
   settings: { theme: 'light', sound: true, music: true, voice: true, motion: true, lang: 'en', readAloud: true, screenFit: 'auto', zoom: 1 },
-  /* `worldDone` is lessons finished per world; the Journey map turns it into which
-     station the child is parked at, so finishing a mission drives the car forward. */
-  /* `lastTest` is the run the child just finished. The result screen showed it and threw
-     it away, so the Parent Zone had nothing to report and printed invented scores. */
-  progress: { lessonStage: 1, quizzesDone: 0, mastery: 68, world: 'maths', worldDone: {}, journeySeen: {}, lastTest: null },
-  /* The family. `profile` is whichever child is signed in; the rest wait here
-     with their own progress so switching does not overwrite anyone. */
-  children: [
-    { id: 'aarav', name: 'Aarav', grade: '4', board: 'CBSE', face: 1, outfit: 'explorer', img: '/art/crops/aarav-card.webp', xp: 1250, streak: 7, mastery: 72 },
-    /* face has to match the child's own card art, or the parent opens Mira's page and
-       finds a boy's portrait beside her name. kid4 is the bob-and-headband girl in
-       mira.webp; kid2 is the remaining boy face for Vihaan. kid3 is a girl and was
-       sitting on him. */
-    { id: 'mira', name: 'Mira', grade: '2', board: 'CBSE', face: 4, outfit: 'sprint', img: '/art/crops/mira.webp', xp: 640, streak: 3, mastery: 48 },
-    { id: 'vihaan', name: 'Vihaan', grade: '1', board: 'CBSE', face: 2, outfit: 'ranger', img: '/art/crops/vihaan.webp', xp: 310, streak: 2, mastery: 36 },
-  ],
-  activeChildId: 'aarav',
+  progress: emptyProgress,
+  children: [],
+  activeChildId: null,
+  creatingChild: false,
+  familyVersion: 1,
+  accounts: {},
   parentLock: { pin: null },
   /* Why the login screen was opened: 'play' continues into the child's setup,
      'parent' goes straight to the grown-up side after signing in. */
@@ -41,7 +30,7 @@ const initial = {
 
 function load() {
   try {
-    const s = JSON.parse(localStorage.getItem(KEY))
+    const s = migrateFamily(JSON.parse(localStorage.getItem(KEY)))
     if (s) return {
       ...initial, ...s,
       profile: { ...initial.profile, ...s.profile }, stats: { ...initial.stats, ...s.stats },
@@ -89,20 +78,11 @@ function reducer(state, a) {
     case 'notice': return { ...state, notices: [...state.notices, { id: ++seq, message: a.message }] }
     case 'clearNotice': return { ...state, notices: state.notices.filter(n => n.id !== a.id) }
     case 'pin': return { ...state, parentLock: { pin: a.pin } }
-    case 'switchChild': {
-      const kids = state.children ?? []
-      const next = kids.find(c => c.id === a.id)
-      if (!next || a.id === state.activeChildId) return state
-      // bank the signed-in child's numbers before handing over
-      const saved = kids.map(c => c.id === state.activeChildId
-        ? { ...c, name: state.profile.name, grade: state.profile.grade, board: state.profile.board,
-            face: state.profile.face, outfit: state.profile.outfit, xp: state.stats.xp, streak: state.stats.streak }
-        : c)
-      return { ...state, children: saved, activeChildId: a.id,
-        profile: { ...state.profile, name: next.name, grade: next.grade, board: next.board, face: next.face, outfit: next.outfit },
-        stats: { ...state.stats, xp: next.xp, streak: next.streak },
-        progress: { ...state.progress, mastery: next.mastery ?? state.progress.mastery } }
-    }
+    case 'switchChild': return selectChild(state, a.id)
+    case 'addChild': return beginChild(state, a.name)
+    case 'completeChild': return finishChild(state, a.id)
+    case 'remoteFamily': return hydrateRemoteFamily(state, a.email, a.students, a.characters)
+    case 'remoteChild': return beginRemoteChild(state, a.student)
     case 'authIntent': return { ...state, authIntent: a.intent }
     case 'reset': return { ...initial, settings: state.settings }
     default: return state
@@ -141,6 +121,34 @@ export function GameProvider({ children }) {
     clearNotice: id => dispatch({ type: 'clearNotice', id }),
     setParentPin: pin => dispatch({ type: 'pin', pin }),
     setAuthIntent: intent => dispatch({ type: 'authIntent', intent }),
+    signUp: async (email, password) => {
+      await backend.signup(email, password)
+      dispatch({ type: 'remoteFamily', email, students: [] })
+      return '/onboarding/child'
+    },
+    signIn: async (email, password) => {
+      await backend.login(email, password)
+      const [data, catalog] = await Promise.all([backend.students(), backend.avatarCharacters()])
+      const students = data.students ?? []
+      const next = hydrateRemoteFamily(state, email, students, catalog.characters ?? [])
+      dispatch({ type: 'remoteFamily', email, students, characters: catalog.characters ?? [] })
+      if (students.length === 1 && !students[0].onboarding_completed) {
+        const status = await backend.onboardingStatus(students[0].id)
+        return onboardingRoute(status.next_step)
+      }
+      return loginRoute(next, state.authIntent === 'parent')
+    },
+    addChild: async name => {
+      const student = await backend.createStudent(name.trim())
+      dispatch({ type: 'remoteChild', student })
+      return student
+    },
+    completeChild: () => dispatch({ type: 'completeChild', id: crypto.randomUUID() }),
+    saveGradeBoard: () => backend.saveGradeBoard(state.activeChildId, state.profile.grade, state.profile.board),
+    saveAvatar: () => saveAvatarChoice(state.activeChildId, state.profile.face, state.profile.outfit),
+    saveInterests: () => saveInterestKeys(state.activeChildId, state.profile.interests),
+    saveGoals: () => saveGoalKeys(state.activeChildId, state.profile.goals),
+    greetNova: () => backend.greetNova(state.activeChildId),
     switchChild: id => dispatch({ type: 'switchChild', id }),
     reset: () => dispatch({ type: 'reset' }),
     toggleTheme: () => dispatch({ type: 'settings', patch: { theme: state.settings.theme === 'dark' ? 'light' : 'dark' } }),

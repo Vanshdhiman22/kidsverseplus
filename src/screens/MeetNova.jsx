@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { MessageSquare, Heart, Star, AudioLines, ChevronDown, Volume2, ShieldCheck, Users } from 'lucide-react'
@@ -28,6 +28,8 @@ export default function MeetNova() {
   const nav = useNavigate()
   const g = useGame()
   const name = g.state.profile.name
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
   return (
     <Page>
       <Scene name="nova" />
@@ -56,7 +58,8 @@ export default function MeetNova() {
           ))}
         </Stack>
         <Item v="pop" className="mt-4 flex justify-center"><span className="pill h-[44px] px-6 gap-3 text-[15px] font-extrabold tracking-[0.14em] text-ink-2 uppercase"><Heart size={18} className="text-pink-500" fill="currentColor" /> You + Nova <ChevronDown size={16} /></span></Item>
-        <Item v="pop" className="mt-4"><Button size="lg" arrow className="w-full h-[80px] uppercase text-[28px]" sound="unlock" onClick={() => { g.setProfile({ firstVisit: true }); nav('/welcome') }}>Start my journey</Button></Item>
+        {error && <Item className="mt-2 text-[14px] font-bold text-red-500">{error}</Item>}
+        <Item v="pop" className="mt-4"><Button size="lg" arrow className="w-full h-[80px] uppercase text-[28px]" sound="unlock" disabled={busy} onClick={async () => { setError(''); setBusy(true); try { await g.greetNova(); g.setProfile({ firstVisit: true }); g.completeChild(); nav('/welcome') } catch (e) { setError(e.message) } finally { setBusy(false) } }}>{busy ? 'Starting…' : 'Start my journey'}</Button></Item>
         <Item v="pop" className="mt-3 flex justify-center"><Button variant="ghost" size="md" icon={<Volume2 size={22} />} className="w-[300px] h-[54px] text-[19px]" onClick={() => sfx.success()}>Hear Nova speak</Button></Item>
       </Stack>
 

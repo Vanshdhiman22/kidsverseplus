@@ -32,6 +32,8 @@ export default function ParentRail({ children }) {
   const g = useGame()
   const { name, grade, board, face } = g.state.profile
   const kids = g.state.children ?? []
+  const items = ITEMS.map(item => item.to === '/switch' && kids.length < 2
+    ? { ...item, label: 'Add a child', to: '/onboarding/child' } : item)
 
   return (
     <motion.aside className="absolute top-0 bottom-0 z-20 flex flex-col pt-6 pb-5 glass glass-soft"
@@ -42,7 +44,7 @@ export default function ParentRail({ children }) {
       <div className="px-1"><Logo variant="planet" tagline="PARENT ZONE" /></div>
 
       {/* who you are looking at, and one tap to change it */}
-      <button className="mt-5 card p-2 flex items-center gap-2 text-left" onClick={() => { sfx.tap(); nav('/switch', { state: { from: 'parent' } }) }}>
+      <button className="mt-5 card p-2 flex items-center gap-2 text-left" disabled={kids.length < 2} onClick={() => { sfx.tap(); nav('/switch', { state: { from: 'parent' } }) }}>
         <img src={`/art/kid${face}-face-sm.webp`} alt="" className="w-[42px] h-[42px] rounded-full object-cover border-2 border-white shrink-0" />
         <span className="flex-1 leading-tight min-w-0">
           <span className="block font-display font-extrabold text-[17px] text-ink truncate">{name}</span>
@@ -55,7 +57,7 @@ export default function ParentRail({ children }) {
       )}
 
       <nav className="mt-4 flex flex-col gap-1">
-        {ITEMS.map((it, i) => {
+        {items.map((it, i) => {
           const on = pathname === it.to
           return (
             <motion.button key={it.label}
