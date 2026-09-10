@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Rocket, Trophy, Home, Check, Flag, TrendingUp, ArrowRight, Star } from 'lucide-react'
 import Scene, { Child } from '../components/Scene.jsx'
@@ -28,6 +28,7 @@ const Chunky = ({ children, className, delay = 0 }) => (
 
 export default function MissionComplete() {
   const nav = useNavigate()
+  const location = useLocation()
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats; const level = g.level
   const ac = useAccent()
   /* Words from the package. XP, the mastery ring and the skill bars are about the child,
@@ -35,6 +36,12 @@ export default function MissionComplete() {
   const pkg = useContent('fractions-equal-parts')
   const K = pkg.complete
   const XP = pkg.mission.xp
+  let savedResult = {}
+  try { savedResult = JSON.parse(sessionStorage.getItem('kv:last-mission-score') ?? '{}') } catch { savedResult = {} }
+  const score = Number(location.state?.score ?? savedResult.score ?? 0)
+  const total = Number(location.state?.total ?? savedResult.total ?? Math.min(pkg.check.questions.length, 6))
+  const scoreRatio = total > 0 ? score / total : 0
+  const scorePercent = Math.round(scoreRatio * 100)
   const OUTCOME = { understood: [Trophy, '#7c3aed'], improved: [TrendingUp, '#3b82f6'], next: [Flag, '#22c55e'] }
   useEffect(() => { const t = setTimeout(() => sfx.unlock(), 300); const t2 = setTimeout(() => { g.addXp(XP, 'Fractions mission'); g.advanceStation({ world: MISSION_WORLD, base: WORLD_DONE[MISSION_WORLD] ?? 0, per: STATION_PER, total: STATION_TOTAL }) }, 1400); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
   return (
@@ -53,8 +60,8 @@ export default function MissionComplete() {
       <div className="absolute left-[40px] top-[540px]"><SpeechBubble tail="right" delay={0.3} className="w-[200px] text-[17px]">{fill(K.nova.speech, { name }).split(name).map((part, i, arr) => <React.Fragment key={i}>{part}{i < arr.length - 1 && <span className="text-primary-ink font-extrabold">{name}</span>}</React.Fragment>)}</SpeechBubble></div>
 
       <Panel className="absolute left-[930px] top-[110px] w-[655px] h-[240px] p-6 flex items-center gap-8" initial="hidden" animate="show">
-        <div className="relative"><div className="label-caps absolute -top-1 left-0 whitespace-nowrap">Your Progress</div><Ring size={180} stroke={16} value={0.8} id="mc" delay={0.27} className="mt-6"><div className="text-center leading-none"><div className="font-display font-extrabold text-[44px] text-ink"><Counter to={80} delay={0.27} />%</div><div className="text-[15px] font-bold text-ink-3 mt-1">Mastered</div></div></Ring></div>
-        <div className="flex-1"><div className="font-display font-extrabold text-[26px] text-ink">{K.topic_label}</div><div className="text-[20px] font-semibold text-ink-2">{K.encouragement}</div></div>
+        <div className="relative"><div className="label-caps absolute -top-1 left-0 whitespace-nowrap">Your Score</div><Ring size={180} stroke={16} value={scoreRatio} id="mc" delay={0.27} className="mt-6"><div className="text-center leading-none"><div className="font-display font-extrabold text-[44px] text-ink"><Counter to={scorePercent} delay={0.27} />%</div><div className="text-[15px] font-bold text-ink-3 mt-1">{score}/{total} correct</div></div></Ring></div>
+        <div className="flex-1"><div className="font-display font-extrabold text-[26px] text-ink">{K.topic_label}</div><div className="mt-2 font-display font-extrabold text-[32px] text-primary-ink">Score: {score}/{total}</div><div className="text-[18px] font-semibold text-ink-2">{K.encouragement}</div></div>
       </Panel>
       <Stack className="absolute left-[850px] top-[365px] flex gap-[18px]" start={1} delay={0.12}>
         {K.outcomes.map(o => { const [I, c0] = OUTCOME[o.kind] ?? OUTCOME.next; return [I, c0, o.heading, o.skill, o.description, o.kind === 'next' ? null : 6] }).map(([I, c0, t, s, d, v], i) => { const c = ac(c0); return (

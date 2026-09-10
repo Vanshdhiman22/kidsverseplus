@@ -25,6 +25,8 @@ export default function SpotMistake() {
   const nav = useNavigate()
   const g = useGame(); const { streak, xpToday } = g.state.stats
   const [picks, setPicks] = useState([])
+  const [locked, setLocked] = useState(false)
+  const [score, setScore] = useState(0)
   const [hints, setHints] = useState(1)
   const [wrong, setWrong] = useState(0)
   /* Offered right on the question, not a screen further on: a child who cannot see
@@ -44,10 +46,11 @@ export default function SpotMistake() {
   const answered = multi ? picks.length === requiredCount : picks.length === 1
   const correct = answered && picks.length === answers.length && picks.every(v => answers.includes(v))
   const choose = v => {
+    if (locked) return
     if (!multi) {
-      const wasCorrect = correct
       setPicks([v])
-      if (answers.includes(v)) { sfx.success(); if (!wasCorrect) g.addXp(Q.xp_on_correct, Q.title) } else { sfx.wrong(); setWrong(w => w + 1) }
+      setLocked(true)
+      if (answers.includes(v)) { sfx.success(); setScore(value => value + 1); g.addXp(Q.xp_on_correct, Q.title) } else { sfx.wrong(); setWrong(w => w + 1) }
       return
     }
 
@@ -57,7 +60,8 @@ export default function SpotMistake() {
     setPicks(next)
     if (next.length === requiredCount) {
       const right = next.length === answers.length && next.every(key => answers.includes(key))
-      if (right) { sfx.success(); if (!correct) g.addXp(Q.xp_on_correct, Q.title) }
+      setLocked(true)
+      if (right) { sfx.success(); setScore(value => value + 1); g.addXp(Q.xp_on_correct, Q.title) }
       else { sfx.wrong(); setWrong(w => w + 1) }
     } else sfx.tap()
   }
@@ -100,8 +104,8 @@ export default function SpotMistake() {
             /* A wrong pick should not leave the child guessing which one was right:
                once they have answered, NO carries its green tick and colour whether
                or not it was the card they tapped. Nothing is coloured before that. */
-            const right = answered && answers.includes(v)
-            const wrong = answered && on && !answers.includes(v)
+            const right = locked && answers.includes(v)
+            const wrong = locked && on && !answers.includes(v)
             /* `selected` paints its own lavender, which would sit on top of the green
                and make a right answer look merely picked, so once a card is marked
                right or wrong that colour is the one left to read. */
@@ -109,7 +113,7 @@ export default function SpotMistake() {
               <Card key={v} hover selected={on && !right && !wrong}
                 className={cn('relative flex flex-col items-center justify-center text-center px-5 transition-colors', Q.options.length > 2 ? 'h-[104px]' : 'h-[150px]', right && 'bg-[var(--success-bg)]', wrong && 'bg-[var(--danger-bg)]')}
                 style={right ? { boxShadow: '0 0 0 3px #22c55e, 0 20px 44px -16px rgba(34,197,94,.5)' } : wrong ? { boxShadow: '0 0 0 3px #ef4444' } : undefined}
-                onClick={() => choose(v)}>
+                aria-disabled={locked} onClick={() => choose(v)}>
                 <span className="absolute top-4 right-4">
                   {right || wrong
                     ? <motion.span initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }}
@@ -140,7 +144,7 @@ export default function SpotMistake() {
           })}
         </Stack>
         <AnimatePresence>
-          {answered && (
+          {locked && (
             <motion.div className="mt-4 card p-4" initial={{ opacity: 0, y: 20, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
               <div className="flex items-center gap-2"><img src="/art/22-novahead.webp" alt="" className="w-[40px]" /><span className="eyebrow text-[14px]">Nova's Feedback</span></div>
               <p className="mt-2 text-[16px] font-bold text-ink-2 leading-snug">{correct ? Q.feedback_correct : QM.feedback_wrong}</p>
@@ -162,9 +166,14 @@ export default function SpotMistake() {
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => hints < HINTS.length && (sfx.unlock(), setHints(hints + 1))}><Lightbulb size={22} className="text-gold" fill="currentColor" /> Hint</button>
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => sfx.tap()}><Headphones size={22} className="text-primary-ink" /> Listen</button>
       </motion.div>
-      <motion.div className="absolute" style={{ ...bleedR(24), ...safeB(69) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!correct} sound="whoosh" onClick={() => {
-        if (questionIndex === questions.length - 1) { nav('/missions/fractions/complete'); return }
-        setQuestionIndex(i => i + 1); setPicks([]); setHints(1); setWrong(0); setModel(0)
+      <motion.div className="absolute" style={{ ...bleedR(24), ...safeB(69) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!locked} sound="whoosh" onClick={() => {
+        if (questionIndex === questions.length - 1) {
+          const result = { score, total: questions.length }
+          sessionStorage.setItem('kv:last-mission-score', JSON.stringify(result))
+          nav('/missions/fractions/complete', { state: result })
+          return
+        }
+        setQuestionIndex(i => i + 1); setPicks([]); setLocked(false); setHints(1); setWrong(0); setModel(0)
       }}>{questionIndex === questions.length - 1 ? 'Finish Mission' : 'Next Question'}</Button></motion.div>
     </Page>
   )
