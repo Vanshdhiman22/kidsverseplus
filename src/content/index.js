@@ -15,9 +15,12 @@
  * sees an empty screen because a service was slow. */
 import { useEffect, useState } from 'react'
 import fractions from './fractions-equal-parts.json'
+import additionStudio from './packages/addition-introduction.json'
 import { normalizeContentPackage } from './normalize.js'
 
-const BUNDLED = { 'fractions-equal-parts': fractions }
+const addition = normalizeContentPackage(additionStudio, 'addition-introduction', fractions)
+const BUNDLED = { 'fractions-equal-parts': fractions, 'addition-introduction': addition }
+export const ACTIVE_CONTENT_ID = import.meta.env.VITE_LEARNING_PACKAGE_ID || 'addition-introduction'
 const API = import.meta.env.VITE_CONTENT_API
 
 const cache = new Map()

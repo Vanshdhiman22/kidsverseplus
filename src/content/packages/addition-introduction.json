@@ -1,0 +1,221 @@
+{
+  "curriculum": {
+    "grade": "Grade 1",
+    "board": "CBSE",
+    "subject": "Mathematics",
+    "topic": "Addition Concepts"
+  },
+  "concept": {
+    "name": "Introduction to Addition",
+    "learning_objective": "To understand that addition means putting two groups of objects together to find the total sum."
+  },
+  "theme_interest": "Everyday Life",
+  "content_type": "concept_package",
+  "learning_content": {
+    "teaching_method": "We use the 'Combine and Count' method. Imagine you have a collection of items. You count the first group, then the second group, and finally, you count everything all together to find the grand total.",
+    "image_url": "/art/generated/addition-introduction.jpg",
+    "image_prompt": "A friendly cartoon robot named Nova standing in a bright sunny kitchen with two baskets of colorful fruits, counting them to show addition.",
+    "explanation": "Addition is like being a helper! Imagine Nova has 3 apples in one basket and 2 oranges in another. To find out how many pieces of fruit Nova has in total, we combine them into one pile: 3 + 2 = 5. By counting the whole pile, we find the sum. It is simply putting things together to see how many we have altogether.",
+    "hints": [
+      "Addition is about joining two groups into one big group.",
+      "Count the first set, then keep counting the second set starting from the next number.",
+      "The answer you get is called the total or the sum."
+    ],
+    "nova_script": "Hi there! I am Nova! Ready to do some counting? Let's join groups together to see how many we have!",
+    "nova_feedback": "Great job! You are getting the hang of combining groups!"
+  },
+  "check_for_understanding": [
+    {
+      "question": "If you have 2 red balls and 1 blue ball, how many balls do you have altogether?",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": "3",
+      "difficulty": "Easy",
+      "explanation": "You have 2 balls in one hand and 1 in the other. 2 + 1 = 3.",
+      "xp": 10,
+      "marks": 1,
+      "novaFeedback": "Exactly right! You combined them perfectly!"
+    },
+    {
+      "question": "What does the plus sign (+) mean in mathematics?",
+      "options": [
+        "To take away",
+        "To share",
+        "To put together",
+        "To hide"
+      ],
+      "answer": "To put together",
+      "difficulty": "Easy",
+      "explanation": "The plus sign (+) tells us to add or combine groups to find a total.",
+      "xp": 10,
+      "marks": 1,
+      "novaFeedback": "Spot on! That is exactly what adding is."
+    },
+    {
+      "question": "If Nova has 4 stickers and gets 2 more, how many does she have now?",
+      "options": [
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "answer": "6",
+      "difficulty": "Medium",
+      "explanation": "Starting at 4 and counting 2 more (5, 6) gives us 6.",
+      "xp": 15,
+      "marks": 2,
+      "novaFeedback": "You are a math superstar!"
+    }
+  ],
+  "test_questions": {
+    "one_time": false,
+    "questions": [
+      {
+        "question": "3 toys plus 2 toys makes how many toys?",
+        "options": [
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "answer": "5",
+        "difficulty": "Easy",
+        "explanation": "3 + 2 = 5.",
+        "xp": 20,
+        "marks": 2,
+        "novaFeedback": "Brilliant work!"
+      },
+      {
+        "question": "If you have 5 pencils and add 0 pencils, how many do you have?",
+        "options": [
+          "0",
+          "4",
+          "5",
+          "6"
+        ],
+        "answer": "5",
+        "difficulty": "Easy",
+        "explanation": "Adding zero means the amount stays the same.",
+        "xp": 20,
+        "marks": 2,
+        "novaFeedback": "Smart thinking!"
+      },
+      {
+        "question": "Which sentence describes addition?",
+        "options": [
+          "Splitting a group apart",
+          "Taking things away",
+          "Putting groups together",
+          "Counting only one group"
+        ],
+        "answer": "Putting groups together",
+        "difficulty": "Medium",
+        "explanation": "Addition is the process of calculating the total of two or more numbers or amounts.",
+        "xp": 20,
+        "marks": 2,
+        "novaFeedback": "You really understand the concept!"
+      },
+      {
+        "question": "Nova found 4 flowers, then found 4 more. How many flowers did Nova find?",
+        "options": [
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
+        "answer": "8",
+        "difficulty": "Medium",
+        "explanation": "4 + 4 equals 8.",
+        "xp": 20,
+        "marks": 2,
+        "novaFeedback": "Fantastic calculation!"
+      },
+      {
+        "question": "What is 1 + 6?",
+        "options": [
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
+        "answer": "7",
+        "difficulty": "Medium",
+        "explanation": "When you have 6 and add 1 more, you get 7.",
+        "xp": 20,
+        "marks": 2,
+        "novaFeedback": "Excellent counting!"
+      }
+    ]
+  },
+  "battle_questions": [
+    {
+      "question": "Nova has 5 cookies and her friend gives her 3 more. How many cookies does she have?",
+      "options": [
+        "7",
+        "8",
+        "9",
+        "10"
+      ],
+      "answer": "8",
+      "difficulty": "Medium",
+      "explanation": "5 + 3 = 8.",
+      "xp": 50,
+      "marks": 5,
+      "novaFeedback": "That is a lot of cookies! Great job."
+    },
+    {
+      "question": "Choose the correct addition sum for 2 cars and 4 cars.",
+      "options": [
+        "2 + 4 = 6",
+        "2 + 2 = 4",
+        "4 + 4 = 8",
+        "1 + 4 = 5"
+      ],
+      "answer": "2 + 4 = 6",
+      "difficulty": "Medium",
+      "explanation": "Combining 2 and 4 gives a total of 6.",
+      "xp": 50,
+      "marks": 5,
+      "novaFeedback": "You nailed it!"
+    },
+    {
+      "question": "If you add 2 books and 7 books, what is the total?",
+      "options": [
+        "8",
+        "9",
+        "10",
+        "11"
+      ],
+      "answer": "9",
+      "difficulty": "Hard",
+      "explanation": "2 + 7 = 9.",
+      "xp": 50,
+      "marks": 5,
+      "novaFeedback": "Impressive! You are getting faster at this!"
+    }
+  ],
+  "challenge": {
+    "one_time": false,
+    "questions": [
+      {
+        "question": "Nova has three sets of items: 2 blocks, 1 block, and 2 blocks. How many blocks does she have altogether?",
+        "options": [
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "answer": "5",
+        "difficulty": "Hard",
+        "explanation": "2 + 1 + 2 = 5.",
+        "xp": 100,
+        "marks": 10,
+        "novaFeedback": "Wow! You are a master at adding multiple groups!"
+      }
+    ]
+  }
+}

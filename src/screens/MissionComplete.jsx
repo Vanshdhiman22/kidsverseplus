@@ -19,7 +19,7 @@ const MISSION_WORLD = 'maths'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { useAccent } from '../lib/accent.js'
-import { useContent, fill } from '../content/index.js'
+import { ACTIVE_CONTENT_ID, useContent, fill } from '../content/index.js'
 
 /* Chunky 3D headline: layered text-shadows give the extruded, toy-like look. */
 const Chunky = ({ children, className, delay = 0 }) => (
@@ -33,7 +33,7 @@ export default function MissionComplete() {
   const ac = useAccent()
   /* Words from the package. XP, the mastery ring and the skill bars are about the child,
      so they are never read from content -- see docs/CONTENT-CONTRACT.md. */
-  const pkg = useContent('fractions-equal-parts')
+  const pkg = useContent(ACTIVE_CONTENT_ID)
   const K = pkg.complete
   const XP = pkg.mission.xp
   let savedResult = {}
@@ -76,7 +76,7 @@ export default function MissionComplete() {
         ) })}
       </Stack>
       <Stack className="absolute left-[850px] top-[685px] w-[755px]" start={1.4}>
-        <Item v="pop" className="grid grid-cols-2 gap-5"><Button size="md" arrow icon={<Rocket size={24} />} className="h-[70px] uppercase text-[22px]" sound="whoosh" onClick={() => nav(K.next_step)}>Nova's next step</Button><Button variant="outline" size="md" icon={<Trophy size={24} />} className="h-[70px] uppercase text-[20px]" onClick={() => nav('/challenge')}>Try a challenge</Button></Item>
+        <Item v="pop" className="grid grid-cols-2 gap-5"><Button size="md" arrow icon={<Rocket size={24} />} className="h-[70px] uppercase text-[22px]" sound="whoosh" onClick={() => nav(K.next_step)}>Nova's next step</Button><Button variant="outline" size="md" icon={<Trophy size={24} />} className="h-[70px] uppercase text-[20px]" onClick={() => nav('/tests/mixed/intro?source=challenge')}>Try a challenge</Button></Item>
         <Item v="pop" className="mt-4"><Button variant="ghost" size="md" icon={<Home size={22} />} className="w-full h-[58px] text-[20px]" onClick={() => nav('/journey')}>Back to Journey</Button></Item>
       </Stack>
     </Page>

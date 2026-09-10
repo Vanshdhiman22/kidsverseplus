@@ -11,7 +11,7 @@ import { Tilt, Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 
 const CARDS = [
-  { I: CalendarDays, c: '#7c3aed', t: 'Daily Challenge', s: 'New challenge every day!', tag: '+30 XP', btn: 'Start', to: '/tests/mixed/intro', primary: true },
+  { I: CalendarDays, c: '#7c3aed', t: 'Daily Challenge', s: 'New challenge every day!', tag: '+30 XP', btn: 'Start', to: '/tests/mixed/intro?source=challenge', primary: true },
   { I: Swords, c: '#3b82f6', t: 'Battle Arena', s: 'Compete with AI opponents.', btn: 'Enter Battle', to: '/challenge/opponents', primary: true },
   { I: Trophy, c: '#f59e0b', grad: 'linear-gradient(100deg,#f59e0b,#f97316)', t: 'Leaderboard', s: 'See how you rank.', btn: 'View Leaderboard', to: '/challenge/leaderboard' },
   { I: Medal, c: '#f97316', grad: 'linear-gradient(100deg,#fb923c,#ea580c)', t: 'Personal Best', s: 'Track your top scores.', btn: 'View Stats', to: '/profile' },

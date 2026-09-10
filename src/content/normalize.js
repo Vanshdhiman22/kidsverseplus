@@ -36,13 +36,16 @@ function studioQuestion(question, index, learning) {
       image,
       alt: question.image_alt ?? question.alt ?? `Visual for question ${index + 1}`,
       hints,
-      feedback_wrong: question.feedback_wrong ?? question.explanation ?? learning.nova_feedback ?? 'Look closely and try again.',
+      feedback_wrong: question.feedback_wrong ?? question.novaFeedback ?? question.explanation ?? learning.nova_feedback ?? 'Look closely and try again.',
     }],
     options,
     ...(isMulti ? { required_count: question.required_count ?? answer.length } : {}),
     answer,
-    feedback_correct: question.feedback_correct ?? question.explanation ?? learning.nova_feedback ?? 'Great work! That is correct.',
-    xp_on_correct: Number(question.xp_on_correct ?? 10),
+    feedback_correct: question.feedback_correct ?? question.novaFeedback ?? question.explanation ?? learning.nova_feedback ?? 'Great work! That is correct.',
+    explanation: question.explanation ?? '',
+    difficulty: question.difficulty ?? 'Medium',
+    marks: Number(question.marks ?? 1),
+    xp_on_correct: Number(question.xp_on_correct ?? question.xp ?? 10),
     nova: {
       speech: question.nova_script ?? learning.nova_script ?? 'Look closely and choose your answer.',
       voice: question.nova_voice ?? question.question ?? question.prompt ?? '',
@@ -68,6 +71,9 @@ export function normalizeContentPackage(raw, id, fallback) {
     throw new Error('studio questions require text, options, an answer and an image')
   }
 
+  const normalizeGroup = group => list(group).map((question, index) => studioQuestion(question, index, learning))
+  const conceptName = payload.concept?.name ?? fallback.topic
+  const objective = payload.concept?.learning_objective ?? fallback.learning_objective
   return {
     ...fallback,
     content_id: id,
@@ -77,17 +83,28 @@ export function normalizeContentPackage(raw, id, fallback) {
     board: payload.curriculum?.board ?? fallback.board,
     topic: payload.curriculum?.topic ?? fallback.topic,
     learning_objective: payload.concept?.learning_objective ?? fallback.learning_objective,
+    mission: {
+      ...fallback.mission,
+      title: conceptName,
+      subtitle: objective,
+      rail: { title: payload.curriculum?.topic ?? conceptName, blurb: learning.teaching_method ?? objective },
+    },
     discover: {
       selected: 0,
       contents: [{
         ...fallback.discover.contents[0],
         model: {
           ...fallback.discover.contents[0].model,
-          title: payload.concept?.name ?? fallback.discover.contents[0].model.title,
-          caption: learning.explanation ?? fallback.discover.contents[0].model.caption,
+          title: conceptName,
+          caption: objective,
           image: learning.image_url ?? questions[0].models[0].image,
           alt: learning.image_alt ?? `Visual explanation of ${payload.concept?.name ?? fallback.topic}`,
         },
+        prompt: {
+          statement: learning.teaching_method ?? objective,
+          question: 'What do you notice?',
+        },
+        think_about: { text: objective, emphasis: conceptName.split(/\s+/)[0] ?? '' },
         hints: list(learning.hints),
         nova: {
           speech: learning.nova_script ?? fallback.discover.contents[0].nova.speech,
@@ -96,5 +113,20 @@ export function normalizeContentPackage(raw, id, fallback) {
       }],
     },
     check: { selected: 0, questions },
+    assessments: {
+      check_for_understanding: normalizeGroup(payload.check_for_understanding),
+      test_questions: normalizeGroup(payload.test_questions?.questions),
+      battle_questions: normalizeGroup(payload.battle_questions),
+      challenge_questions: normalizeGroup(payload.challenge?.questions),
+    },
+    studio: payload,
+    complete: {
+      ...fallback.complete,
+      topic_label: conceptName,
+      encouragement: learning.nova_feedback ?? fallback.complete.encouragement,
+      outcomes: fallback.complete.outcomes.map((outcome, index) => index === 0
+        ? { ...outcome, skill: conceptName, description: objective }
+        : outcome),
+    },
   }
 }

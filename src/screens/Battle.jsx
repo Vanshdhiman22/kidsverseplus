@@ -9,7 +9,7 @@ import { UserChip, StatPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
-import { Bar, Fraction } from '../components/Widgets.jsx'
+import { Bar } from '../components/Widgets.jsx'
 import { Vs } from './BattlePreview.jsx'
 import { BOTS, BATTLE_QS } from '../data/battle.jsx'
 import { useGame } from '../state/GameProvider.jsx'
@@ -17,6 +17,7 @@ import { bleedL, bleedR, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 import { charByFace } from '../data/poses.js'
+import { ACTIVE_CONTENT_ID, useContent } from '../content/index.js'
 
 const ICONS = { Maths: Calculator, Literacy: BookOpen, Speed: Zap, Logic: Puzzle }
 const COLORS = { Maths: '#3b82f6', Literacy: '#a855f7', Speed: '#22c55e', Logic: '#f59e0b' }
@@ -60,11 +61,20 @@ export default function Battle() {
   const [done, setDone] = useState(false)
   const [secs, setSecs] = useState(22)
   const [elapsed, setElapsed] = useState(0)   // the result screen printed a fixed 00:22
-  const q = BATTLE_QS[round % BATTLE_QS.length]
+  const pkg = useContent(ACTIVE_CONTENT_ID)
+  const legacyBattle = BATTLE_QS.map((item, index) => ({
+    question_id: `legacy-battle-${index}`,
+    instruction: item.q,
+    options: item.options.map(([n, d], optionIndex) => ({ key: `option_${optionIndex + 1}`, label: `${n}/${d}` })),
+    answer: `option_${item.answer + 1}`,
+    models: [],
+  }))
+  const battleQuestions = pkg.assessments?.battle_questions?.length ? pkg.assessments.battle_questions : legacyBattle
+  const q = battleQuestions[round % battleQuestions.length]
   /* Energy was 85 and 70, fixed, for the whole battle. A bar that never moves while a
      fight is happening is a picture of a bar. Each point the other side takes costs a
      share of it, so it reads as what is left. */
-  const energy = side => Math.max(0, Math.round(100 - (score[side] / BATTLE_QS.length) * 100))
+  const energy = side => Math.max(0, Math.round(100 - (score[side] / battleQuestions.length) * 100))
   /* The clock used to roll straight back to 22 and keep going, so the round timer was
      decoration: a child could sit on one question forever. Time out now costs the round,
      which is what the countdown has been implying all along. */
@@ -77,7 +87,7 @@ export default function Battle() {
   const submit = () => {
     if (pick == null) return
     if (done) {
-      if (round + 1 >= BATTLE_QS.length) { sfx.whoosh(); nav(`/challenge/result?bot=${bot.id}&me=${score[0]}&bot_s=${score[1]}&t=${elapsed}`); return }
+      if (round + 1 >= battleQuestions.length) { sfx.whoosh(); nav(`/challenge/result?bot=${bot.id}&me=${score[0]}&bot_s=${score[1]}&t=${elapsed}`); return }
       setRound(round + 1); setPick(null); setDone(false); setSecs(22); return
     }
     const right = pick === q.answer; setDone(true)
@@ -90,7 +100,7 @@ export default function Battle() {
       <motion.button className="absolute left-[30px] top-[100px] pill h-[44px] px-4 text-[15px] font-bold text-ink" style={bleedL(30)} onClick={() => { sfx.tap(); nav('/challenge') }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.14 }}><ChevronLeft size={18} /> Leave battle</motion.button>
       <Stack className="absolute left-[560px] top-[30px] w-[560px] text-center" start={0.2}>
         <Item className="font-display font-extrabold text-[40px] leading-none grad-text uppercase flex items-center justify-center gap-4"><Star size={26} className="text-gold" fill="currentColor" /> Live Battle Arena <Star size={26} className="text-gold" fill="currentColor" /></Item>
-        <Item className="mt-2 font-display font-extrabold text-[22px] text-ink-2 uppercase tracking-wide">Round {round + 1} / {BATTLE_QS.length}</Item>
+        <Item className="mt-2 font-display font-extrabold text-[22px] text-ink-2 uppercase tracking-wide">Round {round + 1} / {battleQuestions.length}</Item>
       </Stack>
       <motion.div className="absolute flex items-center gap-3" style={{ ...bleedR(24), ...safeT(22) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><StatPill kind="streak" value={g.state.stats.streak} label="Day streak" /><StatPill kind="xp" value={xp.toLocaleString()} /><UserChip name={name} face={face} /></motion.div>
 
@@ -105,7 +115,7 @@ export default function Battle() {
       <Panel className="absolute left-[105px] top-[420px] w-[285px] p-5" initial="hidden" animate="show">
         <div className="text-center font-display font-extrabold text-[16px] text-ink uppercase tracking-wide">This battle</div>
         <div className="mt-3 flex flex-col gap-3">
-          {[['Correct', score[0], '#22c55e'], ['Missed', score[1], '#ef4444'], ['Round', `${round + 1} / ${BATTLE_QS.length}`, '#7c5cff']].map(([k, v, c]) => (
+          {[['Correct', score[0], '#22c55e'], ['Missed', score[1], '#ef4444'], ['Round', `${round + 1} / ${battleQuestions.length}`, '#7c5cff']].map(([k, v, c]) => (
             <div key={k} className="flex items-center gap-3">
               <span className="w-[10px] h-[10px] rounded-full shrink-0" style={{ background: c }} />
               <span className="flex-1 text-[15px] font-bold text-ink-2">{k}</span>
@@ -118,21 +128,19 @@ export default function Battle() {
       <Panel className="absolute left-[105px] top-[640px] w-[285px] h-[140px] p-4 flex items-center gap-3" initial="hidden" animate="show"><img src="/art/hd/nova-v2.webp" alt="" className="w-[80px] floaty" /><div><div className="text-[14px] font-extrabold text-ink uppercase tracking-wide">Nova's Coach Tip</div><div className="mt-1 card px-3 py-2 text-[14px] font-bold text-ink-2 leading-snug">Focus on accuracy over speed! 🎯</div></div></Panel>
       <Panel className="absolute left-[1285px] top-[640px] w-[285px] h-[140px] p-4 flex items-center gap-3" initial="hidden" animate="show"><img src="/art/hd/nova-v2.webp" alt="" className="w-[80px] floaty" /><p className="text-[15px] font-bold text-ink-2 leading-snug">{done
           ? (pick === q.answer ? `Nice one \u2014 that is ${score[0]} to ${bot.name}'s ${score[1]}.` : `${bot.name} takes that one. Next question.`)
-          : `${bot.name} is quick on fractions. Read the shaded part before you answer.`}</p></Panel>
+          : `${bot.name} is quick. Read the whole question before you answer.`}</p></Panel>
 
       <Panel className="absolute left-[415px] top-[415px] w-[840px] h-[415px] p-7" initial="hidden" animate="show">
-        <motion.div key={round} className="text-center font-display font-extrabold text-[30px] text-ink" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}>{q.q}</motion.div>
-        <div className="mt-4 mx-auto flex w-[640px] h-[86px] rounded-[10px] overflow-hidden border-2 border-[var(--line)]">
-          {Array.from({ length: q.total }, (_, i) => <motion.span key={`${round}-${i}`} className="flex-1 border-r-2 border-[var(--line)] last:border-0" initial={{ background: 'rgba(255,255,255,.9)' }} animate={{ background: i < q.shaded ? '#a78bfa' : 'rgba(255,255,255,.9)' }} transition={{ delay: 0.06 + i * 0.1 }} />)}
-        </div>
-        <Stack key={`o${round}`} className="mt-5 grid grid-cols-4 gap-5" start={0.3} delay={0.08}>
-          {q.options.map(([n, d], i) => { const on = pick === i, right = done && i === q.answer, wrong = done && on && !right; return (
-            <Item key={i} v="pop"><Card hover={!done} selected={on && !done} className={cn('relative h-[120px] grid place-items-center text-ink', wrong && 'shake')} style={right ? { boxShadow: '0 0 0 3px #22c55e', borderColor: '#22c55e' } : wrong ? { boxShadow: '0 0 0 3px #ef4444', borderColor: '#ef4444' } : undefined} onClick={() => { if (!done) { sfx.select(); setPick(i) } }}>
+        <motion.div key={round} className="text-center font-display font-extrabold text-[27px] text-ink leading-tight" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}>{q.instruction}</motion.div>
+        {q.models?.[0]?.image && <img src={q.models[0].image} alt={q.models[0].alt ?? ''} className="mx-auto mt-3 h-[105px] max-w-[260px] rounded-[16px] object-contain" />}
+        <Stack key={`o${round}`} className="mt-4 grid grid-cols-4 gap-5" start={0.3} delay={0.08}>
+          {q.options.map((option, i) => { const on = pick === option.key, right = done && option.key === q.answer, wrong = done && on && !right; return (
+            <Item key={option.key} v="pop"><Card hover={!done} selected={on && !done} className={cn('relative h-[105px] grid place-items-center px-3 text-center text-ink', wrong && 'shake')} style={right ? { boxShadow: '0 0 0 3px #22c55e', borderColor: '#22c55e' } : wrong ? { boxShadow: '0 0 0 3px #ef4444', borderColor: '#ef4444' } : undefined} onClick={() => { if (!done) { sfx.select(); setPick(option.key) } }}>
               {(on || right) && <span className="absolute -top-3 -right-1 w-[30px] h-[30px] rounded-full grid place-items-center text-white" style={{ background: right ? '#22c55e' : 'var(--grad-primary)' }}><Check size={16} strokeWidth={3.5} /></span>}
-              <Fraction n={n} d={d} size={36} />
+              <span className="font-display font-extrabold text-[19px] leading-tight">{option.label}</span>
             </Card></Item>) })}
         </Stack>
-        <div className="mt-5 flex justify-center"><Button size="md" arrow className="w-[525px] h-[62px] uppercase text-[24px]" disabled={pick == null} sound="whoosh" onClick={submit}>{done ? (round + 1 >= BATTLE_QS.length ? 'See result' : 'Next round') : 'Submit answer'}</Button></div>
+        <div className="mt-4 flex justify-center"><Button size="md" arrow className="w-[525px] h-[62px] uppercase text-[24px]" disabled={pick == null} sound="whoosh" onClick={submit}>{done ? (round + 1 >= battleQuestions.length ? 'See result' : 'Next round') : 'Submit answer'}</Button></div>
       </Panel>
     </Page>
   )

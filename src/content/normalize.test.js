@@ -41,3 +41,21 @@ test('studio multi-select answers become pick-n questions', () => {
   assert.equal(result.check.questions[0].required_count, 2)
   assert.equal(result.check.questions[0].type, 'multi_select')
 })
+
+test('full studio package preserves test, battle and challenge sections', () => {
+  const question = {
+    question: 'What is 2 + 1?', options: ['2', '3', '4'], answer: '3',
+    image_url: 'https://images.example/addition.webp', xp: 25, marks: 2,
+  }
+  const studio = {
+    learning_content: { image_url: 'https://images.example/concept.webp' },
+    check_for_understanding: [question],
+    test_questions: { questions: [question] },
+    battle_questions: [question],
+    challenge: { questions: [question] },
+  }
+  const result = normalizeContentPackage(studio, 'addition-introduction', fallback)
+  assert.equal(result.assessments.test_questions[0].answer, 'option_2')
+  assert.equal(result.assessments.battle_questions[0].xp_on_correct, 25)
+  assert.equal(result.assessments.challenge_questions[0].marks, 2)
+})

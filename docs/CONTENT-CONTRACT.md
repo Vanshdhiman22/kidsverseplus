@@ -119,6 +119,13 @@ Every pushed question must include question text, options, a correct answer and 
 URL. Until the Studio's MongoDB push endpoint is connected, the bundled package remains
 the local fallback.
 
+The active bundled package can be selected with `VITE_LEARNING_PACKAGE_ID`. The current
+local default is `addition-introduction`, imported from the Content Studio download. Its
+`check_for_understanding`, `test_questions.questions`, `battle_questions`, and
+`challenge.questions` feed the lesson check, Test Mode, Battle Arena, and Concept
+Challenge respectively. A question-level `image_url` always wins; otherwise the screens
+use `learning_content.image_url` as the shared concept-image fallback.
+
 ```json
 {
   "question_id": "q_fraction_002",

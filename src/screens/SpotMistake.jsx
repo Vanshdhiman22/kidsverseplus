@@ -9,7 +9,7 @@ import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { LessonVisual } from '../components/LessonModels.jsx'
-import { useContent, checkQuestion } from '../content/index.js'
+import { ACTIVE_CONTENT_ID, useContent, checkQuestion } from '../content/index.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeB, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
@@ -32,7 +32,7 @@ export default function SpotMistake() {
   /* Offered right on the question, not a screen further on: a child who cannot see
      it in the pizza often sees it at once in a bar or on a number line. */
   const [model, setModel] = useState(0)
-  const pkg = useContent('fractions-equal-parts')
+  const pkg = useContent(ACTIVE_CONTENT_ID)
   const questions = pkg.check.questions.slice(0, 6)
   const [questionIndex, setQuestionIndex] = useState(() => Math.min(pkg.check.selected ?? 0, questions.length - 1))
   /* The question, its options, the right answer, the hints for each picture and the
