@@ -34,6 +34,10 @@ blocks match the screens. `contents[]` and `questions[]` are arrays so the engin
 return the full set; `selected` says which one the screen shows. How "selected" is chosen
 (sequence? strategy?) is the open product question — the shape supports either.
 
+The lesson check UI runs the first six questions as one sequence on the same page. A
+correct answer enables **Next Question**; question six enables **Finish Mission**. Each
+question carries its own `models[0].image`, so its artwork changes with its text.
+
 ```json
 {
   "content_id": "fractions-equal-parts",
@@ -105,6 +109,15 @@ Use a transparent PNG or WebP with the subject centred in a 2:1 canvas; remote H
 and app paths such as `/art/questions/fractions/q1.webp` are both supported. If `image` is
 missing or cannot load, the `key` selects the built-in pizza, bar or number-line renderer.
 Those fraction renderers draw their divisions from `split`.
+
+**Content Studio payloads.** Set `VITE_CONTENT_API` to the service that exposes
+`GET /learning-packages/:contentId`. The client accepts either this native contract or
+the payload downloaded by the Kidsverse Content Studio. For Studio payloads it reads
+`learning_content` plus `check_for_understanding` and `test_questions.questions`, keeps
+the first six valid questions, and maps each question's `image_url` to its visual slot.
+Every pushed question must include question text, options, a correct answer and an image
+URL. Until the Studio's MongoDB push endpoint is connected, the bundled package remains
+the local fallback.
 
 ```json
 {

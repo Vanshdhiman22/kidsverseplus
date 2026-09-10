@@ -78,6 +78,112 @@
         "feedback_correct": "Great work! You found all four true facts about the chocolate bar. ✦",
         "xp_on_correct": 10,
         "nova": { "speech": "Choose four true facts! 🔍", "voice": "Look at the chocolate bar and choose the four true statements." }
+      },
+      {
+        "question_id": "q_fraction_002",
+        "type": "true_false",
+        "title": "True or False?",
+        "instruction": "Look at the pizza.\nIt is divided into four equal parts.",
+        "models": [
+          { "key": "equal-pizza", "label": "Equal pizza", "image": "/art/new/pizza-equal.webp",
+            "alt": "A pizza divided into four equal slices",
+            "hints": ["Count the pizza slices.", "Compare each slice from the centre to the crust.", "All four slices have the same size."],
+            "feedback_wrong": "Compare the four slices again. Each one has the same shape and size. 🔍" }
+        ],
+        "options": [
+          { "key": "true", "label": "TRUE", "sub": "The statement is correct" },
+          { "key": "false", "label": "FALSE", "sub": "The statement is incorrect" }
+        ],
+        "answer": "true",
+        "feedback_correct": "Correct! The whole pizza is split into four equal parts. ✦",
+        "xp_on_correct": 10,
+        "nova": { "speech": "Compare all four slices! 🔍", "voice": "Is this pizza divided into four equal parts?" }
+      },
+      {
+        "question_id": "q_fraction_003",
+        "type": "yes_no",
+        "title": "Spot the Mistake!",
+        "instruction": "Look carefully.\nAre all four pizza slices equal-sized?",
+        "models": [
+          { "key": "unequal-pizza", "label": "Unequal pizza", "image": "/art/new/pizza-unequal.webp",
+            "alt": "A pizza cut into four slices of different sizes",
+            "hints": ["Compare the spaces between each cut.", "Look at the slice on the upper right.", "One slice is much smaller than the others."],
+            "feedback_wrong": "Look at the upper-right slice. It is smaller than the other pieces. 🔍" }
+        ],
+        "options": [
+          { "key": "yes", "label": "YES", "sub": "All slices are equal" },
+          { "key": "no", "label": "NO", "sub": "The slices are different" }
+        ],
+        "answer": "no",
+        "feedback_correct": "Correct! These slices are not all the same size. ✦",
+        "xp_on_correct": 10,
+        "nova": { "speech": "Check every slice carefully! 🔍", "voice": "Are all four pizza slices equal-sized?" }
+      },
+      {
+        "question_id": "q_fraction_004",
+        "type": "single_choice",
+        "title": "Choose the Fraction!",
+        "instruction": "Three of four equal pizza parts remain.\nWhat fraction of the pizza is shown?",
+        "models": [
+          { "key": "three-quarters", "label": "Three-quarter pizza", "image": "/art/pizza-4.webp",
+            "alt": "Three out of four equal pizza quarters",
+            "hints": ["Count all four equal spaces.", "Count the three pizza parts that are present.", "Three out of four is written as 3/4."],
+            "feedback_wrong": "Count the three pizza pieces out of four equal spaces. 🔍" }
+        ],
+        "options": [
+          { "key": "one-fourth", "label": "1/4" },
+          { "key": "one-half", "label": "1/2" },
+          { "key": "three-fourths", "label": "3/4" },
+          { "key": "one-whole", "label": "1 whole" }
+        ],
+        "answer": "three-fourths",
+        "feedback_correct": "Exactly! Three of the four equal parts are shown: 3/4. ✦",
+        "xp_on_correct": 10,
+        "nova": { "speech": "Count the shown parts and all the spaces! 🔍", "voice": "What fraction of the pizza is shown?" }
+      },
+      {
+        "question_id": "q_fraction_005",
+        "type": "single_choice",
+        "title": "Find the Half!",
+        "instruction": "Look at the shaded pizza pieces.\nWhat fraction of the whole is shaded?",
+        "models": [
+          { "key": "half-pizza", "label": "Half pizza", "image": "/art/pizza-pull.webp",
+            "alt": "Two shaded quarters of a pizza",
+            "hints": ["The whole has four equal spaces.", "Two of the four quarters are shaded.", "Two quarters make one half."],
+            "feedback_wrong": "Count two shaded pieces out of four equal pieces, then simplify. 🔍" }
+        ],
+        "options": [
+          { "key": "one-fourth", "label": "1/4" },
+          { "key": "one-half", "label": "1/2" },
+          { "key": "three-fourths", "label": "3/4" },
+          { "key": "one-whole", "label": "1 whole" }
+        ],
+        "answer": "one-half",
+        "feedback_correct": "Well done! Two out of four equal parts is one half. ✦",
+        "xp_on_correct": 10,
+        "nova": { "speech": "Two quarters can make a simpler fraction! 🔍", "voice": "What fraction of the pizza is shaded?" }
+      },
+      {
+        "question_id": "q_fraction_006",
+        "type": "single_choice",
+        "title": "Count Equal Parts!",
+        "instruction": "This whole pizza is shared equally.\nHow many equal parts are there?",
+        "models": [
+          { "key": "four-slice-pizza", "label": "Four-slice pizza", "image": "/art/pizza-big.webp",
+            "alt": "A whole pizza separated into four equal slices",
+            "hints": ["Start at the top and count each slice.", "Every slice reaches from the centre to the crust.", "There are four equal slices."],
+            "feedback_wrong": "Point to each separate slice and count once around the pizza. 🔍" }
+        ],
+        "options": [
+          { "key": "two", "label": "2 parts" },
+          { "key": "three", "label": "3 parts" },
+          { "key": "four", "label": "4 parts" },
+          { "key": "six", "label": "6 parts" }
+        ],
+        "answer": "four",
+        "feedback_correct": "Correct! The whole pizza has four equal parts. ✦",
+        "xp_on_correct": 10,
+        "nova": { "speech": "Count once around the pizza! 🔍", "voice": "How many equal parts are in this whole pizza?" }
       }
     ]
   },

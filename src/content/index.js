@@ -15,6 +15,7 @@
  * sees an empty screen because a service was slow. */
 import { useEffect, useState } from 'react'
 import fractions from './fractions-equal-parts.json'
+import { normalizeContentPackage } from './normalize.js'
 
 const BUNDLED = { 'fractions-equal-parts': fractions }
 const API = import.meta.env.VITE_CONTENT_API
@@ -32,7 +33,7 @@ async function fetchRemote(id) {
   if (cache.has(id)) return cache.get(id)
   const p = fetch(`${API.replace(/\/$/, '')}/learning-packages/${id}`)
     .then(r => (r.ok ? r.json() : Promise.reject(new Error(`${r.status} ${r.statusText}`))))
-    .then(pkg => (pkg && pkg.content_id === id ? pkg : Promise.reject(new Error('package id mismatch'))))
+    .then(pkg => normalizeContentPackage(pkg, id, getContent(id)))
     .catch(err => { console.warn(`[content] remote package "${id}" not used:`, err.message); return null })
   cache.set(id, p)
   return p

@@ -30,10 +30,12 @@ export default function SpotMistake() {
   /* Offered right on the question, not a screen further on: a child who cannot see
      it in the pizza often sees it at once in a bar or on a number line. */
   const [model, setModel] = useState(0)
+  const pkg = useContent('fractions-equal-parts')
+  const questions = pkg.check.questions.slice(0, 6)
+  const [questionIndex, setQuestionIndex] = useState(() => Math.min(pkg.check.selected ?? 0, questions.length - 1))
   /* The question, its options, the right answer, the hints for each picture and the
      feedback all come from the learning package. This file is the template. */
-  const pkg = useContent('fractions-equal-parts')
-  const Q = checkQuestion(pkg)
+  const Q = questions[questionIndex] ?? checkQuestion(pkg)
   const QM = Q.models[model % Q.models.length]
   const HINTS = QM.hints
   const answers = Array.isArray(Q.answer) ? Q.answer : [Q.answer]
@@ -71,7 +73,7 @@ export default function SpotMistake() {
       <Child screen="spot" delay={0.5} />
 
       <Panel className="absolute left-[320px] top-[90px] w-[1010px] h-[705px] p-8 overflow-hidden" initial="hidden" animate="show">
-        <div className="text-center"><h1 className="font-display font-extrabold text-[62px] leading-none text-ink">{Q.title}</h1><motion.div className="mx-auto mt-3 h-[6px] w-[90px] rounded-full" style={{ background: 'var(--grad-primary)' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.2 }} /><p className="mt-3 text-[21px] font-semibold text-ink-2 leading-snug">{Q.instruction.split('\n').map((l, i) => <React.Fragment key={i}>{i > 0 && <br />}{l}</React.Fragment>)}</p></div>
+        <div className="text-center"><div className="label-caps mb-2">Question {questionIndex + 1} of {questions.length}</div><h1 className="font-display font-extrabold text-[54px] leading-none text-ink">{Q.title}</h1><motion.div className="mx-auto mt-3 h-[6px] w-[90px] rounded-full" style={{ background: 'var(--grad-primary)' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.2 }} /><p className="mt-3 text-[21px] font-semibold text-ink-2 leading-snug">{Q.instruction.split('\n').map((l, i) => <React.Fragment key={i}>{i > 0 && <br />}{l}</React.Fragment>)}</p></div>
         <div className="absolute left-[765px] top-[160px]"><SpeechBubble tail="bottom" text={Q.nova.speech} delay={0.3} className="w-[190px] text-[18px]" /></div>
 
         {/* The thing being judged. It lives here in the DOM, not in the backdrop,
@@ -160,7 +162,10 @@ export default function SpotMistake() {
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => hints < HINTS.length && (sfx.unlock(), setHints(hints + 1))}><Lightbulb size={22} className="text-gold" fill="currentColor" /> Hint</button>
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => sfx.tap()}><Headphones size={22} className="text-primary-ink" /> Listen</button>
       </motion.div>
-      <motion.div className="absolute" style={{ ...bleedR(24), ...safeB(69) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[24px]" disabled={!correct} sound="whoosh" onClick={() => nav('/missions/fractions/complete')}>Continue</Button></motion.div>
+      <motion.div className="absolute" style={{ ...bleedR(24), ...safeB(69) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!correct} sound="whoosh" onClick={() => {
+        if (questionIndex === questions.length - 1) { nav('/missions/fractions/complete'); return }
+        setQuestionIndex(i => i + 1); setPicks([]); setHints(1); setWrong(0); setModel(0)
+      }}>{questionIndex === questions.length - 1 ? 'Finish Mission' : 'Next Question'}</Button></motion.div>
     </Page>
   )
 }
