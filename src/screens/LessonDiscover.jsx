@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Search, BookOpen, Hand, Lightbulb, Pencil, Rocket, Volume2, Star, Clock, Lock, Music, Headphones, BarChart3, ChevronDown } from 'lucide-react'
+import { Lightbulb, Volume2, Star, Clock, Lock, Music, Headphones, ChevronDown } from 'lucide-react'
 import { Child } from '../components/Scene.jsx'
 import Page from '../components/Page.jsx'
 import { Panel } from '../components/Panel.jsx'
@@ -17,17 +17,11 @@ export default function LessonDiscover() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
   const [opened, setOpened] = React.useState(0)      // hints revealed so far
-  /* The gentler version of the same idea: two astronauts, not four. Sharing between
-     two is the case a child can usually see without counting, so it is the way back
-     in when four parts will not land. */
-  const [easier, setEasier] = React.useState(false)
   /* Everything this screen says comes from the learning package; the JSX is the template. */
   const pkg = useContent(ACTIVE_CONTENT_ID)
   const C = discoverContent(pkg)
   const M = pkg.mission
   const HINTS = C.hints
-  const crew = easier && C.easier?.enabled ? C.easier.crew_count : C.crew.count
-  const numberWord = n => ({ 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six' })[n] ?? String(n)
 
   return (
     <Page>
@@ -112,39 +106,24 @@ export default function LessonDiscover() {
         </div>
 
         <div className="mt-5 rounded-[26px] border-[1.5px] border-[var(--line)] bg-[var(--glass)] h-[382px] relative overflow-hidden">
-          {/* left: the whole, in whichever picture the child asked for */}
-          <div className="absolute left-[28px] top-[26px] w-[510px]">
-            <motion.div key={crew} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
-              <div className="mx-auto w-[330px] card px-5 py-3 text-center">
-                <div className="font-display font-extrabold text-[21px] text-ink uppercase"><span className="text-gold">&#10022;</span> {C.model.title} <span className="text-gold">&#10022;</span></div>
-                <div className="text-[15px] font-semibold text-ink-2">{C.model.caption}</div>
-              </div>
-              <div className="mt-2"><LessonVisual model={C.model} parts={easier ? 2 : 1} /></div>
-            </motion.div>
-          </div>
+          {/* Generated package content replaces the old hardcoded astronaut crew. */}
+          <motion.div className="absolute left-[28px] top-[28px] w-[475px] h-[326px] flex flex-col gap-4"
+            initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35 }}>
+            <div className="card px-6 py-4">
+              <div className="text-[12px] font-extrabold tracking-[0.14em] text-primary-ink uppercase">Concept</div>
+              <div className="mt-1 font-display font-extrabold text-[26px] leading-tight text-ink">{C.model.title}</div>
+              <p className="mt-2 text-[15px] font-semibold text-ink-2 leading-snug">{C.model.caption}</p>
+            </div>
+            <div className="card px-6 py-5 flex-1">
+              <div className="text-[12px] font-extrabold tracking-[0.14em] text-primary-ink uppercase">How it works</div>
+              <p className="mt-2 text-[17px] font-bold text-ink-2 leading-relaxed">{C.prompt.statement}</p>
+              <p className="mt-3 font-display font-extrabold text-[25px] leading-tight text-primary-ink">{C.prompt.question.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}{line}</React.Fragment>)}</p>
+            </div>
+          </motion.div>
 
-          {/* the whole travels across to the crew who must share it */}
-          <svg className="absolute left-[540px] top-[36px] w-[130px] h-[40px] pointer-events-none" viewBox="0 0 130 40" aria-hidden>
-            <path d="M2 30 C 45 30, 80 12, 120 10" fill="none" stroke="var(--primary)" strokeWidth="2.4" strokeDasharray="7 7" strokeLinecap="round" opacity=".55" />
-            <path d="M112 4 L 122 10 L 112 16" fill="none" stroke="var(--primary)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" opacity=".55" />
-          </svg>
-
-          {/* right: the crew, and the question */}
-          {/* The crew is one drawing of four, so the easier framing clips it to the
-              two on the left rather than letting the words promise a crew of two
-              beside a picture of four. */}
-          <motion.img src={C.crew.image} alt="" className="absolute right-[42px] top-[16px] w-[330px]"
-            style={{ clipPath: crew < C.crew.count ? `inset(0 ${Math.round((1 - crew / C.crew.count) * 100)}% 0 0)` : 'none' }}
-            initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0, y: [0, -6, 0] }}
-            transition={{ x: { type: 'spring', stiffness: 150, damping: 20, delay: 0.25 }, opacity: { delay: 0.25 }, y: { duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 } }} />
-          <motion.div className="absolute right-[30px] top-[152px] w-[352px] card p-5 text-center" initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            {/* Keyed and timed exactly like the model, so the words never name a
-                picture that is still fading in on the other side of the arrow. */}
-            <motion.p key={crew} className="text-[19px] font-bold text-ink-2 leading-snug"
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
-              {easier && C.easier?.enabled ? C.easier.statement : C.prompt.statement}
-            </motion.p>
-            <p className="mt-2 font-display font-extrabold text-[31px] leading-tight text-primary-ink">{C.prompt.question.split('\n').map((l, i) => <React.Fragment key={i}>{i > 0 && <br />}{l}</React.Fragment>)}</p>
+          <motion.div className="absolute right-[28px] top-[28px] w-[500px] h-[326px] card grid place-items-center overflow-hidden"
+            initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
+            <LessonVisual model={C.model} />
           </motion.div>
         </div>
 
@@ -185,9 +164,8 @@ export default function LessonDiscover() {
 
         <div className="mt-auto">
           <div className="font-display font-extrabold text-[15px] text-ink">Still not sure?</div>
-          <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug">Try an easier example to understand better.</p>
-          {C.easier?.enabled && <Button variant="outline" size="sm" icon={<BarChart3 size={17} />} className="mt-2 w-full h-[46px] text-[15px]" onClick={() => { sfx.tap(); setEasier(e => !e) }}>{easier ? `Back to ${numberWord(C.crew.count).toLowerCase()}` : 'Easier Example'}</Button>}
-          {easier && C.easier?.enabled && <div className="mt-1.5 text-center text-[12px] font-bold text-ink-3">{C.easier.label}</div>}
+          <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug">Review the concept image and learning objective together.</p>
+          <div className="mt-3 card p-3 text-[13px] font-semibold text-ink-2 leading-snug">{C.think_about.text}</div>
         </div>
       </Panel>
 

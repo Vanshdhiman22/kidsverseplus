@@ -112,6 +112,10 @@ export function normalizeContentPackage(raw, id, fallback) {
         },
       }],
     },
+    // Generated packages own their lesson visual and must not retain the
+    // fallback fraction package's astronaut crew or crew-specific mode.
+    crew: null,
+    easier: { enabled: false },
     check: { selected: 0, questions },
     assessments: {
       check_for_understanding: normalizeGroup(payload.check_for_understanding),
