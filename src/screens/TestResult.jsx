@@ -11,6 +11,7 @@ import { Ring, Counter, Confetti, Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { gradeLabel } from '../data/catalog.js'
 import { sfx } from '../lib/sound.js'
+import PerfectScorePopup from '../components/PerfectScorePopup.jsx'
 
 export default function TestResult() {
   const nav = useNavigate()
@@ -55,7 +56,7 @@ export default function TestResult() {
       {/* The right-hand column starts at x=1075, so this row has to finish before it:
           the wider version ran to 1280 and sat on the Nova Recommends card. */}
       <motion.div className="absolute left-[350px] top-[725px] flex items-center gap-5" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[470px] h-[92px] uppercase text-[23px]" sub="Focus. Improve. Master!" sound="whoosh" onClick={() => nav('/missions/fractions')}>Practise weak concept</Button>
+        <Button size="lg" arrow icon={pct < 95 ? <RefreshCw size={28} /> : <Rocket size={28} strokeWidth={2.4} />} className="w-[470px] h-[92px] uppercase text-[23px]" sub={pct < 95 ? 'One more try can raise your score' : 'Focus. Improve. Master!'} sound="whoosh" onClick={() => nav(run?.source === 'challenge' ? '/tests/mixed/intro?source=challenge' : '/tests/mixed/intro')}>{pct < 95 ? 'Try Again' : 'Practise Again'}</Button>
         <Button variant="ghost" size="md" icon={<Gamepad2 size={24} />} className="w-[215px] h-[70px] px-4 uppercase text-[17px]" onClick={() => nav('/tests')}>Back to Arena</Button>
       </motion.div>
 
@@ -81,6 +82,7 @@ export default function TestResult() {
           <ChevronRight size={28} className="text-primary-ink" />
         </Card>
       </Panel>
+      <PerfectScorePopup show={pct === 100} mode={run?.source === 'challenge' ? 'challenge' : 'test'} />
     </Page>
   )
 }

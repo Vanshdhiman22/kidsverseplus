@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Rocket, Trophy, Home, Check, Flag, TrendingUp, ArrowRight, Star } from 'lucide-react'
-import Scene, { Child } from '../components/Scene.jsx'
+import { Rocket, Trophy, Home, Check, Flag, TrendingUp, ArrowRight, Star, RefreshCw } from 'lucide-react'
+import Scene, { Child, Cutout } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
@@ -20,6 +20,7 @@ import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { useAccent } from '../lib/accent.js'
 import { ACTIVE_CONTENT_ID, useContent, fill } from '../content/index.js'
+import PerfectScorePopup from '../components/PerfectScorePopup.jsx'
 
 /* Chunky 3D headline: layered text-shadows give the extruded, toy-like look. */
 const Chunky = ({ children, className, delay = 0 }) => (
@@ -47,8 +48,10 @@ export default function MissionComplete() {
   return (
     <Page>
       <Scene name="complete" />
-      <Child screen="complete" delay={0.6} amp={7} />
-      <Confetti />
+      {scorePercent < 70
+        ? <Cutout id="complete-0" src="/art/generated/complete-low-score.png" delay={0.6} amp={3} />
+        : <Child screen="complete" delay={0.6} amp={7} />}
+      {scorePercent >= 70 && <Confetti />}
       <TopBar back={false} logo="planet" right={<><UserChip name={`Hi, ${name}! 👋`} sub={`Explorer Level ${level}`} face={face} /><span className="pill h-[68px] px-6 gap-3 font-display font-extrabold text-[24px] text-ink"><Star size={28} className="text-gold" fill="currentColor" /> <Counter to={xp} from={xp - XP} delay={0.3} /> XP</span></>} showControls={false} />
       <div className="absolute left-[150px] top-[120px] w-[700px] text-center">
         <Chunky className="text-[112px] leading-[0.9]" delay={0.2}>MISSION</Chunky>
@@ -76,9 +79,10 @@ export default function MissionComplete() {
         ) })}
       </Stack>
       <Stack className="absolute left-[850px] top-[685px] w-[755px]" start={1.4}>
-        <Item v="pop" className="grid grid-cols-2 gap-5"><Button size="md" arrow icon={<Rocket size={24} />} className="h-[70px] uppercase text-[22px]" sound="whoosh" onClick={() => nav(K.next_step)}>Nova's next step</Button><Button variant="outline" size="md" icon={<Trophy size={24} />} className="h-[70px] uppercase text-[20px]" onClick={() => nav('/tests/mixed/intro?source=challenge')}>Try a challenge</Button></Item>
+        <Item v="pop" className={`grid gap-4 ${scorePercent < 95 ? 'grid-cols-3' : 'grid-cols-2'}`}><Button size="md" arrow icon={<Rocket size={22} />} className="h-[70px] uppercase text-[18px]" sound="whoosh" onClick={() => nav(K.next_step)}>Nova's next step</Button>{scorePercent < 95 && <Button variant="outline" size="md" icon={<RefreshCw size={22} />} className="h-[70px] uppercase text-[18px]" onClick={() => nav('/missions/fractions/spot-mistake')}>Try Again</Button>}<Button variant="outline" size="md" icon={<Trophy size={22} />} className="h-[70px] uppercase text-[18px]" onClick={() => nav('/tests/mixed/intro?source=challenge')}>Try a challenge</Button></Item>
         <Item v="pop" className="mt-4"><Button variant="ghost" size="md" icon={<Home size={22} />} className="w-full h-[58px] text-[20px]" onClick={() => nav('/journey')}>Back to Journey</Button></Item>
       </Stack>
+      <PerfectScorePopup show={scorePercent === 100} mode="mission" />
     </Page>
   )
 }

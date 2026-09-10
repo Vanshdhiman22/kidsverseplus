@@ -53,7 +53,7 @@ export default function TestQuestion() {
     if (submitted) {
       if (qi + 1 >= QUESTIONS.length) {
         sfx.whoosh()
-        nav('/tests/mixed/result', { state: { correct, total: QUESTIONS.length, seconds: START - secs } })
+        nav('/tests/mixed/result', { state: { correct, total: QUESTIONS.length, seconds: START - secs, source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test' } })
         return
       }
       setQi(qi + 1); setPick(null); setSubmitted(false); sfx.tap(); return
