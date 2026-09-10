@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'motion/react'
+import { visualSource } from '../content/visuals.js'
 
 /* ── the same fraction, told three ways ───────────────────────────────────
    A child who cannot see it in the pizza often sees it at once in a chocolate
@@ -125,3 +126,31 @@ export const MODELS = [
   { key: 'bar',   label: 'Chocolate bar', title: '1 Whole Chocolate Bar', Art: Bar },
   { key: 'line',  label: 'Number line',   title: '0 to 1 Number Line',    Art: NumberLine },
 ]
+
+/** Resolve a question/content visual from its data. Uploaded artwork wins; the
+    built-in model remains a fallback for older fraction packages. */
+export function LessonVisual({ model = {}, parts = 1, split, className = '' }) {
+  const src = visualSource(model)
+  const fallback = MODELS.find(item => item.key === model.key) ?? MODELS[0]
+  const [failed, setFailed] = React.useState(false)
+  React.useEffect(() => setFailed(false), [src])
+
+  if (!src || failed) return <fallback.Art parts={parts} split={split} />
+
+  return (
+    <div className={`relative w-[500px] h-[250px] grid place-items-center ${className}`}>
+      <motion.img
+        key={src}
+        src={src}
+        alt={model.alt ?? model.visual?.alt ?? model.label ?? model.title ?? 'Question illustration'}
+        draggable={false}
+        className="max-w-[470px] max-h-[240px] w-auto h-auto object-contain"
+        style={{ filter: 'drop-shadow(0 24px 28px rgba(40,20,120,.22))' }}
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1, y: [0, -7, 0] }}
+        transition={{ opacity: { duration: 0.25 }, scale: { duration: 0.25 }, y: { duration: 5, repeat: Infinity, ease: 'easeInOut' } }}
+        onError={() => setFailed(true)}
+      />
+    </div>
+  )
+}

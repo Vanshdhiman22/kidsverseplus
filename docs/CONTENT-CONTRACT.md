@@ -98,11 +98,27 @@ return the full set; `selected` says which one the screen shows. How "selected" 
 
 ## Things the engine should know
 
-**Pictures.** For fraction questions the app draws the pizza, the bar and the number line
-itself from `split` (how the whole is divided; `[1,1,1,1]` with one slice drawn uneven is
-the "spot the mistake" case). So `models[]` for fractions carries no image files — the
-three keys name the three renderers. For other subjects `models[n].image` is an uploaded
-PNG (sizes in the PDF). Both land in the same slot.
+**Pictures.** Every `discover.contents[n].model` and every `check.questions[n].models[m]`
+may provide an `image` URL and descriptive `alt` text. That image is rendered in the main
+visual slot, so changing the selected content or question changes the artwork with it.
+Use a transparent PNG or WebP with the subject centred in a 2:1 canvas; remote HTTPS URLs
+and app paths such as `/art/questions/fractions/q1.webp` are both supported. If `image` is
+missing or cannot load, the `key` selects the built-in pizza, bar or number-line renderer.
+Those fraction renderers draw their divisions from `split`.
+
+```json
+{
+  "question_id": "q_fraction_002",
+  "instruction": "Which tray shows three equal groups?",
+  "models": [{
+    "key": "grouped-cookies",
+    "label": "Cookie trays",
+    "image": "/art/questions/fractions/equal-cookie-trays.webp",
+    "alt": "Three trays containing the same number of cookies",
+    "hints": ["Count each tray.", "Compare the totals.", "Look for equal groups."]
+  }]
+}
+```
 
 **Hints are per picture.** "Look at the crust" is meaningless on a number line. Three
 hints per model, not three per question.

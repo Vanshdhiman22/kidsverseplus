@@ -6,7 +6,7 @@ import { Child } from '../components/Scene.jsx'
 import Page from '../components/Page.jsx'
 import { Panel } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import { Pizza } from '../components/LessonModels.jsx'
+import { LessonVisual } from '../components/LessonModels.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { useContent, discoverContent } from '../content/index.js'
 import { sfx } from '../lib/sound.js'
@@ -119,7 +119,7 @@ export default function LessonDiscover() {
                 <div className="font-display font-extrabold text-[21px] text-ink uppercase"><span className="text-gold">&#10022;</span> {C.model.title} <span className="text-gold">&#10022;</span></div>
                 <div className="text-[15px] font-semibold text-ink-2">{C.model.caption}</div>
               </div>
-              <div className="mt-2"><Pizza parts={easier ? 2 : 1} /></div>
+              <div className="mt-2"><LessonVisual model={C.model} parts={easier ? 2 : 1} /></div>
             </motion.div>
           </div>
 

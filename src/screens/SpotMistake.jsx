@@ -8,7 +8,7 @@ import Logo from '../components/Logo.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
-import { MODELS } from '../components/LessonModels.jsx'
+import { LessonVisual } from '../components/LessonModels.jsx'
 import { useContent, checkQuestion } from '../content/index.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeB, safeT } from '../components/Stage.jsx'
@@ -35,7 +35,6 @@ export default function SpotMistake() {
   const pkg = useContent('fractions-equal-parts')
   const Q = checkQuestion(pkg)
   const QM = Q.models[model % Q.models.length]
-  const M = MODELS.find(m => m.key === QM.key) ?? MODELS[0]
   const HINTS = QM.hints
   const correct = pick === Q.answer
   const choose = v => {
@@ -62,8 +61,8 @@ export default function SpotMistake() {
         <div className="absolute left-[255px] top-[196px]">
           {/* Keyed, but with no exit to wait on: the new model mounts at once, so
               the picture and the words that name it can never disagree. */}
-          <motion.div key={M.key} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24 }}>
-            <M.Art split={Q.split ?? SPLIT} />
+          <motion.div key={`${Q.question_id}:${QM.key}:${QM.image ?? QM.image_url ?? ''}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24 }}>
+            <LessonVisual model={QM} split={Q.split ?? SPLIT} />
           </motion.div>
         </div>
         {/* Tucked into the corner beside NO rather than sitting between the picture
