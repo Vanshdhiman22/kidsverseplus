@@ -133,11 +133,11 @@ export default function NavDrawer({ pinned = false }) {
     <>
       {/* the handle: a slim tab on the left edge, clear of every corner control */}
       <motion.button type="button" aria-label="Open menu" aria-expanded={open}
-        className="absolute left-0 top-1/2 z-40 w-[26px] h-[92px] rounded-r-[14px] grid place-items-center text-white/90"
+        className="absolute top-1/2 z-40 w-[26px] h-[92px] rounded-r-[14px] grid place-items-center text-white/90"
         /* centred with a margin, not -translate-y-1/2: motion writes its own inline
            transform for the slide-in and wipes the Tailwind one, which left the handle
            sitting 46px below centre. */
-        style={{ marginTop: -46, background: FRAME, boxShadow: '0 10px 26px -10px rgba(20,15,80,.9)' }}
+        style={{ left: 'calc(0px - var(--bleed, 0px))', marginTop: -46, background: FRAME, boxShadow: '0 10px 26px -10px rgba(20,15,80,.9)' }}
         initial={{ x: -26, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }}
         whileHover={{ width: 32 }}
         onClick={() => { sfx.tap(); setOpen(o => !o) }}>
