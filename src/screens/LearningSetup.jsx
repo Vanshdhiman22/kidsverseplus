@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { GraduationCap, BookOpen, Landmark, Globe, Star, ShieldCheck, ArrowLeft, Rocket, CheckCircle2, MoreHorizontal } from 'lucide-react'
@@ -27,8 +27,6 @@ export default function LearningSetup() {
   const nav = useNavigate()
   const g = useGame()
   const { grade, board } = g.state.profile
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
   return (
     <Page>
       <Scene name="setup" />
@@ -85,10 +83,7 @@ export default function LearningSetup() {
 
       <Panel className="absolute left-[680px] top-[790px] w-[945px] h-[112px] px-6 flex items-center justify-end gap-6" initial="hidden" animate="show" style={{ borderRadius: 30 }}>
         <Button variant="ghost" size="md" icon={<ArrowLeft size={24} strokeWidth={2.6} />} className="h-[72px] px-10 text-[22px]" onClick={() => nav(-1)}>Back</Button>
-        <div className="flex flex-col items-end gap-1">
-          {error && <span className="text-[14px] font-bold text-red-500">{error}</span>}
-          <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[440px] uppercase" disabled={busy} sound="whoosh" onClick={async () => { setError(''); setBusy(true); try { await g.saveGradeBoard(); nav('/onboarding/avatar') } catch (e) { setError(e.message) } finally { setBusy(false) } }}>{busy ? 'Saving…' : 'Continue'}</Button>
-        </div>
+        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[440px] uppercase" sound="whoosh" onClick={() => { g.setProfile({ face: 1, outfit: 'explorer' }); nav('/onboarding/avatar') }}>Continue</Button>
       </Panel>
     </Page>
   )

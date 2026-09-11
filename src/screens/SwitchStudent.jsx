@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Search, Bell, Rocket, Plus, Users, ShieldCheck, ArrowRight, Flame } from 'lucide-react'
 import Scene, { Cutout } from '../components/Scene.jsx'
@@ -13,7 +13,7 @@ import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Bar, Sparkles } from '../components/Widgets.jsx'
 import { useGame, levelOf } from '../state/GameProvider.jsx'
-import { spriteFor, gradeLabel } from '../data/catalog.js'
+import { gradeLabel } from '../data/catalog.js'
 import { bleedR } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
@@ -47,7 +47,7 @@ export default function SwitchStudent() {
   /* The signed-in child's row is only refreshed when they are switched away from, so
      until then the live profile and stats are the newer copy of the same numbers. */
   const live = c => (c && c.id === active
-    ? { ...c, name: g.state.profile.name, grade: g.state.profile.grade, board: g.state.profile.board, face: g.state.profile.face, outfit: g.state.profile.outfit, xp: g.state.stats.xp, streak: g.state.stats.streak }
+    ? { ...c, name: g.state.profile.name, grade: g.state.profile.grade, board: g.state.profile.board, xp: g.state.stats.xp, streak: g.state.stats.streak }
     : c)
 
   const kid = live(kids.find(c => c.id === selected)) ?? live(kids.find(c => c.id === active)) ?? kids[0]
@@ -65,9 +65,6 @@ export default function SwitchStudent() {
        A child came here to be that child, so they land in the app. */
     nav(fromParent ? '/parent' : '/home')
   }
-
-  if (!kid) return <Navigate to="/onboarding/child" replace />
-  if (kids.length === 1) return <Navigate to={fromParent ? "/parent" : "/home"} replace />
 
   if (!unlocked) {
     return (
@@ -105,7 +102,7 @@ export default function SwitchStudent() {
         <Sparkles n={4} seed={33} />
         <span className="absolute left-4 top-4 chip h-[28px] px-3 text-[12px] uppercase tracking-wider text-white" style={{ background: 'var(--grad-primary)' }}>{isActive ? '✓ Signed in' : 'Preview'}</span>
         <div className="mt-6 flex gap-4 flex-1">
-          <motion.img key={kid.face} src={spriteFor(kid.outfit, kid.face)} alt="" className="w-[205px] h-[410px] object-cover rounded-[18px]" animate={{ y: [0, -6, 0] }} transition={{ duration: 3.6, repeat: Infinity }} />
+          <motion.img key={kid.img} src={kid.img} alt="" className="w-[205px] h-[410px] object-cover rounded-[18px]" animate={{ y: [0, -6, 0] }} transition={{ duration: 3.6, repeat: Infinity }} />
           <div className="flex-1 pt-6">
             <div className="font-display font-extrabold text-[40px] leading-none text-ink">{kid.name}</div>
             <div className="mt-2 flex gap-2"><span className="chip h-[30px] px-3 text-[14px] text-white" style={{ background: 'var(--grad-primary)' }}>{gradeLabel(kid.grade)}</span><span className="chip h-[30px] px-3 text-[14px]">{kid.board ?? 'CBSE'}</span></div>
@@ -124,7 +121,7 @@ export default function SwitchStudent() {
       <Stack className="absolute left-[895px] top-[290px] flex gap-[20px]" start={0.7} delay={0.1}>
         {others.map(o => <Item key={o.id} v="pop"><Card hover className={cn('w-[200px] h-[490px] p-4 flex flex-col items-center', o.id === active && 'card-selected')} onClick={() => preview(o.id)}>
           {o.id === active && <span className="absolute left-3 top-3 chip h-[24px] px-2 text-[11px] uppercase tracking-wider text-primary-ink">Signed in</span>}
-          <img src={spriteFor(o.outfit, o.face)} alt="" className="w-[170px] h-[300px] object-contain" />
+          <img src={o.img} alt="" className="w-[170px] h-[300px] object-contain" />
           <div className="mt-2 self-start font-display font-extrabold text-[26px] text-ink">{o.name}</div>
           <div className="self-start flex gap-2"><span className="chip h-[26px] px-3 text-[12px] text-white" style={{ background: 'var(--grad-primary)' }}>{gradeLabel(o.grade)}</span><span className="chip h-[26px] px-3 text-[12px]">{o.board ?? 'CBSE'}</span></div>
           <div className="mt-3 self-start text-[13px] font-bold text-ink-2">Concepts Mastered</div>

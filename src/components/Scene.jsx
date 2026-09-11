@@ -77,7 +77,7 @@ export function Child({ screen, ...rest }) {
   return (
     <>
       <Cutout id={slot.cutout} src={src} box={pair?.child ?? childBox(face, screen)} {...rest}
-        style={rest.style} />
+        style={{ ...rest.style, ...(screen === 'welcome' && face === 4 ? { clipPath: 'inset(10.5% 0 0 0)' } : {}) }} />
       {/* Nova is drawn after the child. Several replacement poses are wider than the
           master and otherwise cover her face/body in lesson sidebars. */}
       {nova && <Cutout id={`nova:${slot.cutout}`} src={nova.src} box={pair.nova}

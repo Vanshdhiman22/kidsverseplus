@@ -33,7 +33,6 @@ export default function ParentLogin() {
   const [pw, setPw] = useState('')
   const [show, setShow] = useState(false)
   const [err, setErr] = useState('')
-  const [busy, setBusy] = useState(false)
   /* Where signing in leads depends on which door was used on the landing page:
      a parent who asked for the Parent Zone lands there, everyone else carries
      on into the child's setup. */
@@ -42,16 +41,17 @@ export default function ParentLogin() {
      onboarding steps when there is no child yet. It used to send every sign-in to the
      Create Child screen, so returning families were asked to name a child they had
      already made. */
-  const signIn = async () => {
+  const signIn = () => {
     if (!email.trim() || !pw.trim()) {
       /* g.notice renders through NovaIsland, which this route excludes, so the guard was
          silent: the button played its sound and nothing else happened. */
       setErr('Enter your email and password to continue.'); sfx.wrong?.(); return
     }
-    setErr(''); setBusy(true)
-    try { nav(await g.signIn(email, pw)) }
-    catch (error) { setErr(error.message); sfx.wrong?.() }
-    finally { setBusy(false) }
+    setErr('')
+    const parent = g.state.authIntent === 'parent'
+    const kids = g.state.children ?? []
+    g.setAuthIntent('play')
+    nav(parent ? '/parent' : kids.length === 0 ? '/onboarding/child' : kids.length > 1 ? '/switch' : '/home')
   }
   return (
     <Page>
@@ -77,7 +77,7 @@ export default function ParentLogin() {
             <div className="text-right mt-1"><button className="text-[16px] font-bold text-primary-ink hover:underline">Forgot password?</button></div>
           </Item>
           {err && <Item v="soft"><div className="text-[17px] font-bold text-red-500">{err}</div></Item>}
-          <Item v="pop"><Button size="md" arrow icon={<Lock size={24} strokeWidth={2.4} />} className="w-full h-[62px] uppercase text-[21px]" sound="whoosh" disabled={busy} onClick={signIn}>{busy ? 'Signing in…' : 'Login to Kidsverse'}</Button></Item>
+          <Item v="pop"><Button size="md" arrow icon={<Lock size={24} strokeWidth={2.4} />} className="w-full h-[62px] uppercase text-[21px]" sound="whoosh" onClick={signIn}>Login to Kidsverse</Button></Item>
           <Item v="soft" className="flex items-center gap-4 text-[17px] font-bold text-ink-3"><span className="hairline flex-1" />or continue with<span className="hairline flex-1" /></Item>
           <Item v="soft" className="grid grid-cols-3 gap-4">
             <Social label="Google"><svg width="24" height="24" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.4z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.8 9.4 6 12 6z"/></svg></Social>

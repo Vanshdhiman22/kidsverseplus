@@ -19,8 +19,6 @@ export default function CreateChild() {
   /* Opened pre-filled with whoever was signed in, so the screen asking who is beginning
      their adventure answered itself with the previous child's name. */
   const [name, setName] = useState('')
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
   const ok = name.trim().length >= 2
   return (
     <Page>
@@ -49,15 +47,14 @@ export default function CreateChild() {
             <label className="block text-[20px] font-extrabold text-ink mb-3">Child's first name</label>
             <div className="relative">
               <User size={26} strokeWidth={2.2} className="absolute left-6 top-1/2 -translate-y-1/2 text-primary-ink" />
-              <input className="input h-[84px] text-[26px] rounded-[22px]" style={{ borderColor: ok ? 'var(--primary)' : undefined }} placeholder="Type a first name or nickname" autoComplete="off" value={name} onChange={e => setName(e.target.value)} autoFocus />
+              <input className="input h-[84px] text-[26px] rounded-[22px]" style={{ borderColor: ok ? 'var(--primary)' : undefined }} placeholder="Type a first name or nickname" value={name} onChange={e => setName(e.target.value)} autoFocus />
               <AnimatePresence>
                 {ok && <motion.span className="absolute right-6 top-1/2 -translate-y-1/2 w-[32px] h-[32px] rounded-full grid place-items-center bg-green-500 text-white" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 18 }}><Check size={20} strokeWidth={3.5} /></motion.span>}
               </AnimatePresence>
             </div>
             <p className="mt-3 flex items-center gap-2 text-[16px] font-semibold text-ink-3"><ShieldCheck size={18} className="text-primary-ink" /> Only a first name or nickname is needed.</p>
           </Item>
-          {error && <Item className="mt-3 text-[16px] font-bold text-red-500">{error}</Item>}
-          <Item v="pop" className="mt-9"><Button size="lg" arrow className="w-full uppercase" disabled={!ok || busy} sound="whoosh" onClick={async () => { setError(''); setBusy(true); try { await g.addChild(name.trim()); nav('/onboarding/grade-board') } catch (e) { setError(e.message) } finally { setBusy(false) } }}>{busy ? 'Saving…' : 'Continue'}</Button></Item>
+          <Item v="pop" className="mt-9"><Button size="lg" arrow className="w-full uppercase" disabled={!ok} sound="whoosh" onClick={() => { g.setProfile({ name: name.trim() }); nav('/onboarding/grade-board') }}>Continue</Button></Item>
           <Item className="mt-5 text-center"><button className="text-[22px] font-extrabold text-primary-ink hover:underline" onClick={() => nav(-1)}>Back</button></Item>
         </Stack>
       </Panel>

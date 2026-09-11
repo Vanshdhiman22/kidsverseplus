@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ChevronLeft, Star } from 'lucide-react'
@@ -21,8 +21,6 @@ export default function Interests() {
   const sel = g.state.profile.interests
   const toggle = id => { const on = sel.includes(id); sfx[on ? 'tap' : 'select'](); g.setProfile({ interests: on ? sel.filter(i => i !== id) : [...sel, id] }) }
   const enough = sel.length >= 3
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
   return (
     <Page>
       <Scene name="interests" />
@@ -62,8 +60,7 @@ export default function Interests() {
         </div>
       </motion.div>
       <motion.div className="absolute left-[1085px] top-[800px]" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        {error && <div className="absolute bottom-full right-0 mb-2 w-[520px] text-right text-[14px] font-bold text-red-500">{error}</div>}
-        <Button size="lg" arrow className="w-[520px] h-[96px] uppercase text-[30px]" disabled={!enough || busy} sound="whoosh" onClick={async () => { setError(''); setBusy(true); try { await g.saveInterests(); nav('/onboarding/goals') } catch (e) { setError(e.message) } finally { setBusy(false) } }}>{busy ? 'Saving…' : 'Continue'}</Button>
+        <Button size="lg" arrow className="w-[520px] h-[96px] uppercase text-[30px]" disabled={!enough} sound="whoosh" onClick={() => nav('/onboarding/goals')}>Continue</Button>
       </motion.div>
     </Page>
   )
