@@ -31,7 +31,8 @@ export default function LessonDiscover() {
           so in dark mode it put a near-white sheet under everything. */}
 
       {/* left column: who you are, what the mission is, and Nova */}
-      <Panel className="absolute left-[19px] top-[10px] w-[272px] h-[820px] p-0 overflow-hidden">
+      <Panel className="absolute top-[10px] h-[840px] p-0 overflow-hidden"
+        style={{ left: 'calc(19px - var(--bleed, 0px))', width: 'calc(272px + var(--bleed, 0px))', paddingLeft: 'var(--bleed, 0px)' }}>
         <div className="pt-6 flex flex-col items-center text-center">
           <div className="flex items-center gap-2">
             <img src="/art/planet-sm.webp" alt="" className="w-[52px] floaty" />
@@ -50,18 +51,18 @@ export default function LessonDiscover() {
         </div>
         <p className="mt-3 px-5 text-[15px] font-semibold text-ink-2 leading-snug">{M.rail.blurb}</p>
 
-        <div className="mt-4 mx-4 card p-4">
+        <div className="mt-3 mx-4 card p-3">
           <div className="flex items-center justify-between">
             <span className="font-display font-extrabold text-[19px] text-primary-ink">Nova</span>
             <button className="text-primary-ink" onClick={() => sfx.success()} aria-label="Hear Nova"><Volume2 size={20} /></button>
           </div>
-          <p className="mt-1 text-[15px] font-bold text-ink-2 leading-snug">{C.nova.speech}</p>
+          <p className="mt-1 text-[13px] font-bold text-ink-2 leading-snug">{C.nova.speech}</p>
         </div>
 
         {/* The cutout's own box already sits in this column, so it needs no offset. */}
-        <Child screen="discover" delay={0.4} amp={6} />
+        <Child screen="discover" delay={0.4} amp={6} dy={36} scale={0.86} style={{ marginLeft: 'var(--bleed, 0px)' }} />
 
-        <div className="absolute left-4 right-4 bottom-5">
+        <div className="absolute bottom-5 w-[240px]" style={{ left: 'calc(16px + var(--bleed, 0px))' }}>
           <div className="card px-4 py-3">
             <div className="flex items-center gap-2">
               <img src="/art/planet-sm.webp" alt="" className="w-[26px]" />
@@ -135,7 +136,8 @@ export default function LessonDiscover() {
       </Panel>
 
       {/* right rail: help, offered before it is asked for */}
-      <Panel className="absolute left-[1460px] top-[90px] w-[195px] h-[760px] p-4 flex flex-col">
+      <Panel className="absolute top-[90px] h-[760px] p-4 flex flex-col"
+        style={{ right: 'calc(17px - var(--bleed, 0px))', width: 'calc(195px + var(--bleed, 0px))', paddingRight: 'calc(16px + var(--bleed, 0px))' }}>
         <div className="flex items-center gap-2"><Lightbulb size={19} className="text-gold" /><span className="font-display font-extrabold text-[17px] text-ink">NEED A HINT?</span></div>
         <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug">Stuck? Get a little help to move ahead.</p>
 
