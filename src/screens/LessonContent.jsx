@@ -1,16 +1,23 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
-import { ArrowLeft, BookOpen, Check, Lightbulb, Play, Sparkles, Star, Volume2 } from 'lucide-react'
+import { ArrowLeft, BookOpen, Check, Lightbulb, Play, Sparkles, Star } from 'lucide-react'
 import Page from '../components/Page.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import { LessonVisual } from '../components/LessonModels.jsx'
+import { visualSource } from '../content/visuals.js'
 import { ACTIVE_CONTENT_ID, discoverContent, useContent } from '../content/index.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 
 const sentence = value => String(value ?? '').trim()
+
+const studioVideoList = learning => {
+  const videos = learning?.video_urls ?? learning?.videos
+  if (Array.isArray(videos)) return videos.map(item => typeof item === 'string' ? item : item?.url).filter(Boolean)
+  return [learning?.video_url ?? learning?.ai_video_url].filter(Boolean)
+}
 
 function learningPages(pkg) {
   const content = discoverContent(pkg)
@@ -51,10 +58,16 @@ export default function LessonContent() {
   const content = discoverContent(pkg)
   const pages = useMemo(() => learningPages(pkg), [pkg])
   const [page, setPage] = useState(0)
+  const [videoFailed, setVideoFailed] = useState(false)
   const current = pages[page]
   const Icon = current.icon
   const last = page === pages.length - 1
   const progress = ((page + 1) / pages.length) * 100
+  const lessonVideos = studioVideoList(pkg.studio?.learning_content)
+  const videoUrl = lessonVideos[page] ?? lessonVideos[0] ?? content.model.video_url ?? content.model.video
+  const poster = pkg.studio?.learning_content?.video_poster_url ?? visualSource(content.model)
+
+  useEffect(() => setVideoFailed(false), [videoUrl])
 
   const previous = () => {
     sfx.tap()
@@ -116,15 +129,32 @@ export default function LessonContent() {
           </AnimatePresence>
         </div>
 
-        <aside className="absolute right-[35px] top-[138px] w-[470px] h-[585px] flex flex-col gap-4">
-          <Card className="h-[335px] grid place-items-center overflow-hidden">
-            <LessonVisual model={content.model} />
-          </Card>
-          <Card className="flex-1 p-5 flex gap-4">
-            <img src="/art/22-novahead.webp" alt="Nova" className="w-[72px] h-[72px] object-contain shrink-0" />
-            <div>
-              <div className="flex items-center gap-2 font-display font-extrabold text-[19px] text-primary-ink">Nova explains <button aria-label="Listen to Nova" onClick={() => sfx.success()}><Volume2 size={19} /></button></div>
-              <p className="mt-2 text-[17px] font-bold leading-snug text-ink-2">{current.nova}</p>
+        <aside className="absolute right-[35px] top-[138px] w-[470px] h-[585px]">
+          <Card className="relative h-full p-0 overflow-hidden bg-[#11152f]">
+            {videoUrl && !videoFailed ? (
+              <video
+                key={`${page}:${videoUrl}`}
+                className="absolute inset-0 w-full h-full object-cover"
+                src={videoUrl}
+                poster={poster || undefined}
+                controls
+                playsInline
+                preload="metadata"
+                aria-label={`AI video lesson: ${current.title}`}
+                onError={() => setVideoFailed(true)}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-white">
+                <LessonVisual model={content.model} fill />
+                <div className="absolute inset-0 grid place-items-center bg-[rgba(17,21,47,.2)]">
+                  <div className="rounded-full w-[76px] h-[76px] grid place-items-center text-white backdrop-blur-md border border-white/70 shadow-xl bg-[rgba(88,66,220,.78)]" aria-label="AI lesson video poster">
+                    <Play size={34} fill="currentColor" className="ml-1" />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="absolute top-4 left-4 z-10 rounded-full px-4 py-2 text-[12px] font-extrabold tracking-[0.12em] text-white bg-[rgba(17,21,47,.68)] backdrop-blur-md pointer-events-none">
+              AI VIDEO LESSON · STEP {page + 1}
             </div>
           </Card>
         </aside>

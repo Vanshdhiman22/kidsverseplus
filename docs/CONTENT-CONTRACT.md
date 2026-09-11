@@ -110,6 +110,14 @@ and app paths such as `/art/questions/fractions/q1.webp` are both supported. If 
 missing or cannot load, the `key` selects the built-in pizza, bar or number-line renderer.
 Those fraction renderers draw their divisions from `split`.
 
+**AI lesson video.** The Learn Before You Quiz screen renders only the AI teaching video
+in its right-hand media panel. Studio packages may provide one shared
+`learning_content.video_url`, or a `learning_content.video_urls` array with one URL for
+each of the Understand, Example, and Remember steps. Native packages may provide
+`discover.contents[n].model.video_url`. Videos use the browser's play, pause, replay,
+volume, seek, and fullscreen controls. `learning_content.video_poster_url` is optional;
+the concept image is used as the poster and fallback when a video is unavailable.
+
 **Content Studio payloads.** Set `VITE_CONTENT_API` to the service that exposes
 `GET /learning-packages/:contentId`. The client accepts either this native contract or
 the payload downloaded by the Kidsverse Content Studio. For Studio payloads it reads
