@@ -13,8 +13,9 @@
   "content_type": "concept_package",
   "learning_content": {
     "teaching_method": "We use the 'Combine and Count' method. Imagine you have a collection of items. You count the first group, then the second group, and finally, you count everything all together to find the grand total.",
-    "image_url": "/art/generated/addition-introduction.jpg",
-    "image_prompt": "A friendly cartoon robot named Nova standing in a bright sunny kitchen with two baskets of colorful fruits, counting them to show addition.",
+    "image_url": "/art/generated/addition-scene-background.png",
+    "image_alt": "Two baskets of colourful fruit in a bright kitchen",
+    "image_prompt": "A bright sunny kitchen with two baskets of colorful fruits and clear central space for the reusable Nova presenter. No characters, robots, text, logos, or watermark.",
     "explanation": "Addition is like being a helper! Imagine Nova has 3 apples in one basket and 2 oranges in another. To find out how many pieces of fruit Nova has in total, we combine them into one pile: 3 + 2 = 5. By counting the whole pile, we find the sum. It is simply putting things together to see how many we have altogether.",
     "hints": [
       "Addition is about joining two groups into one big group.",

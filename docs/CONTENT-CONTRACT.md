@@ -110,13 +110,13 @@ and app paths such as `/art/questions/fractions/q1.webp` are both supported. If 
 missing or cannot load, the `key` selects the built-in pizza, bar or number-line renderer.
 Those fraction renderers draw their divisions from `split`.
 
-**AI lesson video.** The Learn Before You Quiz screen renders only the AI teaching video
-in its right-hand media panel. Studio packages may provide one shared
-`learning_content.video_url`, or a `learning_content.video_urls` array with one URL for
-each of the Understand, Example, and Remember steps. Native packages may provide
-`discover.contents[n].model.video_url`. Videos use the browser's play, pause, replay,
-volume, seek, and fullscreen controls. `learning_content.video_poster_url` is optional;
-the concept image is used as the poster and fallback when a video is unavailable.
+**Animated Nova teacher.** The Learn Before You Quiz screen combines the generated
+concept image with the reusable Nova character. Nova's movement and local text-to-speech
+are supplied by the frontend; the package only supplies the lesson image and Nova script.
+Each learning step reads its matching script, so this presenter works across subjects
+without generating or storing a video.
+Generated concept images should contain the lesson objects and environment without Nova;
+the frontend layers the canonical animated Nova character over every scene.
 
 **Content Studio payloads.** Set `VITE_CONTENT_API` to the service that exposes
 `GET /learning-packages/:contentId`. The client accepts either this native contract or
