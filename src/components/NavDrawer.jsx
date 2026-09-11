@@ -119,7 +119,7 @@ export default function NavDrawer({ pinned = false }) {
   if (pinned) {
     return (
       <motion.aside className="absolute top-0 bottom-0 z-20"
-        style={{ left: 'calc(0px - var(--bleed, 0px))', width: 'calc(205px + var(--bleed, 0px))', paddingLeft: 'calc(0px + var(--bleed, 0px))' }}
+        style={{ left: 'calc(0px - var(--bleed, 0px))', width: 205 }}
         initial={{ x: -60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 220, damping: 26 }}>
         <Panel pinned onGate={() => setGate(true)} />
         {gate && <ParentGate onCancel={() => setGate(false)} onPass={() => { setGate(false); nav('/parent') }} />}
