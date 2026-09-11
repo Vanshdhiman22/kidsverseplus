@@ -91,13 +91,13 @@ export default function LessonDiscover() {
       </motion.div>
 
       {/* the mission itself */}
-      <Panel className="absolute left-[324px] top-[134px] w-[1085px] h-[671px] p-7">
+      <Panel className="absolute left-[305px] top-[90px] w-[1140px] h-[760px] p-7">
         <div className="flex items-start gap-4">
-          <span className="w-[52px] h-[52px] rounded-[16px] grid place-items-center font-display font-extrabold text-[24px] text-white shrink-0" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }}>{M.code}</span>
+          <span className="w-[60px] h-[60px] rounded-[18px] grid place-items-center font-display font-extrabold text-[26px] text-white shrink-0" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }}>{M.code}</span>
           <div className="leading-tight">
             <div className="text-[13px] font-extrabold tracking-[0.14em] text-primary-ink">LEARNING MISSION</div>
-            <div className="mt-0.5 font-display font-extrabold text-[34px] text-ink">{M.title} <span className="text-gold">{M.emoji}</span></div>
-            <div className="mt-1 text-[17px] font-semibold text-ink-2">{M.subtitle}</div>
+            <div className="mt-0.5 font-display font-extrabold text-[38px] tracking-[-0.02em] text-ink">{M.title} <span className="text-gold">{M.emoji}</span></div>
+            <div className="mt-1 max-w-[680px] text-[18px] font-semibold text-ink-2 leading-snug">{M.subtitle}</div>
           </div>
           <div className="ml-auto flex items-center gap-3 pt-1">
             <span className="pill h-[50px] px-4 gap-2 text-[17px] font-bold text-ink-2"><Clock size={20} className="text-primary-ink" /> {M.duration_min[0]}&ndash;{M.duration_min[1]} min</span>
@@ -105,25 +105,25 @@ export default function LessonDiscover() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-[26px] border-[1.5px] border-[var(--line)] bg-[var(--glass)] h-[382px] relative overflow-hidden">
+        <div className="mt-5 rounded-[28px] border-[1.5px] border-[var(--line)] bg-[var(--glass)] h-[455px] relative overflow-hidden">
           {/* Generated package content replaces the old hardcoded astronaut crew. */}
-          <motion.div className="absolute left-[28px] top-[28px] w-[475px] h-[326px] flex flex-col gap-4"
+          <motion.div className="absolute left-[28px] top-[28px] w-[580px] h-[399px] flex flex-col gap-4"
             initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35 }}>
             <div className="card px-6 py-4">
               <div className="text-[12px] font-extrabold tracking-[0.14em] text-primary-ink uppercase">Concept</div>
-              <div className="mt-1 font-display font-extrabold text-[26px] leading-tight text-ink">{C.model.title}</div>
-              <p className="mt-2 text-[15px] font-semibold text-ink-2 leading-snug">{C.model.caption}</p>
+              <div className="mt-1 font-display font-extrabold text-[30px] leading-tight text-ink">{C.model.title}</div>
+              <p className="mt-2 text-[17px] font-semibold text-ink-2 leading-snug">{C.model.caption}</p>
             </div>
             <div className="card px-6 py-5 flex-1">
               <div className="text-[12px] font-extrabold tracking-[0.14em] text-primary-ink uppercase">How it works</div>
-              <p className="mt-2 text-[17px] font-bold text-ink-2 leading-relaxed">{C.prompt.statement}</p>
-              <p className="mt-3 font-display font-extrabold text-[25px] leading-tight text-primary-ink">{C.prompt.question.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}{line}</React.Fragment>)}</p>
+              <p className="mt-2 text-[18px] font-bold text-ink-2 leading-relaxed">{C.prompt.statement}</p>
+              <p className="mt-4 font-display font-extrabold text-[29px] leading-tight text-primary-ink">{C.prompt.question.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}{line}</React.Fragment>)}</p>
             </div>
           </motion.div>
 
-          <motion.div className="absolute right-[28px] top-[28px] w-[500px] h-[326px] card grid place-items-center overflow-hidden"
+          <motion.div className="absolute right-[28px] top-[28px] w-[450px] h-[399px] card overflow-hidden"
             initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
-            <LessonVisual model={C.model} />
+            <LessonVisual model={C.model} fill />
           </motion.div>
         </div>
 
@@ -135,7 +135,7 @@ export default function LessonDiscover() {
       </Panel>
 
       {/* right rail: help, offered before it is asked for */}
-      <Panel className="absolute left-[1434px] top-[134px] w-[219px] h-[671px] p-4 flex flex-col">
+      <Panel className="absolute left-[1460px] top-[90px] w-[195px] h-[760px] p-4 flex flex-col">
         <div className="flex items-center gap-2"><Lightbulb size={19} className="text-gold" /><span className="font-display font-extrabold text-[17px] text-ink">NEED A HINT?</span></div>
         <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug">Stuck? Get a little help to move ahead.</p>
 

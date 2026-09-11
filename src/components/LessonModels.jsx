@@ -129,13 +129,30 @@ export const MODELS = [
 
 /** Resolve a question/content visual from its data. Uploaded artwork wins; the
     built-in model remains a fallback for older fraction packages. */
-export function LessonVisual({ model = {}, parts = 1, split, className = '' }) {
+export function LessonVisual({ model = {}, parts = 1, split, className = '', fill = false }) {
   const src = visualSource(model)
   const fallback = MODELS.find(item => item.key === model.key) ?? MODELS[0]
   const [failed, setFailed] = React.useState(false)
   React.useEffect(() => setFailed(false), [src])
 
   if (!src || failed) return <fallback.Art parts={parts} split={split} />
+
+  if (fill) return (
+    <div className={`relative w-full h-full overflow-hidden ${className}`}>
+      <motion.img
+        key={src}
+        src={src}
+        alt={model.alt ?? model.visual?.alt ?? model.label ?? model.title ?? 'Question illustration'}
+        draggable={false}
+        className="absolute inset-0 w-full h-full object-cover"
+        initial={{ opacity: 0, scale: 1.04 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        onError={() => setFailed(true)}
+      />
+      <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.5), inset 0 -45px 70px -60px rgba(35,25,90,.5)' }} />
+    </div>
+  )
 
   return (
     <div className={`relative w-[500px] h-[250px] grid place-items-center ${className}`}>
