@@ -32,7 +32,7 @@ export default function LessonDiscover() {
 
       {/* left column: who you are, what the mission is, and Nova */}
       <Panel className="absolute top-[10px] h-[840px] p-0 overflow-hidden"
-        style={{ left: 'calc(19px - var(--bleed, 0px))', width: 'calc(272px + var(--bleed, 0px))', paddingLeft: 'var(--bleed, 0px)' }}>
+        style={{ left: 'calc(19px - var(--bleed, 0px))', width: 'calc(272px + var(--bleed, 0px))' }}>
         <div className="pt-6 flex flex-col items-center text-center">
           <div className="flex items-center gap-2">
             <img src="/art/planet-sm.webp" alt="" className="w-[52px] floaty" />
@@ -49,20 +49,20 @@ export default function LessonDiscover() {
             <div className="font-display font-extrabold text-[21px] text-ink uppercase">{M.rail.title}</div>
           </div>
         </div>
-        <p className="mt-3 px-5 text-[15px] font-semibold text-ink-2 leading-snug">{M.rail.blurb}</p>
+        <p className="mt-3 px-5 text-[15px] font-semibold text-ink-2 leading-snug text-pretty">{M.rail.blurb}</p>
 
         <div className="mt-3 mx-4 card p-3">
           <div className="flex items-center justify-between">
             <span className="font-display font-extrabold text-[19px] text-primary-ink">Nova</span>
             <button className="text-primary-ink" onClick={() => sfx.success()} aria-label="Hear Nova"><Volume2 size={20} /></button>
           </div>
-          <p className="mt-1 text-[13px] font-bold text-ink-2 leading-snug">{C.nova.speech}</p>
+          <p className="mt-1 text-[13px] font-bold text-ink-2 leading-snug text-pretty">{C.nova.speech}</p>
         </div>
 
         {/* The cutout's own box already sits in this column, so it needs no offset. */}
-        <Child screen="discover" delay={0.4} amp={6} dy={36} scale={0.86} style={{ marginLeft: 'var(--bleed, 0px)' }} />
+        <Child screen="discover" delay={0.4} amp={6} dy={36} scale={0.86} style={{ marginLeft: 'calc(var(--bleed, 0px) / 2)' }} />
 
-        <div className="absolute bottom-5 w-[240px]" style={{ left: 'calc(16px + var(--bleed, 0px))' }}>
+        <div className="absolute left-4 right-4 bottom-5">
           <div className="card px-4 py-3">
             <div className="flex items-center gap-2">
               <img src="/art/planet-sm.webp" alt="" className="w-[26px]" />
@@ -98,7 +98,7 @@ export default function LessonDiscover() {
           <div className="leading-tight">
             <div className="text-[13px] font-extrabold tracking-[0.14em] text-primary-ink">LEARNING MISSION</div>
             <div className="mt-0.5 font-display font-extrabold text-[38px] tracking-[-0.02em] text-ink">{M.title} <span className="text-gold">{M.emoji}</span></div>
-            <div className="mt-1 max-w-[680px] text-[18px] font-semibold text-ink-2 leading-snug">{M.subtitle}</div>
+            <div className="mt-1 max-w-[680px] text-[18px] font-semibold text-ink-2 leading-snug text-pretty">{M.subtitle}</div>
           </div>
           <div className="ml-auto flex items-center gap-3 pt-1">
             <span className="pill h-[50px] px-4 gap-2 text-[17px] font-bold text-ink-2"><Clock size={20} className="text-primary-ink" /> {M.duration_min[0]}&ndash;{M.duration_min[1]} min</span>
@@ -113,11 +113,11 @@ export default function LessonDiscover() {
             <div className="card px-6 py-4">
               <div className="text-[12px] font-extrabold tracking-[0.14em] text-primary-ink uppercase">Concept</div>
               <div className="mt-1 font-display font-extrabold text-[30px] leading-tight text-ink">{C.model.title}</div>
-              <p className="mt-2 text-[17px] font-semibold text-ink-2 leading-snug">{C.model.caption}</p>
+              <p className="mt-2 text-[17px] font-semibold text-ink-2 leading-snug text-pretty">{C.model.caption}</p>
             </div>
             <div className="card px-6 py-5 flex-1">
               <div className="text-[12px] font-extrabold tracking-[0.14em] text-primary-ink uppercase">How it works</div>
-              <p className="mt-2 text-[18px] font-bold text-ink-2 leading-relaxed">{C.prompt.statement}</p>
+              <p className="mt-2 text-[18px] font-bold text-ink-2 leading-relaxed text-pretty">{C.prompt.statement}</p>
               <p className="mt-4 font-display font-extrabold text-[29px] leading-tight text-primary-ink">{C.prompt.question.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}{line}</React.Fragment>)}</p>
             </div>
           </motion.div>
@@ -137,9 +137,9 @@ export default function LessonDiscover() {
 
       {/* right rail: help, offered before it is asked for */}
       <Panel className="absolute top-[90px] h-[760px] p-4 flex flex-col"
-        style={{ right: 'calc(17px - var(--bleed, 0px))', width: 'calc(195px + var(--bleed, 0px))', paddingRight: 'calc(16px + var(--bleed, 0px))' }}>
+        style={{ right: 'calc(17px - var(--bleed, 0px))', width: 'calc(195px + var(--bleed, 0px))' }}>
         <div className="flex items-center gap-2"><Lightbulb size={19} className="text-gold" /><span className="font-display font-extrabold text-[17px] text-ink">NEED A HINT?</span></div>
-        <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug">Stuck? Get a little help to move ahead.</p>
+        <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug text-pretty">Stuck? Get a little help to move ahead.</p>
 
         <div className="mt-3 flex flex-col gap-2.5">
           {HINTS.map((h, i) => {
@@ -166,8 +166,8 @@ export default function LessonDiscover() {
 
         <div className="mt-auto">
           <div className="font-display font-extrabold text-[15px] text-ink">Still not sure?</div>
-          <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug">Review the concept image and learning objective together.</p>
-          <div className="mt-3 card p-3 text-[13px] font-semibold text-ink-2 leading-snug">{C.think_about.text}</div>
+          <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug text-pretty">Review the concept image and learning objective together.</p>
+          <div className="mt-3 card p-3 text-[13px] font-semibold text-ink-2 leading-snug text-pretty">{C.think_about.text}</div>
         </div>
       </Panel>
 
