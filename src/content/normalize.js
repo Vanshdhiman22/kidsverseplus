@@ -23,7 +23,8 @@ function studioQuestion(question, index, learning) {
   const rawAnswer = question.answer ?? question.correct_answer ?? question.correctAnswer
   const answer = mapAnswer(rawAnswer, options)
   const isMulti = Array.isArray(answer)
-  const image = question.image_url ?? question.image ?? question.visual?.url ?? learning.image_url
+  const questionImage = question.image_url ?? question.image ?? question.visual?.url
+  const image = questionImage ?? learning.image_url
   const hints = list(question.hints).length ? list(question.hints) : list(learning.hints)
   return {
     question_id: String(question.question_id ?? question.id ?? `generated_${index + 1}`),
@@ -34,6 +35,7 @@ function studioQuestion(question, index, learning) {
       key: question.model_key ?? `generated-${index + 1}`,
       label: question.image_label ?? 'Question image',
       image,
+      image_source: questionImage ? 'question' : 'lesson_fallback',
       alt: question.image_alt ?? question.alt ?? `Visual for question ${index + 1}`,
       hints,
       feedback_wrong: question.feedback_wrong ?? question.novaFeedback ?? question.explanation ?? learning.nova_feedback ?? 'Look closely and try again.',
@@ -60,10 +62,9 @@ export function normalizeContentPackage(raw, id, fallback) {
   if (payload.content_id === id && payload.discover?.contents && payload.check?.questions) return payload
 
   const learning = payload.learning_content ?? {}
-  const generated = [
-    ...list(payload.check_for_understanding),
-    ...list(payload.test_questions?.questions),
-  ].slice(0, 6)
+  // Learning checks and formal tests are separate banks. Mixing them here made
+  // children receive the same question twice in one learning journey.
+  const generated = list(payload.check_for_understanding).slice(0, 6)
   if (!generated.length) throw new Error('studio package has no questions')
 
   const questions = generated.map((question, index) => studioQuestion(question, index, learning))
@@ -71,7 +72,14 @@ export function normalizeContentPackage(raw, id, fallback) {
     throw new Error('studio questions require text, options, an answer and an image')
   }
 
-  const normalizeGroup = group => list(group).map((question, index) => studioQuestion(question, index, learning))
+  const questionKey = question => String(question.question ?? question.instruction ?? question.prompt ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ')
+  const usedQuestions = new Set(generated.map(questionKey))
+  const normalizeGroup = group => list(group).filter(question => {
+    const key = questionKey(question)
+    if (!key || usedQuestions.has(key)) return false
+    usedQuestions.add(key)
+    return true
+  }).map((question, index) => studioQuestion(question, index, learning))
   const conceptName = payload.concept?.name ?? fallback.topic
   const objective = payload.concept?.learning_objective ?? fallback.learning_objective
   return {

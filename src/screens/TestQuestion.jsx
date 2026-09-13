@@ -15,6 +15,8 @@ import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 import { ACTIVE_CONTENT_ID, useContent } from '../content/index.js'
+import QuestionVisual from '../components/QuestionVisual.jsx'
+import { speak } from '../lib/voice.js'
 
 const LETTERS = ['A', 'B', 'C', 'D']
 
@@ -30,6 +32,7 @@ export default function TestQuestion() {
      clock are carried out of here instead. */
   const START = 8 * 60 + 15
   const [correct, setCorrect] = useState(0)
+  const [review, setReview] = useState([])
   const pkg = useContent(ACTIVE_CONTENT_ID)
   const legacyQuestions = LEGACY_QUESTIONS.map((item, index) => ({
     question_id: `legacy-${index}`,
@@ -47,20 +50,41 @@ export default function TestQuestion() {
      arrives here straight from the daily mission, so the count has to be the real one. */
   const total = QUESTIONS.length, shown = qi + 1
   useEffect(() => { const id = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000); return () => clearInterval(id) }, [])
+  useEffect(() => {
+    if (secs !== 0) return
+    const run = { correct, total: QUESTIONS.length, seconds: START, source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test', review, attemptId: crypto.randomUUID(), completedAt: Date.now() }
+    sessionStorage.setItem('kv:last-test-run', JSON.stringify(run)); sessionStorage.removeItem('kv:test-progress')
+    nav('/tests/mixed/result', { replace: true, state: run })
+  }, [secs]) // eslint-disable-line react-hooks/exhaustive-deps
   const mm = String(Math.floor(secs / 60)).padStart(2, '0'), ss = String(secs % 60).padStart(2, '0')
   const submit = () => {
     if (pick == null) return
     if (submitted) {
       if (qi + 1 >= QUESTIONS.length) {
         sfx.whoosh()
-        nav('/tests/mixed/result', { state: { correct, total: QUESTIONS.length, seconds: START - secs, source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test' } })
+        const run = { correct, total: QUESTIONS.length, seconds: START - secs, source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test', review, attemptId: crypto.randomUUID(), completedAt: Date.now() }
+        sessionStorage.setItem('kv:last-test-run', JSON.stringify(run)); sessionStorage.removeItem('kv:test-progress')
+        nav('/tests/mixed/result', { state: run })
         return
       }
       setQi(qi + 1); setPick(null); setSubmitted(false); sfx.tap(); return
     }
     setSubmitted(true)
-    if (pick === q.answer) { setCorrect(c => c + 1); sfx.success() } else sfx.wrong()
+    const isCorrect = pick === q.answer
+    const selectedLabel = q.options.find(option => option.key === pick)?.label
+    const answerLabel = q.options.find(option => option.key === q.answer)?.label
+    setReview(items => [...items, { question: q.instruction, selectedLabel, answerLabel, correct: isCorrect, explanation: q.explanation || q.feedback_correct, model: q.models?.[0] }])
+    if (isCorrect) { setCorrect(c => c + 1); sfx.success() } else sfx.wrong()
   }
+  useEffect(() => {
+    try {
+      const state = JSON.parse(sessionStorage.getItem('kv:test-progress') || 'null')
+      if (state?.source === source && state.qi < QUESTIONS.length) { setQi(state.qi); setCorrect(state.correct); setReview(state.review || []); setSecs(state.secs) }
+    } catch {}
+  }, [source, QUESTIONS.length])
+  useEffect(() => {
+    if (!submitted) sessionStorage.setItem('kv:test-progress', JSON.stringify({ qi, correct, review, secs, source }))
+  }, [qi, correct, review, secs, source, submitted])
   return (
     <Page>
       <Scene name="question" />
@@ -72,26 +96,31 @@ export default function TestQuestion() {
         <span className="font-display font-extrabold text-[20px] text-ink">{Math.round((shown / total) * 100)}%</span>
       </motion.div>
 
+      {/* The side areas are stable game chrome. Question text, image and options remain data-driven. */}
+      <div className="absolute left-[24px] top-[145px] bottom-[92px] w-[286px] rounded-[30px] border border-white/90 bg-white/55 shadow-[0_24px_65px_rgba(55,48,130,.12)] backdrop-blur-md" />
+      <div className="absolute right-[24px] top-[145px] bottom-[92px] w-[286px] rounded-[30px] border border-white/90 bg-white/60 shadow-[0_24px_65px_rgba(55,48,130,.12)] backdrop-blur-md" />
+
       {/* Was the master boy hardcoded, so this screen alone kept showing him after a
           child picked someone else. The src comes from the slot now; the podium and
           the placement stay exactly as designed. */}
-      <Character src={childSrc(face, 'question')} w={260} x={95} y={170} delay={0.14} podium />
-      <motion.div className="absolute left-[55px] top-[725px] pill h-[80px] px-5 gap-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><span className="icon-orb w-[50px] h-[50px] text-gold" style={{ background: 'rgba(251,191,36,.16)' }}><Star size={26} fill="currentColor" /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[22px] text-ink">{name}</span><span className="block text-[15px] font-semibold text-primary-ink">Explorer in Learning</span></span></motion.div>
-      <Character src="/art/hd/q-nova.webp" w={230} x={1395} y={370} delay={0.17} amp={10} />
-      <div className="absolute left-[1355px] top-[190px]"><SpeechBubble tail="bottom" text="Read the question aloud if you need, Explorer. ✨" delay={0.3} className="w-[200px] text-[17px]" /></div>
-      <motion.button className="absolute left-[1575px] top-[262px] w-[64px] h-[64px] rounded-full pill justify-center text-primary-ink" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => sfx.success()} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}><Volume2 size={28} /></motion.button>
-      <motion.div className="absolute left-[1345px] top-[725px] pill h-[80px] px-5 gap-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><img src="/art/22-novahead.webp" alt="" className="w-[50px]" /><span className="leading-tight"><span className="block font-display font-extrabold text-[22px] text-ink">Nova</span><span className="block text-[15px] font-semibold text-primary-ink">Your AI Learning Buddy</span></span></motion.div>
+      <Character src={childSrc(face, 'question')} w={225} x={55} y={220} delay={0.14} podium />
+      <motion.div className="absolute left-[48px] top-[720px] pill h-[62px] px-4 gap-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><span className="icon-orb w-[40px] h-[40px] text-gold" style={{ background: 'rgba(251,191,36,.16)' }}><Star size={21} fill="currentColor" /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[18px] text-ink">{name}</span><span className="block text-[12px] font-semibold text-primary-ink">Explorer in Learning</span></span></motion.div>
+      <Character src="/art/hd/q-nova.webp" w={190} x={1420} y={395} delay={0.17} amp={8} />
+      <div className="absolute left-[1395px] top-[190px]"><SpeechBubble tail="bottom" text="Take your time. Use the picture to help." delay={0.3} className="w-[210px] text-[15px]" /></div>
+      <motion.button aria-label="Hear question" className="absolute left-[1580px] top-[285px] w-[52px] h-[52px] rounded-full pill justify-center text-primary-ink" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }} onClick={() => speak(`${q.instruction}. ${q.options.map(option => option.label).join('. ')}`)} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}><Volume2 size={23} /></motion.button>
+      <motion.div className="absolute left-[1384px] top-[720px] pill h-[62px] px-4 gap-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><img src="/art/22-novahead.webp" alt="" className="w-[42px]" /><span className="leading-tight"><span className="block font-display font-extrabold text-[18px] text-ink">Nova</span><span className="block text-[12px] font-semibold text-primary-ink">Learning buddy</span></span></motion.div>
 
-      <Panel className="absolute left-[360px] top-[165px] w-[955px] h-[500px] p-8" initial="hidden" animate="show">
+      <Panel className="absolute left-[336px] top-[142px] w-[1000px] h-[590px] p-7" initial="hidden" animate="show">
         <motion.div key={`q${qi}`} initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="text-center font-display font-extrabold text-[30px] text-ink leading-tight">{q.instruction}</motion.div>
-        {q.models?.[0]?.image && <img src={q.models[0].image} alt={q.models[0].alt ?? ''} className="mx-auto mt-3 h-[130px] max-w-[300px] rounded-[18px] object-contain" />}
-        <Stack key={`o${qi}`} className="mt-4 grid grid-cols-4 gap-5" start={0.2} delay={0.08}>
+        <div className="mx-auto mt-3 h-[190px] w-[520px] rounded-[20px] overflow-hidden"><QuestionVisual question={q.instruction} model={q.models?.[0]} /></div>
+        <Stack key={`o${qi}`} className={cn('mx-auto mt-4 grid gap-4', q.options.length <= 4 ? 'grid-cols-2 max-w-[720px]' : 'grid-cols-3 max-w-[880px]')} start={0.2} delay={0.08}>
               {q.options.map((option, i) => {
                 const on = pick === option.key; const right = submitted && option.key === q.answer; const wrongPick = submitted && on && option.key !== q.answer
                 return (
-                  <Item key={option.key} v="pop"><Card hover={!submitted} selected={on && !submitted} className={cn('relative h-[190px] flex flex-col items-center pt-5 overflow-hidden', wrongPick && 'shake')} style={right ? { boxShadow: '0 0 0 3px #22c55e, 0 20px 40px -16px rgba(34,197,94,.5)', borderColor: '#22c55e' } : wrongPick ? { boxShadow: '0 0 0 3px #ef4444', borderColor: '#ef4444' } : undefined} onClick={() => { if (!submitted) { sfx.select(); setPick(option.key) } }}>
-                    <div className="w-full px-4 flex items-center justify-between"><span className={cn('w-[40px] h-[40px] rounded-full grid place-items-center font-display font-extrabold text-[20px]', on || right ? 'text-white' : 'text-primary-ink bg-[var(--lavender)]')} style={on || right ? { background: right ? '#22c55e' : 'var(--grad-primary)' } : undefined}>{LETTERS[i]}</span>{on || right ? <motion.span className="w-[34px] h-[34px] rounded-full grid place-items-center text-white" style={{ background: right ? '#22c55e' : 'var(--grad-primary)' }} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 18 }}><Check size={20} strokeWidth={3.5} /></motion.span> : <span className="radio" />}</div>
-                    <div className="flex-1 grid place-items-center px-4 text-center font-display font-extrabold text-[24px] text-ink leading-tight">{option.label}</div>
+                  <Item key={option.key} v="pop"><Card hover={!submitted} selected={on && !submitted} role="button" tabIndex={submitted ? -1 : 0} aria-pressed={on} className={cn('relative h-[92px] flex items-center px-5 gap-4 overflow-hidden', wrongPick && 'shake')} style={right ? { boxShadow: '0 0 0 3px #22c55e, 0 16px 30px -16px rgba(34,197,94,.5)', borderColor: '#22c55e' } : wrongPick ? { boxShadow: '0 0 0 3px #ef4444', borderColor: '#ef4444' } : undefined} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && !submitted && setPick(option.key)} onClick={() => { if (!submitted) { sfx.select(); setPick(option.key) } }}>
+                    <span className={cn('shrink-0 w-[40px] h-[40px] rounded-full grid place-items-center font-display font-extrabold text-[20px]', on || right ? 'text-white' : 'text-primary-ink bg-[var(--lavender)]')} style={on || right ? { background: right ? '#22c55e' : 'var(--grad-primary)' } : undefined}>{LETTERS[i]}</span>
+                    <div className="flex-1 text-center font-display font-extrabold text-[22px] text-ink leading-tight">{option.label}</div>
+                    {on || right ? <motion.span className="shrink-0 w-[30px] h-[30px] rounded-full grid place-items-center text-white" style={{ background: right ? '#22c55e' : 'var(--grad-primary)' }} initial={{ scale: 0 }} animate={{ scale: 1 }}><Check size={18} strokeWidth={3.5} /></motion.span> : <span className="radio shrink-0" />}
                     <AnimatePresence>{right && <motion.div className="w-full py-2 text-center" style={{ background: 'var(--success-bg)', color: 'var(--success-ink)' }} initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={{ type: 'spring', stiffness: 300, damping: 24 }}><div className="font-extrabold text-[16px] flex items-center justify-center gap-2"><Check size={17} strokeWidth={3.5} /> Correct</div></motion.div>}</AnimatePresence>
                     <AnimatePresence>{wrongPick && <motion.div className="w-full py-2 text-center" style={{ background: 'var(--danger-bg)', color: 'var(--danger-ink)' }} initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }}><div className="font-extrabold text-[16px]">Not quite</div></motion.div>}</AnimatePresence>
                   </Card></Item>
@@ -99,8 +128,8 @@ export default function TestQuestion() {
               })}
         </Stack>
       </Panel>
-      <motion.div className="absolute left-[530px] top-[665px]" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow className="w-[600px] h-[112px] uppercase text-[32px]" sub={submitted ? (qi + 1 >= QUESTIONS.length ? 'See your results' : 'Next question') : 'Review your choice and submit'} disabled={pick == null} sound="whoosh" onClick={submit}>{submitted ? (qi + 1 >= QUESTIONS.length ? 'Finish Test' : 'Next Question') : 'Submit Answer'}</Button>
+      <motion.div className="absolute left-[576px] top-[748px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <Button arrow className="w-[520px] h-[66px] uppercase text-[21px]" disabled={pick == null} sound="whoosh" onClick={submit}>{submitted ? (qi + 1 >= QUESTIONS.length ? 'Finish Test' : 'Next Question') : 'Check Answer'}</Button>
       </motion.div>
     </Page>
   )

@@ -1,17 +1,18 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
-import { Flame, Star, Lightbulb, Headphones, Volume2, Check, Lock, RefreshCw, CircleHelp } from 'lucide-react'
+import { Flame, Star, Lightbulb, Headphones, Volume2, Check, Lock, RefreshCw } from 'lucide-react'
 import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import Logo from '../components/Logo.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import { LessonVisual } from '../components/LessonModels.jsx'
+import QuestionVisual from '../components/QuestionVisual.jsx'
 import { ACTIVE_CONTENT_ID, useContent, checkQuestion } from '../content/index.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeB, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
+import { speak } from '../lib/voice.js'
 import { cn } from '../lib/utils.js'
 
 /* The mis-cut the child has to catch. Every model is drawn from this one array,
@@ -26,9 +27,9 @@ export default function SpotMistake() {
   const [picks, setPicks] = useState([])
   const [locked, setLocked] = useState(false)
   const [score, setScore] = useState(0)
-  const [hints, setHints] = useState(1)
+  const [hints, setHints] = useState(0)
   const [wrong, setWrong] = useState(0)
-  const [showWhy, setShowWhy] = useState(false)
+  const [review, setReview] = useState([])
   /* Offered right on the question, not a screen further on: a child who cannot see
      it in the pizza often sees it at once in a bar or on a number line. */
   const [model, setModel] = useState(0)
@@ -49,8 +50,6 @@ export default function SpotMistake() {
     if (locked) return
     if (!multi) {
       setPicks([v])
-      setLocked(true)
-      if (answers.includes(v)) { sfx.success(); setScore(value => value + 1); g.addXp(Q.xp_on_correct, Q.title) } else { sfx.wrong(); setWrong(w => w + 1) }
       return
     }
 
@@ -58,13 +57,40 @@ export default function SpotMistake() {
       ? picks.filter(key => key !== v)
       : picks.length < requiredCount ? [...picks, v] : picks
     setPicks(next)
-    if (next.length === requiredCount) {
-      const right = next.length === answers.length && next.every(key => answers.includes(key))
-      setLocked(true)
-      if (right) { sfx.success(); setScore(value => value + 1); g.addXp(Q.xp_on_correct, Q.title) }
-      else { sfx.wrong(); setWrong(w => w + 1) }
-    } else sfx.tap()
+    sfx.tap()
   }
+  const check = () => {
+    if (!answered || locked) return
+    setLocked(true)
+    const selectedLabel = picks.map(key => Q.options.find(option => option.key === key)?.label).filter(Boolean).join(', ')
+    const answerLabel = answers.map(key => Q.options.find(option => option.key === key)?.label).filter(Boolean).join(', ')
+    setReview(items => [...items, { question: Q.instruction, selectedLabel, answerLabel, correct, hintsUsed: hints, explanation: Q.explanation || (correct ? Q.feedback_correct : QM.feedback_wrong), model: QM }])
+    if (correct) { sfx.success(); setScore(value => value + 1); g.addXp(Q.xp_on_correct, Q.title) }
+    else { sfx.wrong(); setWrong(w => w + 1); setHints(value => Math.max(1, value)) }
+  }
+  const advance = () => {
+    if (questionIndex === questions.length - 1) {
+      const result = { score, total: questions.length, review, attemptId: crypto.randomUUID(), completedAt: Date.now() }
+      sessionStorage.setItem('kv:last-mission-score', JSON.stringify(result))
+      sessionStorage.removeItem('kv:mission-progress')
+      nav('/missions/fractions/complete', { state: result })
+      return
+    }
+    setQuestionIndex(i => i + 1); setPicks([]); setLocked(false); setHints(0); setWrong(0); setModel(0)
+  }
+  useEffect(() => {
+    const saved = sessionStorage.getItem('kv:mission-progress')
+    if (!saved) return
+    try {
+      const state = JSON.parse(saved)
+      if (state.total === questions.length && state.questionIndex < questions.length) {
+        setQuestionIndex(state.questionIndex); setScore(state.score); setReview(state.review || [])
+      }
+    } catch {}
+  }, [questions.length])
+  useEffect(() => {
+    if (!locked) sessionStorage.setItem('kv:mission-progress', JSON.stringify({ questionIndex, score, review, total: questions.length }))
+  }, [questionIndex, score, review, locked, questions.length])
   return (
     <Page>
       <Scene name="spot" />
@@ -80,39 +106,23 @@ export default function SpotMistake() {
         <div className="text-center"><div className="label-caps mb-2">Question {questionIndex + 1} of {questions.length}</div><h1 className="font-display font-extrabold text-[54px] leading-none text-ink">{Q.title}</h1><motion.div className="mx-auto mt-3 h-[6px] w-[90px] rounded-full" style={{ background: 'var(--grad-primary)' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.2 }} /><p className="mt-3 text-[21px] font-semibold text-ink-2 leading-snug">{Q.instruction.split('\n').map((l, i) => <React.Fragment key={i}>{i > 0 && <br />}{l}</React.Fragment>)}</p></div>
         {/* The thing being judged. It lives here in the DOM, not in the backdrop,
             so it can be re-drawn as a different model on request. */}
-        <div className="absolute left-[255px] top-[196px]">
+        <div className="absolute left-[125px] top-[195px] w-[760px] h-[245px]">
           {/* Keyed, but with no exit to wait on: the new model mounts at once, so
               the picture and the words that name it can never disagree. */}
           <motion.div key={`${Q.question_id}:${QM.key}:${QM.image ?? QM.image_url ?? ''}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24 }}>
-            <LessonVisual model={QM} split={Q.split ?? SPLIT} />
+            <QuestionVisual question={Q.instruction} model={QM} />
           </motion.div>
         </div>
         {/* Tucked into the corner beside NO rather than sitting between the picture
             and the answers, where it read as a third thing to choose. */}
-        {Q.models.length > 1 && !locked && (
+        {Q.models.length > 1 && (
           <div className="absolute right-[26px] bottom-[26px] w-[182px] h-[150px] flex flex-col items-center justify-center gap-2">
             <Button variant="outline" size="sm" icon={<RefreshCw size={17} />} className="w-full h-[62px] px-3 text-[15px] leading-tight"
               onClick={() => { sfx.tap(); setModel(m => (m + 1) % Q.models.length) }}>Show it another way</Button>
             <span className="text-[13px] font-bold text-ink-3 text-center">Showing: {QM.label}</span>
           </div>
         )}
-        {locked && (
-          <motion.div className="absolute right-[26px] bottom-[26px] w-[210px]" initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }}>
-            <Button variant="outline" size="sm" icon={<CircleHelp size={18} />} className="w-full h-[46px] text-[16px]"
-              onClick={() => { sfx.tap(); setShowWhy(open => !open) }}>{showWhy ? 'Hide Why' : 'Why?'}</Button>
-            <AnimatePresence>
-              {showWhy && (
-                <motion.div className="mt-3 card p-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <div className="eyebrow text-[13px] flex items-center gap-2"><CircleHelp size={16} className="text-primary-ink" /> Why this answer?</div>
-                  <div className="mt-2 max-h-[145px] overflow-y-auto pr-2 text-[14px] font-semibold text-ink-2 leading-relaxed" tabIndex={0}>
-                    {Q.explanation || (correct ? Q.feedback_correct : QM.feedback_wrong)}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
-        <div className={cn('absolute left-[58px] bottom-[26px] grid gap-4', Q.options.length > 4 ? 'grid-cols-3 w-[704px]' : 'grid-cols-2 w-[688px]')}>
+        <div className={cn('absolute left-1/2 -translate-x-1/2 bottom-[24px] grid gap-4', Q.options.length > 4 ? 'grid-cols-3 w-[850px]' : 'grid-cols-2 w-[760px]')}>
           {Q.options.map(({ key: v, label: big, sub }) => {
             const on = picks.includes(v)
             /* A wrong pick should not leave the child guessing which one was right:
@@ -124,10 +134,10 @@ export default function SpotMistake() {
                and make a right answer look merely picked, so once a card is marked
                right or wrong that colour is the one left to read. */
             return (
-              <Card key={v} hover selected={on && !right && !wrong}
+              <Card key={v} hover selected={on && !right && !wrong} role="button" tabIndex={locked ? -1 : 0}
                 className={cn('relative flex flex-col items-center justify-center text-center px-5 transition-colors', Q.options.length > 2 ? 'h-[104px]' : 'h-[150px]', right && 'bg-[var(--success-bg)]', wrong && 'bg-[var(--danger-bg)]')}
                 style={right ? { boxShadow: '0 0 0 3px #22c55e, 0 20px 44px -16px rgba(34,197,94,.5)' } : wrong ? { boxShadow: '0 0 0 3px #ef4444' } : undefined}
-                aria-disabled={locked} onClick={() => choose(v)}>
+                aria-disabled={locked} aria-pressed={on} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && choose(v)} onClick={() => choose(v)}>
                 <span className="absolute top-4 right-4">
                   {right || wrong
                     ? <motion.span initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }}
@@ -176,19 +186,11 @@ export default function SpotMistake() {
       </Panel>
 
       <motion.div className="absolute flex items-center gap-3" style={{ ...bleedL(24), ...safeB(37) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27 }}>
-        <button className="pill h-[74px] px-4 gap-4 text-left" onClick={() => sfx.success()}><span className="icon-orb w-[54px] h-[54px] text-white" style={{ background: 'var(--grad-primary)' }}><Volume2 size={26} /></span><span className="leading-tight"><span className="block text-[17px] font-extrabold text-ink">Tap to hear the question</span><span className="block text-[13px] font-semibold text-ink-3">Listen anytime!</span></span></button>
+        <button className="pill h-[74px] px-4 gap-4 text-left" onClick={() => speak(`${Q.instruction}. ${Q.options.map(option => option.label).join('. ')}`)}><span className="icon-orb w-[54px] h-[54px] text-white" style={{ background: 'var(--grad-primary)' }}><Volume2 size={26} /></span><span className="leading-tight"><span className="block text-[17px] font-extrabold text-ink">Tap to hear the question</span><span className="block text-[13px] font-semibold text-ink-3">Listen anytime!</span></span></button>
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => hints < HINTS.length && (sfx.unlock(), setHints(hints + 1))}><Lightbulb size={22} className="text-gold" fill="currentColor" /> Hint</button>
-        <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => sfx.tap()}><Headphones size={22} className="text-primary-ink" /> Listen</button>
+        <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => speak(Q.instruction)}><Headphones size={22} className="text-primary-ink" /> Listen</button>
       </motion.div>
-      <motion.div className="absolute" style={{ ...bleedR(24), ...safeB(69) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!locked} sound="whoosh" onClick={() => {
-        if (questionIndex === questions.length - 1) {
-          const result = { score, total: questions.length }
-          sessionStorage.setItem('kv:last-mission-score', JSON.stringify(result))
-          nav('/missions/fractions/complete', { state: result })
-          return
-        }
-        setQuestionIndex(i => i + 1); setPicks([]); setLocked(false); setHints(1); setWrong(0); setModel(0); setShowWhy(false)
-      }}>{questionIndex === questions.length - 1 ? 'Finish Mission' : 'Next Question'}</Button></motion.div>
+      <motion.div className="absolute" style={{ ...bleedR(24), ...safeB(69) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!answered} sound="whoosh" onClick={locked ? advance : check}>{locked ? (questionIndex === questions.length - 1 ? 'Finish Mission' : 'Next Question') : 'Check Answer'}</Button></motion.div>
     </Page>
   )
 }

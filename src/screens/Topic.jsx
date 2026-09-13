@@ -60,7 +60,7 @@ export default function Topic() {
 
       <Stack className="absolute left-[1225px] top-[612px] w-[400px]" start={1}>
         <Item v="pop"><Button size="lg" arrow icon={<Rocket size={26} strokeWidth={2.4} />} className="w-full h-[78px] uppercase text-[22px] px-6 whitespace-nowrap" sound="whoosh" onClick={() => nav('/missions/fractions')}>Learn with Nova</Button></Item>
-        <Item v="pop" className="mt-4 grid grid-cols-2 gap-4"><Button variant="ghost" size="md" icon={<Pencil size={20} />} className="h-[68px] uppercase text-[17px] px-4 whitespace-nowrap" onClick={() => nav('/missions/fractions')}>Practise</Button><Button variant="ghost" size="md" icon={<ClipboardCheck size={20} />} className="h-[68px] uppercase text-[17px] px-4 whitespace-nowrap" onClick={() => nav('/tests/mixed/intro')}>Take Test</Button></Item>
+        <Item v="pop" className="mt-4 grid grid-cols-2 gap-4"><Button variant="ghost" size="md" icon={<Pencil size={20} />} className="h-[68px] uppercase text-[17px] px-4 whitespace-nowrap" onClick={() => nav('/missions/fractions/learn')}>Practise</Button><Button variant="ghost" size="md" icon={<ClipboardCheck size={20} />} className="h-[68px] uppercase text-[17px] px-4 whitespace-nowrap" onClick={() => nav('/tests/mixed/intro')}>Take Test</Button></Item>
       </Stack>
     </Page>
   )
