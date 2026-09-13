@@ -59,9 +59,11 @@ export function openAccount(state, email) {
 }
 
 export function loginRoute(state, parent = false) {
-  if (state.creatingChild) return '/onboarding/grade-board'
-  if (!state.children.length) return '/onboarding/child'
-  return parent ? '/parent' : state.children.length > 1 ? '/switch' : '/home'
+  // Signing in is always a returning-user flow. Child onboarding belongs only
+  // to Create Account (or the explicit Add child action), so an empty local
+  // browser must never turn Login into Sign up.
+  if (parent) return '/parent'
+  return state.children.length > 1 ? '/switch' : '/home'
 }
 
 export function remoteStudent(student, characters = []) {

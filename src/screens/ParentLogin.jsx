@@ -37,11 +37,9 @@ export default function ParentLogin() {
   /* Where signing in leads depends on which door was used on the landing page:
      a parent who asked for the Parent Zone lands there, everyone else carries
      on into the child's setup. */
-  /* Signing in lands where the account actually is: straight into the app for a single
-     child, the child picker when the account holds more than one, and only onto the
-     onboarding steps when there is no child yet. It used to send every sign-in to the
-     Create Child screen, so returning families were asked to name a child they had
-     already made. */
+  /* Sign in is a returning-family door: one child (or an empty local demo browser)
+     enters the game, siblings use the picker, and Parent Zone opens for the grown-up.
+     Only Create Account is allowed to begin child onboarding. */
   const signIn = async () => {
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
       /* g.notice renders through NovaIsland, which this route excludes, so the guard was

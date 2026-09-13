@@ -8,12 +8,12 @@ const add = (state, name, face, id) => {
   return finishChild({ ...draft, profile: { ...draft.profile, face } }, id)
 }
 
-test('new family has blank name, no selected avatar, and no picker', () => {
+test('login never sends a returning user into child creation', () => {
   const state = openAccount(fresh(), 'parent@example.com')
   assert.equal(state.profile.name, '')
   assert.equal(state.profile.face, null)
-  assert.equal(loginRoute(state), '/onboarding/child')
-  assert.equal(loginRoute(state, true), '/onboarding/child')
+  assert.equal(loginRoute(state), '/home')
+  assert.equal(loginRoute(state, true), '/parent')
   assert.equal(finishChild(beginChild(state, 'Alex'), 'a').children.length, 0)
 })
 
@@ -59,12 +59,12 @@ test('legacy demo family is removed but edited student data is retained', () => 
   assert.equal(edited.profile.face, 3)
 })
 
-test('unfinished sibling setup resumes without creating a fake student', () => {
+test('sign in does not resume an unfinished child setup', () => {
   let state = add(openAccount(fresh(), 'parent@example.com'), 'Alex', 1, 'a')
   state = beginChild(state, 'Sam')
   state = openAccount(JSON.parse(JSON.stringify(state)), 'parent@example.com')
   assert.equal(state.children.length, 1)
-  assert.equal(loginRoute(state), '/onboarding/grade-board')
+  assert.equal(loginRoute(state), '/home')
   assert.equal(state.profile.name, 'Sam')
   assert.equal(state.profile.face, null)
 })
