@@ -55,12 +55,12 @@ export default function CreateAccount() {
     return null
   }
 
-  const create = () => {
+  const create = async () => {
     setTried(true)
     if (!ready) { sfx.wrong?.(); return }
     sfx.whoosh()
-    /* Remember who the account belongs to, then hand over to the child steps. */
-    g.setProfile({ parentEmail: email.trim() })
+    /* Register the account in the same local family store used by Sign In. */
+    await g.signUp(email.trim())
     g.setAuthIntent?.('parent')
     nav('/onboarding/child')
   }

@@ -41,7 +41,12 @@ export function openAccount(state, email) {
   const snapshot = { profile: state.profile, stats: state.stats, progress: state.progress,
     children: saveChild(state), activeChildId: state.activeChildId, creatingChild: state.creatingChild, parentLock: state.parentLock }
   if (oldKey) accounts[oldKey] = snapshot
-  const family = key === oldKey ? snapshot : accounts[key]
+  // Builds before the local account registry stored the completed family but
+  // sometimes omitted parentEmail. Attach that one orphaned family to the
+  // first returning sign-in instead of sending the parent through onboarding.
+  const orphanedFamily = !oldKey && !Object.keys(accounts).length && snapshot.children.length ? snapshot : null
+  const family = key === oldKey || orphanedFamily ? (orphanedFamily ?? snapshot) : accounts[key]
+  if (orphanedFamily) accounts[key] = orphanedFamily
   return { ...state, ...(family ?? { profile: { ...emptyProfile }, stats: { ...emptyStats }, progress: { ...emptyProgress }, children: [], activeChildId: null, creatingChild: false, parentLock: { pin: null } }),
     accounts, profile: { ...(family?.profile ?? emptyProfile), parentEmail: key } }
 }

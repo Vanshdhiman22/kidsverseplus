@@ -68,3 +68,13 @@ test('unfinished sibling setup resumes without creating a fake student', () => {
   assert.equal(state.profile.name, 'Sam')
   assert.equal(state.profile.face, null)
 })
+
+test('a completed legacy family without an email is recovered on sign in', () => {
+  let state = add(fresh(), 'Alex', 2, 'a')
+  assert.equal(state.profile.parentEmail, undefined)
+  state = openAccount(JSON.parse(JSON.stringify(state)), 'parent@example.com')
+  assert.equal(state.children.length, 1)
+  assert.equal(state.profile.name, 'Alex')
+  assert.equal(state.profile.parentEmail, 'parent@example.com')
+  assert.equal(loginRoute(state), '/home')
+})
