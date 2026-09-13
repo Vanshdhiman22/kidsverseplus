@@ -102,14 +102,21 @@ export default function SpotMistake() {
       </Panel>
       <Child screen="spot" delay={0.5} />
 
-      <Panel className="absolute left-[320px] top-[90px] w-[1010px] h-[705px] p-8 overflow-hidden" initial="hidden" animate="show">
-        <div className="text-center"><div className="label-caps mb-2">Question {questionIndex + 1} of {questions.length}</div><h1 className="font-display font-extrabold text-[54px] leading-none text-ink">{Q.title}</h1><motion.div className="mx-auto mt-3 h-[6px] w-[90px] rounded-full" style={{ background: 'var(--grad-primary)' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.2 }} /><p className="mt-3 text-[21px] font-semibold text-ink-2 leading-snug">{Q.instruction.split('\n').map((l, i) => <React.Fragment key={i}>{i > 0 && <br />}{l}</React.Fragment>)}</p></div>
+      <Panel className="absolute left-[292px] top-[76px] w-[1125px] h-[735px] p-7 overflow-hidden" initial="hidden" animate="show">
+        <div className="text-center">
+          <div className="label-caps mb-1">Question {questionIndex + 1} of {questions.length}</div>
+          <h1 className="font-display font-extrabold text-[48px] leading-none text-ink">{Q.title}</h1>
+          <motion.div className="mx-auto mt-2 h-[5px] w-[84px] rounded-full" style={{ background: 'var(--grad-primary)' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.2 }} />
+          <div className="mx-auto mt-3 max-w-[940px] rounded-[18px] border border-[var(--primary)] bg-[var(--lavender)] px-6 py-3 shadow-[0_14px_35px_-28px_rgba(93,67,238,.8)]">
+            <p className="text-[21px] font-extrabold text-ink leading-snug">{Q.instruction.split('\n').map((l, i) => <React.Fragment key={i}>{i > 0 && <br />}{l}</React.Fragment>)}</p>
+          </div>
+        </div>
         {/* The thing being judged. It lives here in the DOM, not in the backdrop,
             so it can be re-drawn as a different model on request. */}
-        <div className="absolute left-[125px] top-[195px] w-[760px] h-[245px]">
+        <div className="absolute left-[72px] top-[205px] w-[980px] h-[270px]">
           {/* Keyed, but with no exit to wait on: the new model mounts at once, so
               the picture and the words that name it can never disagree. */}
-          <motion.div key={`${Q.question_id}:${QM.key}:${QM.image ?? QM.image_url ?? ''}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24 }}>
+          <motion.div className="h-full" key={`${Q.question_id}:${QM.key}:${QM.image ?? QM.image_url ?? ''}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24 }}>
             <QuestionVisual question={Q.instruction} model={QM} />
           </motion.div>
         </div>
@@ -122,7 +129,7 @@ export default function SpotMistake() {
             <span className="text-[13px] font-bold text-ink-3 text-center">Showing: {QM.label}</span>
           </div>
         )}
-        <div className={cn('absolute left-1/2 -translate-x-1/2 bottom-[24px] grid gap-4', Q.options.length > 4 ? 'grid-cols-3 w-[850px]' : 'grid-cols-2 w-[760px]')}>
+        <div className={cn('absolute left-1/2 -translate-x-1/2 bottom-[22px] grid gap-3', Q.options.length > 4 ? 'grid-cols-3 w-[940px]' : 'grid-cols-2 w-[880px]')}>
           {Q.options.map(({ key: v, label: big, sub }) => {
             const on = picks.includes(v)
             /* A wrong pick should not leave the child guessing which one was right:
@@ -135,7 +142,7 @@ export default function SpotMistake() {
                right or wrong that colour is the one left to read. */
             return (
               <Card key={v} hover selected={on && !right && !wrong} role="button" tabIndex={locked ? -1 : 0}
-                className={cn('relative flex flex-col items-center justify-center text-center px-5 transition-colors', Q.options.length > 2 ? 'h-[104px]' : 'h-[150px]', right && 'bg-[var(--success-bg)]', wrong && 'bg-[var(--danger-bg)]')}
+                className={cn('relative flex flex-col items-center justify-center text-center px-5 transition-colors', Q.options.length > 2 ? 'h-[98px]' : 'h-[138px]', right && 'bg-[var(--success-bg)]', wrong && 'bg-[var(--danger-bg)]')}
                 style={right ? { boxShadow: '0 0 0 3px #22c55e, 0 20px 44px -16px rgba(34,197,94,.5)' } : wrong ? { boxShadow: '0 0 0 3px #ef4444' } : undefined}
                 aria-disabled={locked} aria-pressed={on} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && choose(v)} onClick={() => choose(v)}>
                 <span className="absolute top-4 right-4">
