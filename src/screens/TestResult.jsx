@@ -13,11 +13,13 @@ import { gradeLabel } from '../data/catalog.js'
 import { sfx } from '../lib/sound.js'
 import PerfectScorePopup from '../components/PerfectScorePopup.jsx'
 import AttemptReview from '../components/AttemptReview.jsx'
+import { useRouteContent, withSubject } from '../content/index.js'
 
 export default function TestResult() {
   const nav = useNavigate()
   const g = useGame(); const { name, face, grade } = g.state.profile
   const [showReview, setShowReview] = useState(false)
+  const pkg = useRouteContent()
   /* The run's real numbers, handed over by TestQuestion. Opened directly (a bookmark, a
      refresh) there is no run to report, so the score reads as not-taken rather than as a
      confident 8 / 10 nobody earned. */
@@ -70,7 +72,7 @@ export default function TestResult() {
       {/* The right-hand column starts at x=1075, so this row has to finish before it:
           the wider version ran to 1280 and sat on the Nova Recommends card. */}
       <motion.div className="absolute left-[350px] top-[725px] flex items-center gap-5" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow icon={pct < 95 ? <RefreshCw size={28} /> : <Rocket size={28} strokeWidth={2.4} />} className="w-[470px] h-[92px] uppercase text-[23px]" sub={pct < 95 ? 'Review the idea before another attempt' : 'Focus. Improve. Master!'} sound="whoosh" onClick={() => nav(pct < 95 ? '/missions/fractions/learn' : (run?.source === 'challenge' ? '/tests/mixed/intro?source=challenge' : '/tests/mixed/intro'))}>{pct < 95 ? 'Practise First' : 'Try Another Test'}</Button>
+        <Button size="lg" arrow icon={pct < 95 ? <RefreshCw size={28} /> : <Rocket size={28} strokeWidth={2.4} />} className="w-[470px] h-[92px] uppercase text-[23px]" sub={pct < 95 ? 'Review the idea before another attempt' : 'Focus. Improve. Master!'} sound="whoosh" onClick={() => nav(pct < 95 ? withSubject('/missions/fractions/learn') : withSubject(run?.source === 'challenge' ? '/tests/mixed/intro?source=challenge' : '/tests/mixed/intro'))}>{pct < 95 ? 'Practise First' : 'Try Another Test'}</Button>
         <Button variant="ghost" size="md" icon={<Gamepad2 size={24} />} className="w-[215px] h-[70px] px-4 uppercase text-[17px]" onClick={() => setShowReview(true)}>Review</Button>
       </motion.div>
 
@@ -90,9 +92,9 @@ export default function TestResult() {
       </Panel>
       <Panel className="absolute left-[1075px] top-[555px] w-[495px] p-6" initial="hidden" animate="show">
         <div className="label-caps text-[14px]">Nova Recommends</div>
-        <Card hover className="mt-3 h-[110px] pr-5 flex items-center gap-4 overflow-hidden" onClick={() => nav('/missions/fractions')}>
+        <Card hover className="mt-3 h-[110px] pr-5 flex items-center gap-4 overflow-hidden" onClick={() => nav(withSubject('/missions/fractions'))}>
           <img src="/art/hd/nova-v2.webp" alt="" className="h-[120px] object-contain -ml-2 floaty" />
-          <span className="flex-1 leading-tight"><span className="block font-display font-extrabold text-[19px] text-primary-ink">5-minute targeted lesson</span><span className="block text-[15px] font-semibold text-ink-2">Review your tricky questions with Nova.</span></span>
+          <span className="flex-1 leading-tight"><span className="block font-display font-extrabold text-[19px] text-primary-ink">5-minute {pkg.subject} lesson</span><span className="block text-[15px] font-semibold text-ink-2">Review your tricky questions with Nova.</span></span>
           <ChevronRight size={28} className="text-primary-ink" />
         </Card>
       </Panel>

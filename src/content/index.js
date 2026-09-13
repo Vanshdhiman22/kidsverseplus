@@ -17,9 +17,11 @@ import { useEffect, useState } from 'react'
 import fractions from './fractions-equal-parts.json'
 import additionStudio from './packages/addition-introduction.json'
 import { normalizeContentPackage } from './normalize.js'
+import { subjectDemoRaw } from './subject-demos.js'
 
 const addition = normalizeContentPackage(additionStudio, 'addition-introduction', fractions)
 const BUNDLED = { 'fractions-equal-parts': fractions, 'addition-introduction': addition }
+for (const subject of ['literacy', 'evs', 'computer', 'general']) BUNDLED[`demo-${subject}`] = normalizeContentPackage(subjectDemoRaw(subject), `demo-${subject}`, addition)
 export const ACTIVE_CONTENT_ID = import.meta.env.VITE_LEARNING_PACKAGE_ID || 'addition-introduction'
 const API = import.meta.env.VITE_CONTENT_API
 
@@ -51,6 +53,13 @@ export function useContent(id) {
     return () => { live = false }
   }, [id])
   return pkg
+}
+
+export const routeSubject = () => new URLSearchParams(window.location.search).get('subject') || 'maths'
+export const withSubject = (path, subject = routeSubject()) => `${path}${path.includes('?') ? '&' : '?'}subject=${subject}`
+export function useRouteContent() {
+  const subject = routeSubject()
+  return useContent(subject === 'maths' ? ACTIVE_CONTENT_ID : `demo-${subject}`)
 }
 
 /* Small helpers the screens share, so each does not re-derive the same things. */

@@ -8,7 +8,7 @@ import { Panel } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import { LessonVisual } from '../components/LessonModels.jsx'
 import { useGame } from '../state/GameProvider.jsx'
-import { ACTIVE_CONTENT_ID, useContent, discoverContent } from '../content/index.js'
+import { useRouteContent, discoverContent, withSubject } from '../content/index.js'
 import { sfx } from '../lib/sound.js'
 import { speak } from '../lib/voice.js'
 import { cn } from '../lib/utils.js'
@@ -19,7 +19,7 @@ export default function LessonDiscover() {
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
   const [opened, setOpened] = React.useState(0)      // hints revealed so far
   /* Everything this screen says comes from the learning package; the JSX is the template. */
-  const pkg = useContent(ACTIVE_CONTENT_ID)
+  const pkg = useRouteContent()
   const C = discoverContent(pkg)
   const M = pkg.mission
   const HINTS = C.hints
@@ -133,7 +133,7 @@ export default function LessonDiscover() {
         <div className="mt-4 rounded-[20px] border-[1.5px] border-[var(--line)] bg-[var(--glass)] h-[62px] px-5 flex items-center gap-3">
           <span className="icon-orb w-[36px] h-[36px] shrink-0"><Lightbulb size={20} /></span>
           <p className="text-[17px] font-semibold text-ink-2">Think about: {(C.think_about.emphasis ? C.think_about.text.split(C.think_about.emphasis) : [C.think_about.text]).map((part, i, arr) => <React.Fragment key={i}>{part}{i < arr.length - 1 && <span className="font-extrabold text-primary-ink">{C.think_about.emphasis}</span>}</React.Fragment>)}</p>
-          <Button size="sm" arrow className="ml-auto h-[46px] px-6 uppercase text-[17px]" sound="whoosh" onClick={() => nav('/missions/fractions/learn')}>Start Learning</Button>
+          <Button size="sm" arrow className="ml-auto h-[46px] px-6 uppercase text-[17px]" sound="whoosh" onClick={() => nav(withSubject('/missions/fractions/learn'))}>Start Learning</Button>
         </div>
       </Panel>
 
