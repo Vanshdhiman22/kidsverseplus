@@ -60,9 +60,9 @@ export default function CreateAccount() {
     if (!ready) { sfx.wrong?.(); return }
     sfx.whoosh()
     /* Register the account in the same local family store used by Sign In. */
-    await g.signUp(email.trim())
+    const next = await g.signUp(email.trim())
     g.setAuthIntent?.('parent')
-    nav('/onboarding/child')
+    nav(next)
   }
 
   return (

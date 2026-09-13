@@ -3,6 +3,13 @@ export const emptyStats = { xp: 0, xpToday: 0, streak: 0, coins: 0, badges: 0, d
 export const emptyProgress = { lessonStage: 1, quizzesDone: 0, mastery: 0, world: 'maths', worldDone: {}, journeySeen: {}, lastTest: null }
 export const accountKey = value => value.trim().toLowerCase()
 
+export function hasFamily(state, email) {
+  const key = accountKey(email)
+  const currentKey = accountKey(state.profile.parentEmail ?? '')
+  if (state.accounts?.[key]?.children?.length) return true
+  return key === currentKey && Boolean(state.children?.length)
+}
+
 export function saveChild(state) {
   if (!state.activeChildId || state.creatingChild) return state.children
   const child = { ...state.profile, id: state.activeChildId, stats: state.stats, progress: state.progress,

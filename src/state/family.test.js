@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { emptyProfile, emptyStats, emptyProgress, beginChild, finishChild, selectChild, openAccount, loginRoute, migrateFamily } from './family.js'
+import { emptyProfile, emptyStats, emptyProgress, beginChild, finishChild, selectChild, openAccount, loginRoute, migrateFamily, hasFamily } from './family.js'
 
 const fresh = () => ({ profile: { ...emptyProfile }, stats: { ...emptyStats }, progress: { ...emptyProgress }, children: [], activeChildId: null, accounts: {}, parentLock: { pin: null } })
 const add = (state, name, face, id) => {
@@ -77,4 +77,10 @@ test('a completed legacy family without an email is recovered on sign in', () =>
   assert.equal(state.profile.name, 'Alex')
   assert.equal(state.profile.parentEmail, 'parent@example.com')
   assert.equal(loginRoute(state), '/home')
+})
+
+test('the same create-account email is recognized as an existing family', () => {
+  let state = add(openAccount(fresh(), 'parent@example.com'), 'Alex', 2, 'a')
+  assert.equal(hasFamily(state, ' PARENT@example.com '), true)
+  assert.equal(hasFamily(state, 'new@example.com'), false)
 })

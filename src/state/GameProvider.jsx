@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useReducer } from
 import { setSoundEnabled } from '../lib/sound.js'
 import { setVoiceEnabled } from '../lib/voice.js'
 
-import { emptyProfile, emptyStats, emptyProgress, beginChild, finishChild, selectChild, migrateFamily, loginRoute, openAccount } from './family.js'
+import { emptyProfile, emptyStats, emptyProgress, beginChild, finishChild, selectChild, migrateFamily, loginRoute, openAccount, hasFamily } from './family.js'
 
 const KEY = 'kidsverse-plus-v2'
 /* A finished mission pays about 45 XP; 400 per level keeps a level within a few sittings. */
@@ -122,8 +122,12 @@ export function GameProvider({ children }) {
     setParentPin: pin => dispatch({ type: 'pin', pin }),
     setAuthIntent: intent => dispatch({ type: 'authIntent', intent }),
     signUp: async email => {
+      const existingFamily = hasFamily(state, email)
       dispatch({ type: 'openAccount', email })
-      return '/onboarding/child'
+      // Reusing an existing email opens its family selector, where the parent
+      // can choose the saved child or add a sibling. It never creates a second
+      // parent account with the same email.
+      return existingFamily ? '/switch' : '/onboarding/child'
     },
     signIn: async email => {
       const next = openAccount(state, email)
