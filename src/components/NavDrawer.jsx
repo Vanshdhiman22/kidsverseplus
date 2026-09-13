@@ -45,7 +45,7 @@ function Panel({ pinned, onNavigate, onGate }) {
   const { pathname } = useLocation()
   const isOn = it => (it.match ?? []).some(m => pathname.startsWith(m))
   return (
-    <div className={cn('h-full flex flex-col px-4 pt-6', pinned ? '' : 'w-[205px]')} style={{ paddingBottom: 78, background: FRAME }}>
+    <div className={cn('h-full flex flex-col px-4 pt-5', pinned ? '' : 'w-[205px] ml-auto')} style={{ paddingBottom: pinned ? 78 : 24, background: FRAME }}>
       <div className="flex items-center gap-3">
         <span className="w-[46px] h-[46px] rounded-[15px] grid place-items-center shrink-0" style={{ background: 'linear-gradient(140deg,#8b5cf6,#5b6cff)', boxShadow: '0 10px 24px -10px rgba(124,92,255,.9)' }}>
           <span className="w-[19px] h-[19px] rounded-full border-[4px] border-white/95" />
@@ -56,12 +56,12 @@ function Panel({ pinned, onNavigate, onGate }) {
         </span>
       </div>
 
-      <nav className="mt-7 flex flex-col gap-[6px]">
+      <nav className="mt-5 flex flex-col gap-[4px]">
         {NAV_ITEMS.map((it, i) => {
           const on = isOn(it)
           return (
             <motion.button key={it.label}
-              className={cn('relative h-[50px] rounded-[15px] flex items-center gap-3 px-4 font-display font-bold text-[17px] transition-colors',
+              className={cn('relative h-[46px] rounded-[15px] flex items-center gap-3 px-4 font-display font-bold text-[16px] transition-colors',
                 on ? 'text-white' : 'text-indigo-200/85 hover:text-white')}
               onClick={() => {
                 sfx.tap()
@@ -80,7 +80,7 @@ function Panel({ pinned, onNavigate, onGate }) {
 
       <motion.div className="mt-auto rounded-[20px] p-4 text-center" style={{ background: CARD_DARK, border: '1px solid rgba(150,170,255,.22)' }}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: pinned ? lead(0.6) : 0.2 }}>
-        <img src="/art/hd/nova-v2.webp" alt="" className="w-[96px] mx-auto floaty" />
+        <img src="/art/hd/nova-v2.webp" alt="" className="w-[78px] mx-auto floaty" />
         <div className="mt-1 font-display font-extrabold text-[19px] text-white">Nova</div>
         <div className="text-[12px] font-semibold text-indigo-200/85 leading-tight">Your AI Learning Buddy</div>
         <button className="mt-3 w-full h-[36px] rounded-full text-white text-[13px] font-extrabold flex items-center justify-center gap-2"
@@ -151,7 +151,8 @@ export default function NavDrawer({ pinned = false }) {
                 blur -- because the drawer sliding over it is already the whole signal that
                 a menu opened. This layer exists only so a tap anywhere outside closes it. */}
             <div className="absolute inset-0 z-40" onClick={() => setOpen(false)} />
-            <motion.aside className="absolute top-0 bottom-0 left-0 z-40"
+            <motion.aside className="absolute top-0 bottom-0 z-40 overflow-hidden rounded-r-[24px]"
+              style={{ left: 'calc(0px - var(--bleed, 0px))', width: 'calc(205px + var(--bleed, 0px))' }}
               initial={{ x: -215 }} animate={{ x: 0 }} exit={{ x: -215 }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}>
               <Panel onNavigate={() => setOpen(false)} onGate={() => setGate(true)} />
