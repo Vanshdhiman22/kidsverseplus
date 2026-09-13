@@ -10,6 +10,7 @@ import { LessonVisual } from '../components/LessonModels.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { ACTIVE_CONTENT_ID, useContent, discoverContent } from '../content/index.js'
 import { sfx } from '../lib/sound.js'
+import { speak } from '../lib/voice.js'
 import { cn } from '../lib/utils.js'
 
 
@@ -22,6 +23,7 @@ export default function LessonDiscover() {
   const C = discoverContent(pkg)
   const M = pkg.mission
   const HINTS = C.hints
+  const liveModel = /^https?:\/\//i.test(C.model.image ?? '') ? C.model : { ...C.model, image: null }
 
   return (
     <Page>
@@ -54,7 +56,7 @@ export default function LessonDiscover() {
         <div className="mt-3 mx-4 card p-3">
           <div className="flex items-center justify-between">
             <span className="font-display font-extrabold text-[19px] text-primary-ink">Nova</span>
-            <button className="text-primary-ink" onClick={() => sfx.success()} aria-label="Hear Nova"><Volume2 size={20} /></button>
+            <button className="text-primary-ink" onClick={() => speak(C.nova.speech)} aria-label="Hear Nova"><Volume2 size={20} /></button>
           </div>
           <p className="mt-1 text-[13px] font-bold text-ink-2 leading-snug text-pretty">{C.nova.speech}</p>
         </div>
@@ -124,7 +126,7 @@ export default function LessonDiscover() {
 
           <motion.div className="absolute right-[28px] top-[28px] w-[450px] h-[399px] card overflow-hidden"
             initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
-            <LessonVisual model={C.model} fill />
+{liveModel.image && <LessonVisual model={liveModel} fill />}
           </motion.div>
         </div>
 
@@ -173,12 +175,13 @@ export default function LessonDiscover() {
 
       {/* bottom bar */}
       <motion.button className="absolute left-[30px] bottom-[28px] pill w-[52px] h-[52px] justify-center text-primary-ink" onClick={() => sfx.tap()} aria-label="Music" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}><Music size={22} /></motion.button>
-      <motion.button className="absolute left-[95px] bottom-[22px] pill h-[64px] px-5 gap-3 text-left" onClick={() => sfx.success()} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.52 }}>
+      <motion.button className="absolute left-[95px] bottom-[22px] pill h-[64px] px-5 gap-3 text-left" onClick={() => speak(`${M.title}. ${M.subtitle}. ${C.prompt.statement}`)} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.52 }}>
         <span className="icon-orb w-[40px] h-[40px]"><Volume2 size={20} /></span>
         <span className="leading-tight"><span className="block text-[15px] font-extrabold text-ink">Tap to hear the mission</span><span className="block text-[12px] font-semibold text-ink-3">Listen anytime!</span></span>
       </motion.button>
       <Button variant="outline" size="sm" icon={<Lightbulb size={19} className="text-gold" />} className="absolute left-[360px] bottom-[26px] h-[56px] px-6 text-[18px]" onClick={() => setOpened(o => Math.min(HINTS.length, o + 1))}>Hint</Button>
-      <Button variant="outline" size="sm" icon={<Headphones size={19} />} className="absolute left-[500px] bottom-[26px] h-[56px] px-6 text-[18px]" sound="tap" onClick={() => sfx.success()}>Listen</Button>
+      <Button variant="outline" size="sm" icon={<Headphones size={19} />} className="absolute left-[500px] bottom-[26px] h-[56px] px-6 text-[18px]" sound="tap" onClick={() => speak(C.prompt.statement)}>Listen</Button>
     </Page>
   )
 }
+

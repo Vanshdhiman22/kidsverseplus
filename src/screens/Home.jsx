@@ -218,7 +218,7 @@ export default function Home() {
             not where a challenge starts. */}
         <motion.button className="mt-2 w-full rounded-[16px] px-3 py-[10px] flex items-center gap-3 text-left"
           style={{ background: 'var(--tint-primary)', border: '1.5px solid var(--tint-primary-line)' }}
-          whileHover={{ y: -2 }} onClick={() => { sfx.whoosh(); nav('/tests/mixed/question') }}>
+          whileHover={{ y: -2 }} onClick={() => { sfx.whoosh(); nav('/tests/mixed/intro') }}>
           <span className="w-[42px] h-[42px] rounded-[13px] grid place-items-center bg-[var(--surface-2)] shrink-0 text-amber-500"><Trophy size={22} /></span>
           <span className="flex-1 leading-tight">
             <span className="block text-[15px] font-extrabold text-ink">Complete a Math Challenge</span>
