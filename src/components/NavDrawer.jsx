@@ -151,12 +151,17 @@ export default function NavDrawer({ pinned = false }) {
                 blur -- because the drawer sliding over it is already the whole signal that
                 a menu opened. This layer exists only so a tap anywhere outside closes it. */}
             <div className="absolute inset-0 z-40" onClick={() => setOpen(false)} />
-            <motion.aside className="absolute top-0 bottom-0 z-40 overflow-hidden rounded-r-[24px]"
-              style={{ left: 'calc(0px - var(--bleed, 0px))', width: 'calc(205px + var(--bleed, 0px))' }}
-              initial={{ x: -215 }} animate={{ x: 0 }} exit={{ x: -215 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 32 }}>
-              <Panel onNavigate={() => setOpen(false)} onGate={() => setGate(true)} />
-            </motion.aside>
+            {/* Keep edge positioning off the animated node. On ultrawide screens
+                Motion owns `transform`; a static wrapper preserves the negative
+                bleed offset while the inner panel slides independently. */}
+            <div className="absolute top-0 bottom-0 z-40"
+              style={{ left: 'calc(0px - var(--bleed, 0px))', width: 'calc(205px + var(--bleed, 0px))' }}>
+              <motion.aside className="h-full w-full overflow-hidden rounded-r-[24px]"
+                initial={{ x: -215 }} animate={{ x: 0 }} exit={{ x: -215 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 32 }}>
+                <Panel onNavigate={() => setOpen(false)} onGate={() => setGate(true)} />
+              </motion.aside>
+            </div>
           </>
         )}
       </AnimatePresence>
