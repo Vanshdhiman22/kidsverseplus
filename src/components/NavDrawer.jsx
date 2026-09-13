@@ -45,7 +45,7 @@ function Panel({ pinned, onNavigate, onGate }) {
   const { pathname } = useLocation()
   const isOn = it => (it.match ?? []).some(m => pathname.startsWith(m))
   return (
-    <div className={cn('h-full flex flex-col px-4 pt-5', pinned ? '' : 'w-[205px] ml-auto')} style={{ paddingBottom: pinned ? 78 : 24, background: FRAME }}>
+    <div className={cn('h-full flex flex-col px-4 pt-5', pinned ? '' : 'w-[235px]')} style={{ paddingBottom: pinned ? 78 : 24, background: FRAME }}>
       <div className="flex items-center gap-3">
         <span className="w-[46px] h-[46px] rounded-[15px] grid place-items-center shrink-0" style={{ background: 'linear-gradient(140deg,#8b5cf6,#5b6cff)', boxShadow: '0 10px 24px -10px rgba(124,92,255,.9)' }}>
           <span className="w-[19px] h-[19px] rounded-full border-[4px] border-white/95" />
@@ -155,9 +155,9 @@ export default function NavDrawer({ pinned = false }) {
                 Motion owns `transform`; a static wrapper preserves the negative
                 bleed offset while the inner panel slides independently. */}
             <div className="absolute top-0 bottom-0 z-40"
-              style={{ left: 'calc(0px - var(--bleed, 0px))', width: 'calc(205px + var(--bleed, 0px))' }}>
+              style={{ left: 'calc(0px - var(--bleed, 0px))', width: 235 }}>
               <motion.aside className="h-full w-full overflow-hidden rounded-r-[24px]"
-                initial={{ x: -215 }} animate={{ x: 0 }} exit={{ x: -215 }}
+                initial={{ x: -245 }} animate={{ x: 0 }} exit={{ x: -245 }}
                 transition={{ type: 'spring', stiffness: 320, damping: 32 }}>
                 <Panel onNavigate={() => setOpen(false)} onGate={() => setGate(true)} />
               </motion.aside>
