@@ -8,7 +8,7 @@ import Logo from '../components/Logo.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import QuestionVisual from '../components/QuestionVisual.jsx'
-import { ACTIVE_CONTENT_ID, useContent, checkQuestion } from '../content/index.js'
+import { useRouteContent, checkQuestion, routeSubject, withSubject } from '../content/index.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeB, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
@@ -33,7 +33,8 @@ export default function SpotMistake() {
   /* Offered right on the question, not a screen further on: a child who cannot see
      it in the pizza often sees it at once in a bar or on a number line. */
   const [model, setModel] = useState(0)
-  const pkg = useContent(ACTIVE_CONTENT_ID)
+  const pkg = useRouteContent()
+  const subject = routeSubject()
   const questions = pkg.check.questions.slice(0, 6)
   const [questionIndex, setQuestionIndex] = useState(() => Math.min(pkg.check.selected ?? 0, questions.length - 1))
   /* The question, its options, the right answer, the hints for each picture and the
@@ -70,10 +71,10 @@ export default function SpotMistake() {
   }
   const advance = () => {
     if (questionIndex === questions.length - 1) {
-      const result = { score, total: questions.length, review, attemptId: crypto.randomUUID(), completedAt: Date.now() }
+      const result = { score, total: questions.length, review, subject, attemptId: crypto.randomUUID(), completedAt: Date.now() }
       sessionStorage.setItem('kv:last-mission-score', JSON.stringify(result))
       sessionStorage.removeItem('kv:mission-progress')
-      nav('/missions/fractions/complete', { state: result })
+      nav(withSubject('/missions/fractions/complete'), { state: result })
       return
     }
     setQuestionIndex(i => i + 1); setPicks([]); setLocked(false); setHints(0); setWrong(0); setModel(0)
@@ -83,14 +84,14 @@ export default function SpotMistake() {
     if (!saved) return
     try {
       const state = JSON.parse(saved)
-      if (state.total === questions.length && state.questionIndex < questions.length) {
+      if (state.subject === subject && state.total === questions.length && state.questionIndex < questions.length) {
         setQuestionIndex(state.questionIndex); setScore(state.score); setReview(state.review || [])
       }
     } catch {}
-  }, [questions.length])
+  }, [questions.length, subject])
   useEffect(() => {
-    if (!locked) sessionStorage.setItem('kv:mission-progress', JSON.stringify({ questionIndex, score, review, total: questions.length }))
-  }, [questionIndex, score, review, locked, questions.length])
+    if (!locked) sessionStorage.setItem('kv:mission-progress', JSON.stringify({ questionIndex, score, review, total: questions.length, subject }))
+  }, [questionIndex, score, review, locked, questions.length, subject])
   return (
     <Page>
       <Scene name="spot" />
@@ -197,7 +198,7 @@ export default function SpotMistake() {
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => hints < HINTS.length && (sfx.unlock(), setHints(hints + 1))}><Lightbulb size={22} className="text-gold" fill="currentColor" /> Hint</button>
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => speak(Q.instruction)}><Headphones size={22} className="text-primary-ink" /> Listen</button>
       </motion.div>
-      <motion.div className="absolute" style={{ ...bleedR(24), ...safeB(69) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!answered} sound="whoosh" onClick={locked ? advance : check}>{locked ? (questionIndex === questions.length - 1 ? 'Finish Mission' : 'Next Question') : 'Check Answer'}</Button></motion.div>
+      <motion.div className="absolute text-center" style={{ ...bleedR(24), ...safeB(44) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!answered} sound="whoosh" onClick={locked ? advance : check}>{locked ? (questionIndex === questions.length - 1 ? 'Finish Mission' : 'Next Question') : 'Check Answer'}</Button>{!answered && <p className="mt-2 text-[13px] font-extrabold text-ink-2">Choose one answer to continue</p>}</motion.div>
     </Page>
   )
 }

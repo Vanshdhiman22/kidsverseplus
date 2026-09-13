@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import { AlarmClock, Volume2, Star, Check } from 'lucide-react'
 import Scene, { Cutout } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
@@ -14,7 +14,7 @@ import { childSrc } from '../data/poses.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
-import { ACTIVE_CONTENT_ID, useContent } from '../content/index.js'
+import { useRouteContent, routeSubject, withSubject } from '../content/index.js'
 import QuestionVisual from '../components/QuestionVisual.jsx'
 import { speak } from '../lib/voice.js'
 
@@ -33,7 +33,7 @@ export default function TestQuestion() {
   const START = 8 * 60 + 15
   const [correct, setCorrect] = useState(0)
   const [review, setReview] = useState([])
-  const pkg = useContent(ACTIVE_CONTENT_ID)
+  const pkg = useRouteContent()
   const legacyQuestions = LEGACY_QUESTIONS.map((item, index) => ({
     question_id: `legacy-${index}`,
     instruction: item.q,
@@ -43,8 +43,9 @@ export default function TestQuestion() {
     feedback_correct: 'Great job! That is correct.',
     explanation: 'Look at the green answer.',
   }))
-  const source = searchParams.get('source') === 'challenge' ? 'challenge_questions' : 'test_questions'
-  const QUESTIONS = pkg.assessments?.[source]?.length ? pkg.assessments[source] : legacyQuestions
+  const assessmentSource = searchParams.get('source') === 'challenge' ? 'challenge_questions' : 'test_questions'
+  const source = `${routeSubject()}:${assessmentSource}`
+  const QUESTIONS = pkg.assessments?.[assessmentSource]?.length ? pkg.assessments[assessmentSource] : legacyQuestions
   const q = QUESTIONS[qi]
   /* Was `total = 10, shown = qi + 3` -- staged for the design render. The child now
      arrives here straight from the daily mission, so the count has to be the real one. */
@@ -52,9 +53,9 @@ export default function TestQuestion() {
   useEffect(() => { const id = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000); return () => clearInterval(id) }, [])
   useEffect(() => {
     if (secs !== 0) return
-    const run = { correct, total: QUESTIONS.length, seconds: START, source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test', review, attemptId: crypto.randomUUID(), completedAt: Date.now() }
+    const run = { correct, total: QUESTIONS.length, seconds: START, subject: routeSubject(), source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test', review, attemptId: crypto.randomUUID(), completedAt: Date.now() }
     sessionStorage.setItem('kv:last-test-run', JSON.stringify(run)); sessionStorage.removeItem('kv:test-progress')
-    nav('/tests/mixed/result', { replace: true, state: run })
+    nav(withSubject('/tests/mixed/result'), { replace: true, state: run })
   }, [secs]) // eslint-disable-line react-hooks/exhaustive-deps
   const mm = String(Math.floor(secs / 60)).padStart(2, '0'), ss = String(secs % 60).padStart(2, '0')
   const submit = () => {
@@ -62,9 +63,9 @@ export default function TestQuestion() {
     if (submitted) {
       if (qi + 1 >= QUESTIONS.length) {
         sfx.whoosh()
-        const run = { correct, total: QUESTIONS.length, seconds: START - secs, source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test', review, attemptId: crypto.randomUUID(), completedAt: Date.now() }
+        const run = { correct, total: QUESTIONS.length, seconds: START - secs, subject: routeSubject(), source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test', review, attemptId: crypto.randomUUID(), completedAt: Date.now() }
         sessionStorage.setItem('kv:last-test-run', JSON.stringify(run)); sessionStorage.removeItem('kv:test-progress')
-        nav('/tests/mixed/result', { state: run })
+        nav(withSubject('/tests/mixed/result'), { state: run })
         return
       }
       setQi(qi + 1); setPick(null); setSubmitted(false); sfx.tap(); return
@@ -89,7 +90,7 @@ export default function TestQuestion() {
     <Page>
       <Scene name="question" />
       <TopBar right={<motion.div className="pill h-[84px] px-6 gap-4" animate={secs < 60 ? { scale: [1, 1.04, 1] } : {}} transition={{ duration: 1, repeat: Infinity }}><span className="icon-orb w-[50px] h-[50px]"><AlarmClock size={28} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[36px] text-ink tabular-nums leading-none">{mm}:{ss}</span><span className="label-caps">Time remaining</span></span></motion.div>} showControls={false} />
-      <motion.div className="absolute left-[360px] top-[36px] pl-6 border-l-2 border-[var(--line)]" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}><div className="eyebrow text-[15px]">Test Mode</div><div className="font-display font-extrabold text-[26px] leading-none text-ink uppercase">Mixed Concept Test</div><div className="text-[15px] font-semibold text-ink-3">Focused assessment. You've got this! 🚀</div></motion.div>
+      <motion.div className="absolute left-[360px] top-[36px] pl-6 border-l-2 border-[var(--line)]" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}><div className="eyebrow text-[15px]">Test Mode · {pkg.subject}</div><div className="font-display font-extrabold text-[26px] leading-none text-ink uppercase">{pkg.mission.title} Test</div><div className="text-[15px] font-semibold text-ink-3">Focused assessment. You've got this! 🚀</div></motion.div>
       <motion.div className="absolute left-[795px] top-[50px] flex items-center gap-5" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <span className="pill h-[50px] px-5 font-display font-extrabold text-[19px] text-primary-ink uppercase">Question {shown} / {total}</span>
         <div className="relative w-[270px] h-[12px] rounded-full bg-[var(--lavender-2)] overflow-hidden"><motion.div className="absolute left-0 top-0 h-full rounded-full" style={{ background: 'var(--grad-primary)' }} animate={{ width: `${(shown / total) * 100}%` }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} /></div>
@@ -115,21 +116,20 @@ export default function TestQuestion() {
         <div className="mx-auto mt-3 h-[190px] w-[520px] rounded-[20px] overflow-hidden"><QuestionVisual question={q.instruction} model={q.models?.[0]} /></div>
         <Stack key={`o${qi}`} className={cn('mx-auto mt-4 grid gap-4', q.options.length <= 4 ? 'grid-cols-2 max-w-[720px]' : 'grid-cols-3 max-w-[880px]')} start={0.2} delay={0.08}>
               {q.options.map((option, i) => {
-                const on = pick === option.key; const right = submitted && option.key === q.answer; const wrongPick = submitted && on && option.key !== q.answer
+                const on = pick === option.key
                 return (
-                  <Item key={option.key} v="pop"><Card hover={!submitted} selected={on && !submitted} role="button" tabIndex={submitted ? -1 : 0} aria-pressed={on} className={cn('relative h-[92px] flex items-center px-5 gap-4 overflow-hidden', wrongPick && 'shake')} style={right ? { boxShadow: '0 0 0 3px #22c55e, 0 16px 30px -16px rgba(34,197,94,.5)', borderColor: '#22c55e' } : wrongPick ? { boxShadow: '0 0 0 3px #ef4444', borderColor: '#ef4444' } : undefined} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && !submitted && setPick(option.key)} onClick={() => { if (!submitted) { sfx.select(); setPick(option.key) } }}>
-                    <span className={cn('shrink-0 w-[40px] h-[40px] rounded-full grid place-items-center font-display font-extrabold text-[20px]', on || right ? 'text-white' : 'text-primary-ink bg-[var(--lavender)]')} style={on || right ? { background: right ? '#22c55e' : 'var(--grad-primary)' } : undefined}>{LETTERS[i]}</span>
+                  <Item key={option.key} v="pop"><Card hover={!submitted} selected={on} role="button" tabIndex={submitted ? -1 : 0} aria-pressed={on} className="relative h-[92px] flex items-center px-5 gap-4 overflow-hidden" onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && !submitted && setPick(option.key)} onClick={() => { if (!submitted) { sfx.select(); setPick(option.key) } }}>
+                    <span className={cn('shrink-0 w-[40px] h-[40px] rounded-full grid place-items-center font-display font-extrabold text-[20px]', on ? 'text-white' : 'text-primary-ink bg-[var(--lavender)]')} style={on ? { background: 'var(--grad-primary)' } : undefined}>{LETTERS[i]}</span>
                     <div className="flex-1 text-center font-display font-extrabold text-[22px] text-ink leading-tight">{option.label}</div>
-                    {on || right ? <motion.span className="shrink-0 w-[30px] h-[30px] rounded-full grid place-items-center text-white" style={{ background: right ? '#22c55e' : 'var(--grad-primary)' }} initial={{ scale: 0 }} animate={{ scale: 1 }}><Check size={18} strokeWidth={3.5} /></motion.span> : <span className="radio shrink-0" />}
-                    <AnimatePresence>{right && <motion.div className="w-full py-2 text-center" style={{ background: 'var(--success-bg)', color: 'var(--success-ink)' }} initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={{ type: 'spring', stiffness: 300, damping: 24 }}><div className="font-extrabold text-[16px] flex items-center justify-center gap-2"><Check size={17} strokeWidth={3.5} /> Correct</div></motion.div>}</AnimatePresence>
-                    <AnimatePresence>{wrongPick && <motion.div className="w-full py-2 text-center" style={{ background: 'var(--danger-bg)', color: 'var(--danger-ink)' }} initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }}><div className="font-extrabold text-[16px]">Not quite</div></motion.div>}</AnimatePresence>
+                    {on ? <motion.span className="shrink-0 w-[30px] h-[30px] rounded-full grid place-items-center text-white" style={{ background: 'var(--grad-primary)' }} initial={{ scale: 0 }} animate={{ scale: 1 }}><Check size={18} strokeWidth={3.5} /></motion.span> : <span className="radio shrink-0" />}
                   </Card></Item>
                 )
               })}
         </Stack>
       </Panel>
-      <motion.div className="absolute left-[576px] top-[748px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+      <motion.div className="absolute left-[576px] top-[748px] text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <Button arrow className="w-[520px] h-[66px] uppercase text-[21px]" disabled={pick == null} sound="whoosh" onClick={submit}>{submitted ? (qi + 1 >= QUESTIONS.length ? 'Finish Test' : 'Next Question') : 'Check Answer'}</Button>
+        <p className="mt-2 text-[13px] font-extrabold text-ink-2">{pick == null ? 'Choose one answer to continue' : submitted ? 'Answer saved — results appear after the test' : 'Ready to lock in your answer'}</p>
       </motion.div>
     </Page>
   )

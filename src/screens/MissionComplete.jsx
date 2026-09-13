@@ -15,11 +15,10 @@ import { WORLD_DONE, STATION_PER, STATION_TOTAL } from '../data/catalog.js'
    credit `progress.world` -- whatever the Journey map's subject switcher was last left
    on -- so a child who browsed the Literacy map and then finished Fractions advanced
    Literacy instead. */
-const MISSION_WORLD = 'maths'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { useAccent } from '../lib/accent.js'
-import { ACTIVE_CONTENT_ID, useContent, fill } from '../content/index.js'
+import { useRouteContent, fill, withSubject, routeSubject } from '../content/index.js'
 import PerfectScorePopup from '../components/PerfectScorePopup.jsx'
 import AttemptReview from '../components/AttemptReview.jsx'
 
@@ -36,7 +35,7 @@ export default function MissionComplete() {
   const [showReview, setShowReview] = useState(false)
   /* Words from the package. XP, the mastery ring and the skill bars are about the child,
      so they are never read from content -- see docs/CONTENT-CONTRACT.md. */
-  const pkg = useContent(ACTIVE_CONTENT_ID)
+  const pkg = useRouteContent()
   const K = pkg.complete
   const XP = pkg.mission.xp
   let savedResult = {}
@@ -49,10 +48,10 @@ export default function MissionComplete() {
   const scorePercent = Math.round(scoreRatio * 100)
   const OUTCOME = { understood: [Trophy, '#7c3aed'], improved: [TrendingUp, '#3b82f6'], next: [Flag, '#22c55e'] }
   useEffect(() => {
-    if (!validResult) { nav('/missions/fractions/spot-mistake', { replace: true }); return }
+    if (!validResult) { nav(withSubject('/missions/fractions/spot-mistake'), { replace: true }); return }
     const t = setTimeout(() => sfx.unlock(), 300)
     const rewardKey = `kv:rewarded:${result.attemptId}`
-    const t2 = setTimeout(() => { if (!localStorage.getItem(rewardKey)) { localStorage.setItem(rewardKey, '1'); g.addXp(XP, 'Fractions mission'); g.advanceStation({ world: MISSION_WORLD, base: WORLD_DONE[MISSION_WORLD] ?? 0, per: STATION_PER, total: STATION_TOTAL }) } }, 1400)
+    const t2 = setTimeout(() => { if (!localStorage.getItem(rewardKey)) { const world = routeSubject(); localStorage.setItem(rewardKey, '1'); g.addXp(XP, `${pkg.subject} mission`); g.advanceStation({ world, base: WORLD_DONE[world] ?? 0, per: STATION_PER, total: STATION_TOTAL }) } }, 1400)
     return () => { clearTimeout(t); clearTimeout(t2) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const mood = scorePercent < 70 ? { title: 'LET’S TRY AGAIN', message: 'A little practice will make this easier.' } : scorePercent < 95 ? { title: 'GOOD PROGRESS', message: 'You are close. Review the tricky parts and try again.' } : { title: 'MISSION COMPLETE!', message: K.encouragement }
@@ -76,7 +75,7 @@ export default function MissionComplete() {
       </div>
       <Sparkles n={12} seed={8} className="left-[80px] top-[80px] w-[800px] h-[700px]" />
       <motion.div className="absolute left-[520px] top-[400px] font-display font-extrabold text-[40px] text-primary-ink text-center leading-none" initial={{ opacity: 0, y: 30, scale: 0.5 }} animate={{ opacity: 1, y: [30, -10, 0], scale: 1 }} transition={{ delay: 0.3, type: 'spring', stiffness: 300, damping: 14 }}>+{XP}<br /><span className="text-[26px]">XP</span></motion.div>
-      <div className="absolute left-[40px] top-[540px]"><SpeechBubble tail="right" delay={0.3} className="w-[200px] text-[17px]">{scorePercent < 70 ? `That's okay, ${name}. Let’s practise together.` : scorePercent < 95 ? `Good try, ${name}. You are getting closer.` : fill(K.nova.speech, { name })}</SpeechBubble></div>
+      <div className={scorePercent < 70 ? 'absolute left-[650px] top-[430px] z-20' : 'absolute left-[40px] top-[540px]'}><SpeechBubble tail={scorePercent < 70 ? 'left' : 'right'} delay={0.3} className="w-[220px] text-[17px]">{scorePercent < 70 ? `That's okay, ${name}. Let’s practise together.` : scorePercent < 95 ? `Good try, ${name}. You are getting closer.` : fill(K.nova.speech, { name })}</SpeechBubble></div>
 
       <Panel className="absolute left-[930px] top-[110px] w-[655px] h-[240px] p-6 flex items-center gap-8" initial="hidden" animate="show">
         <div className="relative"><div className="label-caps absolute -top-1 left-0 whitespace-nowrap">Your Score</div><Ring size={180} stroke={16} value={scoreRatio} id="mc" delay={0.27} className="mt-6"><div className="text-center leading-none"><div className="font-display font-extrabold text-[44px] text-ink"><Counter to={scorePercent} delay={0.27} />%</div><div className="text-[15px] font-bold text-ink-3 mt-1">{score}/{total} correct</div></div></Ring></div>
@@ -95,7 +94,7 @@ export default function MissionComplete() {
         ) })}
       </Stack>
       <Stack className="absolute left-[850px] top-[685px] w-[755px]" start={1.4}>
-        <Item v="pop" className={`grid gap-4 ${scorePercent < 95 ? 'grid-cols-3' : 'grid-cols-2'}`}><Button size="md" arrow icon={<Rocket size={22} />} className="h-[70px] uppercase text-[18px]" sound="whoosh" onClick={() => nav(K.next_step)}>Nova's next step</Button>{scorePercent < 95 && <Button variant="outline" size="md" icon={<RefreshCw size={22} />} className="h-[70px] uppercase text-[18px]" onClick={() => nav('/missions/fractions/learn')}>Practise First</Button>}<Button variant="outline" size="md" icon={<Trophy size={22} />} className="h-[70px] uppercase text-[18px]" onClick={() => nav('/tests/mixed/intro?source=challenge')}>Try a challenge</Button></Item>
+        <Item v="pop" className={`grid gap-4 ${scorePercent < 95 ? 'grid-cols-3' : 'grid-cols-2'}`}><Button size="md" arrow icon={<Rocket size={22} />} className="h-[70px] uppercase text-[18px]" sound="whoosh" onClick={() => nav(withSubject(K.next_step))}>Nova's next step</Button>{scorePercent < 95 && <Button variant="outline" size="md" icon={<RefreshCw size={22} />} className="h-[70px] uppercase text-[18px]" onClick={() => nav(withSubject('/missions/fractions/learn'))}>Practise First</Button>}<Button variant="outline" size="md" icon={<Trophy size={22} />} className="h-[70px] uppercase text-[18px]" onClick={() => nav(withSubject('/tests/mixed/intro?source=challenge'))}>Try a challenge</Button></Item>
         <Item v="pop" className="mt-4 grid grid-cols-2 gap-4"><Button variant="outline" size="md" className="h-[58px] text-[18px]" onClick={() => setShowReview(true)}>Review Answers</Button><Button variant="ghost" size="md" icon={<Home size={22} />} className="h-[58px] text-[18px]" onClick={() => nav('/journey')}>Back to Journey</Button></Item>
       </Stack>
       <PerfectScorePopup show={scorePercent === 100} mode="mission" />
