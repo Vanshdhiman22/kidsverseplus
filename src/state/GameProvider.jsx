@@ -132,6 +132,10 @@ export function GameProvider({ children }) {
     signIn: async email => {
       const next = openAccount(state, email)
       dispatch({ type: 'openAccount', email })
+      // A different browser has no local family snapshot in this frontend demo.
+      // Give Home a neutral display identity while the real account service is
+      // absent, instead of forcing the parent through child creation.
+      if (!next.children.length) dispatch({ type: 'profile', patch: { name: 'Explorer', face: 1, firstVisit: false } })
       return loginRoute(next, state.authIntent === 'parent')
     },
     addChild: async name => dispatch({ type: 'addChild', name: name.trim() }),
