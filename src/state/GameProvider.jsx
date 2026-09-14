@@ -72,6 +72,11 @@ function reducer(state, a) {
         toasts: [...state.toasts, { id: ++seq, amount: a.amount, label: a.label }], flash: up ? 'levelup' : 'xp' }
     }
     case 'streak': return { ...state, stats: { ...state.stats, streak: state.stats.streak + 1 } }
+    case 'useBreakPass': {
+      const used = state.stats.breakPassUsedDates ?? []
+      if ((state.stats.breakPasses ?? 5) <= 0 || used.includes(a.date)) return state
+      return { ...state, stats: { ...state.stats, breakPasses: (state.stats.breakPasses ?? 5) - 1, breakPassUsedDates: [...used, a.date] } }
+    }
     case 'clearToast': return { ...state, toasts: state.toasts.filter(t => t.id !== a.id) }
     case 'clearFlash': return { ...state, flash: null }
     case 'notice': return { ...state, notices: [...state.notices, { id: ++seq, message: a.message }] }
@@ -110,6 +115,7 @@ export function GameProvider({ children }) {
     advanceStation: ({ world, base, per, total } = {}) => dispatch({ type: 'advanceStation', world, base, per, total }),
     addXp: (amount, label) => dispatch({ type: 'xp', amount, label }),
     bumpStreak: () => dispatch({ type: 'streak' }),
+    useBreakPass: date => dispatch({ type: 'useBreakPass', date }),
     /* One finished test. Home's progress panel counts these. */
     finishQuiz: () => dispatch({ type: 'quiz' }),
     recordTest: run => dispatch({ type: 'test', run }),
