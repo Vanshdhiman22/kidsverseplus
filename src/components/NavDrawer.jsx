@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   Home as HomeIcon, BookOpen, Compass, Star, User, Users, Settings, ArrowRight, ChevronRight,
+  Swords, ClipboardCheck, Trophy,
 } from 'lucide-react'
 import { openSettings } from './SettingsSheet.jsx'
 import ParentGate from './ParentGate.jsx'
@@ -19,6 +20,9 @@ export const NAV_ITEMS = [
   { label: 'Explore', icon: Compass, to: '/journey', match: ['/journey', '/extra'] },
   { label: 'Achievements', icon: Star, to: '/profile', match: ['/profile'] },
   { label: 'My Space', icon: User, to: '/switch', match: ['/switch'] },
+  { label: 'Battle Arena', icon: Swords, to: '/challenge/opponents', match: ['/challenge/opponents', '/challenge/preview', '/challenge/battle', '/challenge/result'] },
+  { label: 'Test', icon: ClipboardCheck, to: '/tests', match: ['/tests'] },
+  { label: 'Leaderboard', icon: Trophy, to: '/challenge/leaderboard', match: ['/challenge/leaderboard'] },
   { label: 'Parent Zone', icon: Users, to: '/parent', match: ['/parent'], gated: true },
   { label: 'Settings', icon: Settings, to: null },
 ]
