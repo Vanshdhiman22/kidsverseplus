@@ -43,7 +43,7 @@ const MENU = [
   [Medal, '#f59e0b', 'My Best Scores', 'Top performance', '/challenge/leaderboard', 'View'],
   [Trophy, '#7c3aed', 'My Achievements', 'Badges & trophies', null],
   [Flame, '#f97316', 'My Streak', 'Keep the flame going', null],
-  [Ticket, '#a855f7', 'Break Passes', 'Recharge and come back', null],
+  [Ticket, '#a855f7', 'Break Passes', 'Protect your learning streak', '/profile/break-passes'],
 ]
 const BADGES = ['#7c3aed', '#3b82f6', '#22c55e', '#ef4444', '#8b5cf6', '#f59e0b']
 

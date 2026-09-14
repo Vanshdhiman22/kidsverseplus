@@ -1,5 +1,5 @@
 export const emptyProfile = { name: '', grade: '4', board: 'CBSE', face: null, outfit: 'explorer', interests: [], goals: [], firstVisit: true }
-export const emptyStats = { xp: 0, xpToday: 0, streak: 0, coins: 0, badges: 0, day: 1, battles: 0, reading: 0, bestStreak: 0 }
+export const emptyStats = { xp: 0, xpToday: 0, streak: 0, coins: 0, badges: 0, day: 1, battles: 0, reading: 0, bestStreak: 0, breakPasses: 5, breakPassUsedDates: [] }
 export const emptyProgress = { lessonStage: 1, quizzesDone: 0, mastery: 0, world: 'maths', worldDone: {}, journeySeen: {}, lastTest: null }
 export const accountKey = value => value.trim().toLowerCase()
 

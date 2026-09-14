@@ -47,6 +47,7 @@ const BattleResult = lazyScreen(() => import('./screens/BattleResult.jsx'))
 const Leaderboard = lazyScreen(() => import('./screens/Leaderboard.jsx'))
 const Profile = lazyScreen(() => import('./screens/Profile.jsx'))
 const OurJourney = lazyScreen(() => import('./screens/OurJourney.jsx'))
+const BreakPasses = lazyScreen(() => import('./screens/BreakPasses.jsx'))
 const SwitchStudent = lazyScreen(() => import('./screens/SwitchStudent.jsx'))
 const ParentOverview = lazyScreen(() => import('./screens/ParentOverview.jsx'))
 const ParentEvidence = lazyScreen(() => import('./screens/ParentEvidence.jsx'))
@@ -61,7 +62,7 @@ export const SCREENS = [
   ['/tests', '18 Test Arena'], ['/tests/mixed/intro', '19 Test Intro'], ['/tests/mixed/question', '20 Test Question'], ['/tests/mixed/result', '21 Test Result'],
   ['/extra', '22 Extra Learning'], ['/extra/reading', '23 Reading Fluency'], ['/extra/confidence', '24 Confidence Mission'], ['/challenge', '25 Challenge Home'],
   ['/challenge/opponents', '26 Battle Opponents'], ['/challenge/preview', '27 Battle Preview'], ['/challenge/battle', '28 Battle'], ['/challenge/result', '29 Battle Result'],
-  ['/challenge/leaderboard', '30 Leaderboard'], ['/profile', '31 Profile'], ['/profile/journey', '32 Our Journey'], ['/switch', '33 Switch Student'],
+  ['/challenge/leaderboard', '30 Leaderboard'], ['/profile', '31 Profile'], ['/profile/journey', '32 Our Journey'], ['/profile/break-passes', '32a Break Passes'], ['/switch', '33 Switch Student'],
   ['/parent', '34 Parent Overview'], ['/parent/evidence', '35 Parent Topic Evidence'], ['/parent/plan', '36 Parent Next Plan'],
 ]
 
@@ -104,7 +105,7 @@ function usePrefetch() {
       () => import('./screens/TestQuestion.jsx'), () => import('./screens/TestResult.jsx'), () => import('./screens/ExtraLearning.jsx'),
       () => import('./screens/ReadingFluency.jsx'), () => import('./screens/ConfidenceMission.jsx'), () => import('./screens/BattleOpponents.jsx'),
       () => import('./screens/BattlePreview.jsx'), () => import('./screens/Battle.jsx'), () => import('./screens/BattleResult.jsx'),
-      () => import('./screens/Leaderboard.jsx'), () => import('./screens/OurJourney.jsx'), () => import('./screens/SwitchStudent.jsx'),
+      () => import('./screens/Leaderboard.jsx'), () => import('./screens/OurJourney.jsx'), () => import('./screens/BreakPasses.jsx'), () => import('./screens/SwitchStudent.jsx'),
       () => import('./screens/ParentOverview.jsx'), () => import('./screens/ParentEvidence.jsx'), () => import('./screens/ParentPlan.jsx'),
       () => import('./screens/Welcome.jsx'), () => import('./screens/Interests.jsx'), () => import('./screens/Goals.jsx'),
       () => import('./screens/Avatar.jsx'), () => import('./screens/MeetNova.jsx'), () => import('./screens/CreateChild.jsx'),
@@ -173,6 +174,7 @@ function Routed() {
           <Route path="/challenge/leaderboard" element={<Leaderboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/journey" element={<OurJourney />} />
+          <Route path="/profile/break-passes" element={<BreakPasses />} />
           <Route path="/switch" element={<SwitchStudent />} />
           <Route path="/parent" element={<ParentOverview />} />
           <Route path="/parent/evidence" element={<ParentEvidence />} />
