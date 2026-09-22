@@ -13,10 +13,33 @@ import { WORLDS } from '../data/catalog.js'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 import { useAccent } from '../lib/accent.js'
+import { useGame } from '../state/GameProvider.jsx'
+import { api } from '../lib/api.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
 
 export default function LearnHub() {
   const nav = useNavigate()
   const ac = useAccent()
+  const g = useGame()
+  const studentId = g.state.activeChildId
+  const { data: subjectsResponse } = useLiveResource(
+    () => api.studentSubjects(studentId),
+    [studentId],
+    { enabled: Boolean(studentId) },
+  )
+  const apiSubjects = subjectsResponse?.subjects ?? []
+  const worlds = WORLDS.map(world => {
+    const live = apiSubjects.find(subject => subject.slug === world.id)
+    return live ? {
+      ...world,
+      apiId: live.id || live.subject_id,
+      name: live.name,
+      pct: Number(live.progress_percent ?? 0),
+      done: Math.round((Number(live.progress_percent ?? 0) / 100) * world.total),
+      locked: Boolean(live.locked),
+      badge: live.badge,
+    } : world
+  })
   return (
     <Page>
       <Scene name="learn" />
@@ -34,7 +57,7 @@ export default function LearnHub() {
         {/* There used to be a `featured` branch here for a highlighted world. No world
             carries that flag any more, so every arm of it was dead: a badge that would
             have read "Next: undefined", a bigger card and a different button. */}
-        {WORLDS.map((w, i) => {
+        {worlds.map((w, i) => {
           return (
             <Item key={w.id} v="pop">
               <Tilt max={6}>
@@ -42,6 +65,7 @@ export default function LearnHub() {
                                     {w.locked && <span className="absolute top-3 right-3 icon-orb w-[40px] h-[40px]"><Lock size={20} /></span>}
                   <motion.img src={w.img} alt="" className={cn('object-contain', 'w-[142px] h-[142px]', w.locked && 'opacity-80 saturate-50')} animate={{ y: [0, -10, 0], rotate: [0, 3, 0, -3, 0] }} transition={{ duration: 6 + i, repeat: Infinity, ease: 'easeInOut' }} style={{ filter: 'drop-shadow(0 18px 24px rgba(60,40,160,.35))' }} />
                   <div className={cn('mt-2 font-display font-extrabold text-ink leading-tight', 'text-[22px]')}>{w.name}</div>
+                  {w.badge && <div className="mt-1 chip h-[26px] px-3 text-[11px]">{w.badge}</div>}
                   <div className="mt-1 text-[14px] font-semibold text-ink-3 leading-snug">{w.desc}</div>
                   <div className="mt-auto flex flex-col items-center">
                     <Ring size={72} stroke={8} value={w.pct / 100} id={`w-${w.id}`} delay={0.3 + i * 0.1}><div className="leading-none"><div className={cn('font-display font-extrabold text-ink', 'text-[19px]')}>{w.pct}%</div></div></Ring>

@@ -6,7 +6,8 @@ import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip, LangPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
+import { startTest } from '../lib/gameApi.js'
 import { Switch, Sparkles } from '../components/Widgets.jsx'
 import { QUESTIONS as LEGACY_QUESTIONS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
@@ -28,7 +29,7 @@ export default function TestIntro() {
   const g = useGame(); const { name, face } = g.state.profile; const { readAloud } = g.state.settings
   const pkg = useRouteContent()
   const source = searchParams.get('source') === 'challenge' ? 'challenge' : 'test'
-  const selectedQuestions = source === 'challenge' ? pkg.assessments?.challenge_questions : pkg.assessments?.test_questions
+  const selectedQuestions = pkg.assessments?.test_questions
   const questionCount = selectedQuestions?.length || LEGACY_QUESTIONS.length
   return (
     <Page>
@@ -51,7 +52,7 @@ export default function TestIntro() {
           <div className="card flex-1 px-6 py-4 text-[21px] font-semibold text-ink-2 leading-snug relative"><span className="absolute -left-[12px] top-1/2 -mt-[10px] w-[20px] h-[20px] rotate-45" style={{ background: 'var(--glass-strong)', borderLeft: '1.5px solid var(--glass-border)', borderBottom: '1.5px solid var(--glass-border)' }} />I'll guide you through this.<br />Take your time.<br />Tap me to read instructions.</div>
         </motion.div>
         <Stack className="mt-7 flex flex-col gap-4" start={1.3}>
-          <Item v="pop"><Button size="lg" arrow icon={<Rocket size={30} strokeWidth={2.4} />} className="w-full h-[84px] uppercase text-[30px]" sound="whoosh" onClick={() => nav(`/tests/mixed/question?subject=${routeSubject()}${source === 'challenge' ? '&source=challenge' : ''}`)}>Start {source === 'challenge' ? 'Challenge' : 'Test'}</Button></Item>
+          <Item v="pop"><Button size="lg" arrow icon={<Rocket size={30} strokeWidth={2.4} />} className="w-full h-[84px] uppercase text-[30px]" sound="whoosh" onClick={async () => { await startTest(g.state.activeChildId, routeSubject()); sessionStorage.removeItem('kv:test-progress'); nav(`/tests/mixed/question?subject=${routeSubject()}${source === 'challenge' ? '&source=challenge' : ''}`) }}>Start {source === 'challenge' ? 'Challenge' : 'Test'}</Button></Item>
           <Item v="pop"><Button variant="outline" size="md" className="w-full h-[60px] uppercase text-[20px] tracking-wide" onClick={() => nav('/tests')}>Not now</Button></Item>
           <Item v="pop" className="flex justify-center"><span className="pill h-[54px] px-6 gap-4 text-[18px] font-bold text-ink-2"><Volume2 size={22} className="text-primary-ink" /> Read instructions aloud <Switch on={readAloud} onChange={v => g.setSettings({ readAloud: v })} /></span></Item>
         </Stack>

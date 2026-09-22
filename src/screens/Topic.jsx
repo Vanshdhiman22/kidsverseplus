@@ -12,6 +12,8 @@ import SpeechBubble from '../components/SpeechBubble.jsx'
 import { topicFor, gradeLabel, WORLDS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { cn } from '../lib/utils.js'
+import { loadLearningPath } from '../lib/gameApi.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
 
 
 export default function Topic() {
@@ -20,7 +22,26 @@ export default function Topic() {
   /* Back goes where the child came from. This said "Back to Learn" and always went to the
      Learn Hub, which is wrong for the common path now: most children arrive from Home. */
   const goBack = useBack()
-  const T = topicFor(world)
+  const localTopic = topicFor(world)
+  const g = useGame(); const { name, face, grade } = g.state.profile; const { xp, streak } = g.state.stats
+  const studentId = g.state.activeChildId
+  const { data: livePath } = useLiveResource(
+    () => loadLearningPath(studentId, world),
+    [studentId, world],
+    { enabled: Boolean(studentId) },
+  )
+  const liveDetail = livePath?.detail
+  const T = liveDetail ? {
+    ...localTopic,
+    title: liveDetail.name,
+    subject: liveDetail.subject,
+    desc: liveDetail.description || localTopic.desc,
+    tracks: (liveDetail.tiers ?? []).length ? liveDetail.tiers.slice(0, 3).map(tier => {
+      const key = tier.status === 'completed' ? 'done' : tier.status === 'locked' ? 'locked' : 'progress'
+      const status = key === 'done' ? 'Completed' : key === 'locked' ? 'Locked' : 'In progress'
+      return [tier.label, tier.missions, status, key]
+    }) : localTopic.tracks,
+  } : localTopic
   /* The headline column is 500px and the tracks below start at a fixed y, so a long
      title must shrink rather than wrap -- two lines pushed the description down behind
      the syllabus cards. Sized off the title that shipped ("Fractions", 9 characters). */
@@ -29,7 +50,6 @@ export default function Topic() {
      was the only page this route served. Every subject opens it now, so the pizza was
      painted out and each world draws its own globe on the pedestal instead. */
   const globe = (WORLDS.find(w => w.id === world) ?? WORLDS[1]).img
-  const g = useGame(); const { name, face, grade } = g.state.profile; const { xp, streak } = g.state.stats
   return (
     <Page>
       <Scene name="topic" />

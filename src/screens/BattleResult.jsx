@@ -9,7 +9,7 @@ import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import { Bar, Counter, Confetti, Sparkles } from '../components/Widgets.jsx'
 import { BOTS, BATTLE_XP } from '../data/battle.jsx'
-import { useGame } from '../state/GameProvider.jsx'
+import { useGame, XP_PER_LEVEL } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 
 const ICONS = { Maths: Calculator, Literacy: BookOpen, Speed: Zap }
@@ -17,15 +17,27 @@ const COLORS = { Maths: '#3b82f6', Literacy: '#a855f7', Speed: '#22c55e' }
 
 export default function BattleResult() {
   const nav = useNavigate(); const [sp] = useSearchParams()
-  const bot = BOTS.find(b => b.id === sp.get('bot')) ?? BOTS[0]
+  const bot = { ...(BOTS.find(b => b.id === sp.get('bot')) ?? BOTS[0]) }
   const me = Number(sp.get('me') ?? 4), bs = Number(sp.get('bot_s') ?? 5)
-  const won = me > bs, drew = me === bs
+  let savedResult = null
+  try { savedResult = JSON.parse(sessionStorage.getItem('kv:last-battle-result') || 'null') } catch {}
+  const won = savedResult?.result === 'win', drew = false
   const rounds = me + bs
   const secs = Number(sp.get('t') ?? 0)
   const clock = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
-  const reward = won ? BATTLE_XP.win : drew ? BATTLE_XP.draw : BATTLE_XP.loss
+  const reward = savedResult?.xp_awarded || 0
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
-  useEffect(() => { const t = setTimeout(() => (won ? sfx.success() : sfx.unlock()), 400); const t2 = setTimeout(() => { g.addXp(reward, 'Battle'); g.finishBattle() }, 1500); return () => { clearTimeout(t); clearTimeout(t2) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  try { bot.name = JSON.parse(sessionStorage.getItem(`kv:api-opponent:${g.state.activeChildId}`))?.name || bot.name } catch {}
+  useEffect(() => {
+    if (!savedResult?.battleId) { nav('/challenge/preview', { replace: true }); return }
+    const t = setTimeout(() => (won ? sfx.success() : sfx.unlock()), 400)
+    const t2 = setTimeout(() => {
+      const key = `kv:rewarded:${savedResult.battleId}`
+      if (!localStorage.getItem(key)) { localStorage.setItem(key, '1'); g.finishBattle() }
+      g.refreshStats().catch(e => g.notice(e.message))
+    }, 1500)
+    return () => { clearTimeout(t); clearTimeout(t2) }
+  }, [])
   return (
     <Page>
       <Scene name="bresult" />
@@ -43,7 +55,7 @@ export default function BattleResult() {
         <div className="mt-4 font-display font-extrabold text-[16px] text-ink uppercase tracking-wide">{bot.name} strengths</div>
         <div className="mt-2 flex flex-col gap-3">{bot.strengths.map(([k, v]) => { const I = ICONS[k]; return <div key={k} className="flex items-center gap-3"><span className="icon-orb w-[36px] h-[36px] text-white" style={{ background: COLORS[k] }}><I size={18} /></span><span className="w-[70px] text-[16px] font-bold text-ink">{k}</span><Bar value={v / 5} h={8} className="flex-1" delay={0.3} /><span className="text-[14px] font-extrabold text-ink-3">{v}/5</span></div> })}</div>
         <div className="mt-4 flex items-center gap-3"><img src="/art/hd/nova-v2.webp" alt="" className="w-[64px] floaty" /><div className="card px-3 py-2 text-[14px] font-semibold text-ink-2 leading-snug">{bot.tip}</div></div>
-        <div className="mt-5 flex flex-col gap-3"><Button size="md" icon={<Swords size={22} />} className="w-full h-[58px] uppercase text-[20px]" sound="whoosh" onClick={() => nav(`/challenge/battle?bot=${bot.id}`)}>Battle again</Button><Button variant="outline" size="md" icon={<BookOpen size={20} />} className="w-full h-[52px] uppercase text-[17px] text-sky-600 border-sky-400" onClick={() => nav('/missions/fractions')}>Practise first</Button></div>
+        <div className="mt-5 flex flex-col gap-3"><Button size="md" icon={<Swords size={22} />} className="w-full h-[58px] uppercase text-[20px]" sound="whoosh" onClick={() => nav(`/challenge/preview?bot=${bot.id}`)}>Battle again</Button><Button variant="outline" size="md" icon={<BookOpen size={20} />} className="w-full h-[52px] uppercase text-[17px] text-sky-600 border-sky-400" onClick={() => nav('/missions/fractions')}>Practise first</Button></div>
       </Panel>
 
       <Stack className="absolute left-[545px] top-[115px] w-[600px] text-center" start={0.3}>
@@ -56,7 +68,7 @@ export default function BattleResult() {
         <div><div className="label-caps">You earned!</div><div className="mt-1 flex items-center gap-6">{/* Was "+15 Stars". There are no stars in this app: nothing mints them, holds them or
               spends them, so the child was being paid in a currency that does not exist. */}<span className="flex items-center gap-2"><span className="icon-orb w-[46px] h-[46px] text-white" style={{ background: 'var(--grad-primary)' }}><span className="text-[12px] font-extrabold">XP</span></span><span className="leading-none"><span className="block font-display font-extrabold text-[28px] text-ink">+<Counter to={reward} delay={0.3} /></span><span className="text-[13px] font-bold text-ink-3">XP</span></span></span></div></div>
         <span className="w-px h-16 bg-[var(--line)]" />
-        <div className="flex-1"><div className="label-caps">Next level</div><Bar value={g.levelPct / 100} h={10} className="mt-2" delay={0.3} /><div className="mt-1 text-[14px] font-bold text-ink-3">{g.state.stats.xp % 400} / 400 XP</div></div>
+        <div className="flex-1"><div className="label-caps">Next level</div><Bar value={g.levelPct / 100} h={10} className="mt-2" delay={0.3} /><div className="mt-1 text-[14px] font-bold text-ink-3">{g.state.stats.xp % XP_PER_LEVEL} / {XP_PER_LEVEL} XP</div></div>
         <span className="w-[54px] h-[54px] grid place-items-center text-white font-display font-extrabold text-[22px]" style={{ background: 'var(--grad-primary)', clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)' }}>{g.level}</span>
       </Panel>
 

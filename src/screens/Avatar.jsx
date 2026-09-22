@@ -6,11 +6,11 @@ import Scene, { Cutout } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
 import { Panel, Card, Check } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Sparkles } from '../components/Widgets.jsx'
 import { TrustRow } from './Landing.jsx'
-import { FACES, OUTFITS, spriteFor, hasFaceArt } from '../data/catalog.js'
+import { APPROVED_FACES, OUTFITS, spriteFor, hasFaceArt } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
@@ -35,6 +35,8 @@ export default function Avatar() {
   const nav = useNavigate()
   const g = useGame()
   const { face, outfit, name } = g.state.profile
+  const displayName = name?.trim() || 'Explorer'
+  const selectedFace = [1, 4].includes(Number(face)) ? Number(face) : 1
   const rot = useMotionValue(0)
   const srot = useSpring(rot, { stiffness: 120, damping: 18 })
   const scaleX = useTransform(srot, r => { const m = ((r % 360) + 360) % 360; return m > 90 && m < 270 ? -1 : 1 })
@@ -42,7 +44,7 @@ export default function Avatar() {
   const width = useTransform(srot, r => `${Math.max(0.2, Math.abs(Math.cos((r * Math.PI) / 180))) * 100}%`)
   const turn = d => { sfx.whoosh(); animate(rot, rot.get() + d, { type: 'spring', stiffness: 90, damping: 16 }) }
   const current = OUTFITS.find(o => o.id === outfit)
-  const sprite = spriteFor(outfit, face)
+  const sprite = spriteFor(outfit, selectedFace)
 
   return (
     <Page>
@@ -61,11 +63,11 @@ export default function Avatar() {
       </Stack>
 
       <Stack className="absolute left-[85px] top-[222px] flex flex-col gap-3" start={0.4} delay={0.08}>
-        {FACES.map(f => (
+        {APPROVED_FACES.map(f => (
           <Item key={f.id} v="pop">
-            <Card hover selected={face === f.id} className="relative w-[236px] h-[112px] overflow-hidden grid place-items-center" onClick={() => { sfx.select(); g.setProfile({ face: f.id }) }}>
+            <Card hover selected={selectedFace === f.id} className="relative w-[236px] h-[112px] overflow-hidden grid place-items-center" onClick={() => { sfx.select(); g.setProfile({ face: f.id }) }}>
               <img src={f.thumb} alt="" className="h-[104px] object-contain" />
-              {face === f.id && <Check className="absolute -top-1 -right-1" size={34} />}
+              {selectedFace === f.id && <Check className="absolute -top-1 -right-1" size={34} />}
             </Card>
           </Item>
         ))}
@@ -78,7 +80,7 @@ export default function Avatar() {
           <motion.img key={sprite} src={sprite} alt="" className="h-[535px] object-contain pointer-events-none" style={{ filter: 'drop-shadow(0 24px 30px rgba(40,20,120,.3))' }} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1, y: [0, -8, 0] }} transition={{ opacity: { duration: 0.4 }, scale: { type: 'spring', stiffness: 200 }, y: { duration: 3.8, repeat: Infinity, ease: 'easeInOut' } }} />
         </motion.div>
       </motion.div>
-      <div className="absolute left-[850px] top-[178px]"><SpeechBubble tail="bottom" text={`That looks amazing, ${name}! ✨`} delay={0.3} className="w-[210px] text-[18px]" /></div>
+      <div className="absolute left-[850px] top-[178px]"><SpeechBubble tail="bottom" text={`That looks amazing, ${displayName}! ✨`} delay={0.3} className="w-[210px] text-[18px]" /></div>
 
       <motion.button className="absolute left-[372px] top-[560px] pill flex-col h-auto w-[116px] py-4 gap-1 text-ink" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} onClick={() => turn(180)}>
         <span className="flex items-center gap-2 font-display font-extrabold text-[18px]"><RotateCw size={20} /> Rotate</span>
@@ -121,7 +123,7 @@ export default function Avatar() {
           <span className="icon-orb w-[52px] h-[52px] text-gold" style={{ background: '#fef3c7' }}><Star size={26} fill="currentColor" /></span>
           <div className="flex-1">
             <div className="font-display font-extrabold text-[20px] text-ink">{current.name}</div>
-            <div className="text-[15px] font-semibold text-ink-3">{hasFaceArt(outfit, face) ? current.blurb : 'This outfit is still being drawn for this explorer. Coming soon!'}</div>
+            <div className="text-[15px] font-semibold text-ink-3">{hasFaceArt(outfit, selectedFace) ? current.blurb : 'This outfit is still being drawn for this explorer. Coming soon!'}</div>
             <div className="mt-2 flex gap-2">{current.colors.map(c => <span key={c} className="w-[22px] h-[22px] rounded-full border-2 border-white shadow" style={{ background: c }} />)}</div>
           </div>
         </motion.div>
@@ -130,7 +132,7 @@ export default function Avatar() {
       <TrustRow compact className="absolute left-[85px] top-[812px]" delay={0.3} items={[[ShieldCheck, '#22c55e', 'Safe & Secure', "Your child's data is always protected"], [Heart, '#ec4899', 'Loved by Kids', 'Designed for joy and growth'], [Users, '#3b82f6', 'Trusted by Parents', 'Real progress. Real results.']]} />
       <motion.div className="absolute left-[1085px] top-[795px] flex items-center gap-5" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <Button variant="ghost" size="md" icon={<ArrowLeft size={24} strokeWidth={2.6} />} className="h-[76px] px-9 text-[22px]" onClick={() => nav(-1)}>Back</Button>
-        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[360px] uppercase" sound="whoosh" onClick={() => nav('/onboarding/interests')}>This is me</Button>
+        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[360px] uppercase" sound="whoosh" onClick={async () => { await g.saveAvatar(); nav('/onboarding/interests') }}>This is me</Button>
       </motion.div>
     </Page>
   )

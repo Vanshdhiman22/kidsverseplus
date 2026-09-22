@@ -6,7 +6,7 @@ import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
 import { Panel, Card, Check } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
 import { Steps } from '../components/Stepper.jsx'
 import { GRADES, BOARDS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
@@ -27,6 +27,7 @@ export default function LearningSetup() {
   const nav = useNavigate()
   const g = useGame()
   const { grade, board } = g.state.profile
+  const canContinue = Boolean(grade && board)
   return (
     <Page>
       <Scene name="setup" />
@@ -83,7 +84,7 @@ export default function LearningSetup() {
 
       <Panel className="absolute left-[680px] top-[790px] w-[945px] h-[112px] px-6 flex items-center justify-end gap-6" initial="hidden" animate="show" style={{ borderRadius: 30 }}>
         <Button variant="ghost" size="md" icon={<ArrowLeft size={24} strokeWidth={2.6} />} className="h-[72px] px-10 text-[22px]" onClick={() => nav(-1)}>Back</Button>
-        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[440px] uppercase" sound="whoosh" onClick={() => { g.setProfile({ face: 1, outfit: 'explorer' }); nav('/onboarding/avatar') }}>Continue</Button>
+        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[440px] uppercase" sound="whoosh" disabled={!canContinue} onClick={async () => { await g.saveGradeBoard(); g.setProfile({ face: null, outfit: 'explorer' }); nav('/onboarding/avatar') }}>Continue</Button>
       </Panel>
     </Page>
   )

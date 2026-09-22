@@ -96,9 +96,10 @@ export function LangPill() {
 }
 
 export function UserChip({ name, sub, face = 1, className, extra }) {
+  const safeFace = [1, 4].includes(Number(face)) ? Number(face) : 1
   return (
     <div className={cn('pill h-[68px] pl-2 pr-5 gap-3', className)}>
-      <img src={`/art/kid${face}-face-sm.webp`} alt="" className="w-[52px] h-[52px] rounded-full object-cover border-2 border-white shadow-md" />
+      <img src={`/art/kid${safeFace}-face-sm.webp`} alt="" className="w-[52px] h-[52px] rounded-full object-cover border-2 border-white shadow-md" />
       <div className="leading-tight">
         <div className="font-display font-extrabold text-[19px] text-ink">{name}</div>
         {sub && <div className="text-[14px] font-bold text-ink-3">{sub}</div>}

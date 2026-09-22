@@ -6,7 +6,7 @@ import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
 import { Panel } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
 import { Steps } from '../components/Stepper.jsx'
 import { Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
@@ -54,7 +54,7 @@ export default function CreateChild() {
             </div>
             <p className="mt-3 flex items-center gap-2 text-[16px] font-semibold text-ink-3"><ShieldCheck size={18} className="text-primary-ink" /> Only a first name or nickname is needed.</p>
           </Item>
-          <Item v="pop" className="mt-9"><Button size="lg" arrow className="w-full uppercase" disabled={!ok} sound="whoosh" onClick={() => { g.setProfile({ name: name.trim() }); nav('/onboarding/grade-board') }}>Continue</Button></Item>
+          <Item v="pop" className="mt-9"><Button size="lg" arrow className="w-full uppercase" disabled={!ok} sound="whoosh" onClick={async () => { await g.addChild(name); nav('/onboarding/grade-board') }}>Continue</Button></Item>
           <Item className="mt-5 text-center"><button className="text-[22px] font-extrabold text-primary-ink hover:underline" onClick={() => nav(-1)}>Back</button></Item>
         </Stack>
       </Panel>

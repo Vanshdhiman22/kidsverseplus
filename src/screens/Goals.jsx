@@ -1,17 +1,21 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
 import { Card, Check } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Segments } from '../components/Stepper.jsx'
 import { GOALS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
+import { api, API_MODE } from '../lib/api.js'
+import { useApiCatalog } from '../lib/useApiCatalog.js'
+
+const apiGoalKey = { master_school_topics: 'school', build_confidence: 'confidence', prepare_competitions: 'competition', read_fluently: 'reading', explore_beyond_class: 'explore', not_sure_yet: 'nova' }
 
 /* Constellation: the five goals orbit a star; the chosen one lights up. */
 const NODES = [
@@ -26,11 +30,11 @@ const NODES = [
 ]
 const CENTER = { x: 300, y: 240 }
 
-function Constellation({ chosen, onPick }) {
+function Constellation({ chosen, onPick, available }) {
   return (
     <div className="absolute left-[890px] top-[70px] w-[600px] h-[420px]">
       <svg className="absolute inset-0 w-full h-full overflow-visible">
-        {NODES.map((n, i) => (
+        {NODES.filter(n => available.some(g => g.id === n.id)).map((n, i) => (
           <motion.line key={n.id} x1={CENTER.x} y1={CENTER.y} x2={n.x + 40} y2={n.y + 40} stroke={chosen.includes(n.id) ? '#8b5cf6' : 'rgba(124,92,255,.4)'} strokeWidth={chosen.includes(n.id) ? 3 : 2} strokeDasharray="6 8" initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 1.2, delay: 0.06 + i * 0.12, ease: [0.16, 1, 0.3, 1] }} style={{ filter: chosen.includes(n.id) ? 'drop-shadow(0 0 6px rgba(139,92,246,.9))' : undefined }} />
         ))}
         {[[135, 132, 340, 100], [340, 100, 535, 132], [5, 340, 135, 132], [535, 132, 645, 340]].map(([a, b, c, d], i) => (
@@ -38,7 +42,7 @@ function Constellation({ chosen, onPick }) {
         ))}
       </svg>
       <motion.div className="absolute w-[36px] h-[36px] rounded-full" style={{ left: CENTER.x - 18, top: CENTER.y - 18, background: 'radial-gradient(circle, #fff, #a78bfa 40%, transparent 70%)' }} animate={{ scale: [1, 1.5, 1], opacity: [0.8, 1, 0.8] }} transition={{ duration: 2.4, repeat: Infinity }} />
-      {NODES.map((n, i) => {
+      {NODES.filter(n => available.some(g => g.id === n.id)).map((n, i) => {
         const goal = GOALS.find(g => g.id === n.id); const on = chosen.includes(n.id)
         return (
           <motion.button key={n.id} className="absolute flex flex-col items-center w-[160px] -ml-[40px]" style={{ left: n.x, top: n.y }} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.08 + i * 0.1 }} onClick={() => onPick(n.id)}>
@@ -58,6 +62,17 @@ export default function Goals() {
   const nav = useNavigate()
   const g = useGame()
   const { name } = g.state.profile
+  const loadGoals = useCallback(() => api.goals().then(response => response.goals
+    .filter(item => apiGoalKey[item.key])
+    .map(item => {
+      const local = GOALS.find(goal => goal.id === apiGoalKey[item.key])
+      return { ...local, id: apiGoalKey[item.key], title: item.name, tag: item.tagline, apiId: item.id }
+    })), [])
+  const { data: goals, source, loading } = useApiCatalog(loadGoals, GOALS)
+  const visibleGoals = GOALS.map(local => goals.find(goal => goal.id === local.id)
+    ? { ...local, ...goals.find(goal => goal.id === local.id), available: true }
+    : { ...local, available: source !== 'api' })
+  const novaGoal = goals.find(goal => goal.id === 'nova')
   const chosen = g.state.profile.goals ?? []
   /* Pick as many as you like. "Let Nova decide" is the one exception: it means
      "I have not chosen", so it clears the rest and any other pick clears it. */
@@ -75,40 +90,41 @@ export default function Goals() {
         <Item><h1 className="font-display font-extrabold text-[54px] leading-tight text-ink">What should we grow first?</h1></Item>
         <Item className="text-[21px] font-semibold text-ink-3">Pick one or more goals to personalise {name}'s learning journey.</Item>
       </Stack>
-      <Stack className="absolute left-[95px] top-[275px] flex flex-col gap-[12px]" start={0.4} delay={0.07}>
-        {GOALS.map(gl => {
+      <Stack className="absolute left-[95px] top-[275px] flex flex-col gap-[8px]" start={0.4} delay={0.07}>
+        {visibleGoals.map(gl => {
           const on = chosen.includes(gl.id)
           return (
             <Item key={gl.id} v="left">
-              <Card hover selected={on} className="w-[685px] h-[96px] px-5 flex items-center gap-5" onClick={() => pick(gl.id)}>
-                <span className="w-[76px] h-[76px] rounded-full grid place-items-center shrink-0" style={{ background: 'var(--lavender)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.7)' }}><img src={gl.icon} alt="" className="w-[52px] h-[52px] object-contain" /></span>
+              <Card hover={gl.available} selected={on} className={cn('w-[685px] h-[78px] px-5 flex items-center gap-5', !gl.available && 'opacity-65')} onClick={() => gl.available && pick(gl.id)}>
+                <span className="w-[60px] h-[60px] rounded-full grid place-items-center shrink-0" style={{ background: 'var(--lavender)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.7)' }}><img src={gl.icon} alt="" className="w-[44px] h-[44px] object-contain" /></span>
                 <div className="w-[270px]">
                   <div className="font-display font-extrabold text-[21px] text-ink leading-tight">{gl.title}</div>
                   <div className="text-[15px] font-semibold text-ink-3 leading-snug">{gl.desc}</div>
                 </div>
-                <div className="flex-1 text-[16px] font-bold text-primary-ink leading-snug">{gl.tag}</div>
-                {on ? <Check size={36} /> : <span className="radio" />}
+                <div className="flex-1 text-[16px] font-bold text-primary-ink leading-snug">{gl.available ? gl.tag : 'Awaiting live API'}</div>
+                {gl.available ? (on ? <Check size={36} /> : <span className="radio" />) : <span className="chip h-[30px] px-3 text-[12px]">Coming soon</span>}
               </Card>
             </Item>
           )
         })}
         <Item v="left">
-          <Card hover selected={chosen.includes('nova')} className="w-[685px] h-[86px] px-5 flex items-center gap-5" onClick={() => pick('nova')}>
-            <span className="w-[62px] h-[62px] rounded-full grid place-items-center shrink-0" style={{ background: 'var(--lavender)' }}><img src="/art/goal-nova.webp" alt="" className="w-[48px] h-[48px] object-contain" /></span>
+          <Card hover selected={chosen.includes('nova')} className="w-[685px] h-[74px] px-5 flex items-center gap-5" onClick={() => pick('nova')}>
+            <span className="w-[56px] h-[56px] rounded-full grid place-items-center shrink-0" style={{ background: 'var(--lavender)' }}><img src="/art/goal-nova.webp" alt="" className="w-[44px] h-[44px] object-contain" /></span>
             <div className="flex-1">
-              <div className="font-display font-extrabold text-[21px] text-ink leading-tight">Not sure yet — Let Nova decide</div>
-              <div className="text-[15px] font-semibold text-ink-3">Help me explore and decide later.</div>
+              <div className="font-display font-extrabold text-[21px] text-ink leading-tight">{novaGoal?.title || 'Not sure yet — Let Nova decide'}</div>
+              <div className="text-[15px] font-semibold text-ink-3">{novaGoal?.tag || 'Help me explore and decide later.'}</div>
             </div>
             {chosen.includes('nova') ? <Check size={36} /> : <span className="radio" />}
           </Card>
         </Item>
       </Stack>
 
-      <Constellation chosen={chosen} onPick={pick} />
+      <Constellation chosen={chosen} onPick={id => visibleGoals.find(goal => goal.id === id)?.available && pick(id)} available={visibleGoals} />
+      <div className="absolute right-[70px] top-[120px] rounded-full px-4 py-2 text-[13px] font-extrabold" style={{ background: source === 'api' ? (API_MODE === 'mock' ? 'rgba(59,130,246,.16)' : 'rgba(34,197,94,.16)') : 'rgba(245,158,11,.16)', color: source === 'api' ? (API_MODE === 'mock' ? '#1d4ed8' : '#15803d') : '#b45309' }}>{loading ? 'Loading catalog…' : source === 'api' ? `${API_MODE === 'mock' ? 'Mock' : 'Live'} API catalog · ${goals.length} items` : 'Demo catalog fallback'}</div>
       <Child screen="goals" delay={0.5} />
       <div className="absolute left-[1462px] top-[560px]"><SpeechBubble tail="left" text="We can change this anytime. ✨" delay={0.3} className="w-[170px] text-[17px]" /></div>
       <motion.div className="absolute left-[945px] top-[798px]" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow className="w-[520px] h-[98px] uppercase text-[30px]" sound="whoosh" onClick={() => nav('/onboarding/nova')}>Continue</Button>
+        <Button size="lg" arrow className="w-[520px] h-[98px] uppercase text-[30px]" sound="whoosh" onClick={async () => { await g.saveGoals(); nav('/onboarding/nova') }}>Continue</Button>
       </motion.div>
     </Page>
   )

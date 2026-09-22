@@ -6,7 +6,8 @@ import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import Logo from '../components/Logo.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
+import { completeMission } from '../lib/gameApi.js'
 import QuestionVisual from '../components/QuestionVisual.jsx'
 import { useRouteContent, checkQuestion, routeSubject, withSubject } from '../content/index.js'
 import { useGame } from '../state/GameProvider.jsx'
@@ -23,7 +24,7 @@ const SPLIT = [0.34, 0.19, 0.29, 0.18]
 
 export default function SpotMistake() {
   const nav = useNavigate()
-  const g = useGame(); const { streak, xpToday } = g.state.stats
+  const g = useGame(); const { streak, xp: xpToday } = g.state.stats
   const [picks, setPicks] = useState([])
   const [locked, setLocked] = useState(false)
   const [score, setScore] = useState(0)
@@ -66,12 +67,13 @@ export default function SpotMistake() {
     const selectedLabel = picks.map(key => Q.options.find(option => option.key === key)?.label).filter(Boolean).join(', ')
     const answerLabel = answers.map(key => Q.options.find(option => option.key === key)?.label).filter(Boolean).join(', ')
     setReview(items => [...items, { question: Q.instruction, selectedLabel, answerLabel, correct, hintsUsed: hints, explanation: Q.explanation || (correct ? Q.feedback_correct : QM.feedback_wrong), model: QM }])
-    if (correct) { sfx.success(); setScore(value => value + 1); g.addXp(Q.xp_on_correct, Q.title) }
+    if (correct) { sfx.success(); setScore(value => value + 1) }
     else { sfx.wrong(); setWrong(w => w + 1); setHints(value => Math.max(1, value)) }
   }
-  const advance = () => {
+  const advance = async () => {
     if (questionIndex === questions.length - 1) {
-      const result = { score, total: questions.length, review, subject, attemptId: crypto.randomUUID(), completedAt: Date.now() }
+      const saved = await completeMission(g.state.activeChildId, subject, score / questions.length * 100)
+      const result = { score, total: questions.length, review, subject, attemptId: crypto.randomUUID(), completedAt: saved.completed_at, xpAwarded: saved.xp_awarded, apiSaved: true }
       sessionStorage.setItem('kv:last-mission-score', JSON.stringify(result))
       sessionStorage.removeItem('kv:mission-progress')
       nav(withSubject('/missions/fractions/complete'), { state: result })
@@ -99,7 +101,7 @@ export default function SpotMistake() {
       <Panel className="absolute top-[110px] w-[250px] p-5" style={bleedL(24)} initial="hidden" animate="show">
         <div className="flex items-center gap-3"><span className="icon-orb w-[40px] h-[40px] text-orange-500" style={{ background: 'rgba(249,115,22,.14)' }}><Flame size={22} fill="currentColor" /></span><span className="leading-tight"><span className="label-caps block">Streak</span><span className="font-display font-extrabold text-[20px] text-ink">{streak} days</span></span></div>
         <div className="hairline my-4" />
-        <div className="flex items-center gap-3"><span className="icon-orb w-[40px] h-[40px] text-gold" style={{ background: 'rgba(251,191,36,.16)' }}><Star size={22} fill="currentColor" /></span><span className="leading-tight"><span className="label-caps block">XP Today</span><span className="font-display font-extrabold text-[20px] text-ink"><motion.span key={xpToday} initial={{ scale: 1.4, color: '#7c5cff' }} animate={{ scale: 1, color: 'var(--ink)' }} className="inline-block">{xpToday}</motion.span> XP</span></span></div>
+        <div className="flex items-center gap-3"><span className="icon-orb w-[40px] h-[40px] text-gold" style={{ background: 'rgba(251,191,36,.16)' }}><Star size={22} fill="currentColor" /></span><span className="leading-tight"><span className="label-caps block">Saved XP</span><span className="font-display font-extrabold text-[20px] text-ink"><motion.span key={xpToday} initial={{ scale: 1.4, color: '#7c5cff' }} animate={{ scale: 1, color: 'var(--ink)' }} className="inline-block">{xpToday}</motion.span> XP</span></span></div>
       </Panel>
       <Child screen="spot" delay={0.5} />
 
@@ -186,7 +188,7 @@ export default function SpotMistake() {
         <AnimatePresence>
           {correct && (
             <motion.div className="mt-4 rounded-[22px] p-4 text-white" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }} initial={{ opacity: 0, scale: 0.6, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 360, damping: 16, delay: 0.2 }}>
-              <div className="font-display font-extrabold text-[26px] flex items-center gap-2"><Star size={24} className="text-gold" fill="currentColor" /> +{Q.xp_on_correct} XP</div>
+              <div className="font-display font-extrabold text-[26px] flex items-center gap-2"><Star size={24} className="text-gold" fill="currentColor" /> Correct answer</div>
               <div className="text-[16px] font-bold opacity-90">Keep it up! 🎉</div>
             </motion.div>
           )}

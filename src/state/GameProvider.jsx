@@ -2,11 +2,12 @@ import React, { createContext, useContext, useEffect, useMemo, useReducer } from
 import { setSoundEnabled } from '../lib/sound.js'
 import { setVoiceEnabled } from '../lib/voice.js'
 
-import { emptyProfile, emptyStats, emptyProgress, beginChild, finishChild, selectChild, migrateFamily, loginRoute, openAccount, hasFamily } from './family.js'
+import { emptyProfile, emptyStats, emptyProgress, beginChild, finishChild, selectChild, migrateFamily, loginRoute, openAccount, hydrateRemoteFamily, beginRemoteChild } from './family.js'
+import { api as remote, apiRequest, API_MODE, setToken, warmCatalogs } from '../lib/api.js'
 
-const KEY = 'kidsverse-plus-v2'
+const KEY = `kidsverse-plus-v3-${API_MODE}`
 /* A finished mission pays about 45 XP; 400 per level keeps a level within a few sittings. */
-export const XP_PER_LEVEL = 400
+export const XP_PER_LEVEL = 1000
 export const levelOf = xp => 1 + Math.floor(xp / XP_PER_LEVEL)
 export const levelPct = xp => Math.round(((xp % XP_PER_LEVEL) / XP_PER_LEVEL) * 100)
 
@@ -45,6 +46,7 @@ function load() {
 let seq = 0
 function reducer(state, a) {
   switch (a.type) {
+    case 'remoteStats': return { ...state, stats: { ...state.stats, xp: a.stats.total_xp, streak: a.stats.day_streak } }
     case 'profile': return { ...state, profile: { ...state.profile, ...a.patch } }
     case 'settings': return { ...state, settings: { ...state.settings, ...a.patch } }
     case 'progress': return { ...state, progress: { ...state.progress, ...a.patch } }
@@ -108,6 +110,11 @@ export function GameProvider({ children }) {
     setProfile: patch => dispatch({ type: 'profile', patch }),
     setSettings: patch => dispatch({ type: 'settings', patch }),
     setProgress: patch => dispatch({ type: 'progress', patch }),
+    refreshStats: async () => {
+      if (!state.activeChildId) return
+      const home = await remote.studentHome(state.activeChildId)
+      dispatch({ type: 'remoteStats', stats: home.stats })
+    },
     /* The car has now been watched arriving at this station, so it should not drive
        there again the next time the map is opened. */
     markJourneySeen: (world, index) => dispatch({ type: 'journeySeen', world, index }),
@@ -127,30 +134,57 @@ export function GameProvider({ children }) {
     clearNotice: id => dispatch({ type: 'clearNotice', id }),
     setParentPin: pin => dispatch({ type: 'pin', pin }),
     setAuthIntent: intent => dispatch({ type: 'authIntent', intent }),
-    signUp: async email => {
-      const existingFamily = hasFamily(state, email)
-      dispatch({ type: 'openAccount', email })
-      // Reusing an existing email opens its family selector, where the parent
-      // can choose the saved child or add a sibling. It never creates a second
-      // parent account with the same email.
-      return existingFamily ? '/switch' : '/onboarding/child'
+    signUp: async (email, password) => {
+      const response = await remote.signUp({ email: email.trim().toLowerCase(), password })
+      setToken(response.token)
+      void warmCatalogs()
+      dispatch({ type: 'remoteFamily', email, students: [] })
+      return '/onboarding/child'
     },
-    signIn: async email => {
-      const next = openAccount(state, email)
-      dispatch({ type: 'openAccount', email })
-      // A different browser has no local family snapshot in this frontend demo.
-      // Give Home a neutral display identity while the real account service is
-      // absent, instead of forcing the parent through child creation.
-      if (!next.children.length) dispatch({ type: 'profile', patch: { name: 'Explorer', face: 1, firstVisit: false } })
-      return loginRoute(next, state.authIntent === 'parent')
+    signIn: async (email, password) => {
+      const response = await remote.login({ email: email.trim().toLowerCase(), password })
+      setToken(response.token)
+      void warmCatalogs()
+      const [{ students }, { characters }] = await Promise.all([apiRequest('/parent/students'), remote.avatarCharacters()])
+      dispatch({ type: 'remoteFamily', email, students, characters })
+      if (!students.length) return '/onboarding/child'
+      if (students.length === 1 && !students[0].onboarding_completed) return '/onboarding/grade-board'
+      return loginRoute({ children: students }, state.authIntent === 'parent')
     },
-    addChild: async name => dispatch({ type: 'addChild', name: name.trim() }),
+    addChild: async name => {
+      const student = await apiRequest('/students', { method: 'POST', body: { name: name.trim() } })
+      dispatch({ type: 'remoteChild', student })
+      return student
+    },
     completeChild: () => dispatch({ type: 'completeChild', id: crypto.randomUUID() }),
-    saveGradeBoard: async () => true,
-    saveAvatar: async () => true,
-    saveInterests: async () => true,
-    saveGoals: async () => true,
-    greetNova: async () => true,
+    saveGradeBoard: () => apiRequest(`/students/${state.activeChildId}/grade-board`, { method: 'PATCH', body: { grade: state.profile.grade, board: state.profile.board } }),
+    saveAvatar: async () => {
+      const [{ characters }, { items }] = await Promise.all([remote.avatarCharacters(), remote.avatarItems()])
+      const character = characters[state.profile.face - 1]
+      const apiOutfitSlug = state.profile.outfit === 'explorer' ? 'explorers-jacket' : state.profile.outfit
+      const outfit = items.find(v => v.category === 'outfit' && v.slug === apiOutfitSlug)
+      if (!character || !outfit) throw new Error('This avatar is not available in the API catalog. Choose a supported avatar.')
+      return apiRequest(`/students/${state.activeChildId}/avatar`, { method: 'PUT', body: { character_id: character.id, outfit_item_id: outfit.id } })
+    },
+    saveInterests: async () => {
+      const { interests } = await remote.interests()
+      const ids = state.profile.interests.map(key => interests.find(i => i.key === key)?.id)
+      if (ids.length < 3 || ids.some(id => !id)) throw new Error('Select at least three available API interests.')
+      return apiRequest(`/students/${state.activeChildId}/interests`, { method: 'PUT', body: { interest_ids: ids } })
+    },
+    saveGoals: async () => {
+      const { goals } = await remote.goals()
+      const mapping = { school: 'master_school_topics', confidence: 'build_confidence', competition: 'prepare_competitions', reading: 'read_fluently', explore: 'explore_beyond_class', nova: 'not_sure_yet' }
+      const ids = state.profile.goals.map(key => goals.find(v => v.key === (mapping[key] || key))?.id)
+      if (ids.some(id => !id)) throw new Error('Selected goal is not in the API catalog.')
+      return apiRequest(`/students/${state.activeChildId}/goals`, { method: 'PUT', body: { goal_ids: ids } })
+    },
+    greetNova: async () => {
+      await apiRequest(`/students/${state.activeChildId}/onboarding/steps/lobby/complete`, { method: 'POST', body: {} })
+      const response = await apiRequest(`/students/${state.activeChildId}/nova/greet`, { method: 'POST', body: {} })
+      dispatch({ type: 'completeChild', id: state.activeChildId })
+      return response
+    },
     switchChild: id => dispatch({ type: 'switchChild', id }),
     reset: () => dispatch({ type: 'reset' }),
     toggleTheme: () => dispatch({ type: 'settings', patch: { theme: state.settings.theme === 'dark' ? 'light' : 'dark' } }),

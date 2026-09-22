@@ -13,6 +13,7 @@ import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeT, safeB } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { speak } from '../lib/voice.js'
+import { completeCompanionActivity } from '../lib/gameApi.js'
 
 const SKILLS = [[MessageCircle, '#a855f7', 'Complete sentences', 0.6], [Star, '#facc15', 'Clarity', 0.45], [BookA, '#3b82f6', 'Vocabulary', 0.5], [ShieldCheck, '#38bdf8', 'Confidence', 0.7]]
 
@@ -83,7 +84,12 @@ export default function ConfidenceMission() {
       </motion.div>
       <motion.div className="absolute left-[835px] flex items-center gap-4" style={safeB(24)} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <Button variant="ghost" size="md" icon={<RefreshCw size={22} />} className="h-[64px] px-8 text-[19px]" onClick={() => setTurn(0)}>Try Again</Button>
-        <Button size="md" arrow className="w-[300px] h-[64px] text-[22px]" sound="whoosh" onClick={() => { g.addXp(20, 'Confidence mission'); nav('/extra') }}>Continue</Button>
+        <Button size="md" arrow className="w-[300px] h-[64px] text-[22px]" sound="whoosh" onClick={async () => {
+          try {
+            await completeCompanionActivity(g.state.activeChildId, ['confidence', 'speak', 'talk'])
+            g.addXp(20, 'Confidence mission'); nav('/extra')
+          } catch (error) { g.notice(error.message) }
+        }}>Continue</Button>
       </motion.div>
     </Page>
   )

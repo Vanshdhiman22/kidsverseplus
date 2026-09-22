@@ -37,10 +37,10 @@ export default function MissionComplete() {
      so they are never read from content -- see docs/CONTENT-CONTRACT.md. */
   const pkg = useRouteContent()
   const K = pkg.complete
-  const XP = pkg.mission.xp
   let savedResult = {}
   try { savedResult = JSON.parse(sessionStorage.getItem('kv:last-mission-score') ?? '{}') } catch { savedResult = {} }
   const result = location.state?.attemptId ? location.state : savedResult
+  const XP = result.xpAwarded ?? 0
   const validResult = Boolean(result?.attemptId && Number.isFinite(Number(result.score)) && Number(result.total) > 0)
   const score = Number(result?.score ?? 0)
   const total = Number(result?.total ?? Math.min(pkg.check.questions.length, 6))
@@ -51,7 +51,7 @@ export default function MissionComplete() {
     if (!validResult) { nav(withSubject('/missions/fractions/spot-mistake'), { replace: true }); return }
     const t = setTimeout(() => sfx.unlock(), 300)
     const rewardKey = `kv:rewarded:${result.attemptId}`
-    const t2 = setTimeout(() => { if (!localStorage.getItem(rewardKey)) { const world = routeSubject(); localStorage.setItem(rewardKey, '1'); g.addXp(XP, `${pkg.subject} mission`); g.advanceStation({ world, base: WORLD_DONE[world] ?? 0, per: STATION_PER, total: STATION_TOTAL }) } }, 1400)
+    const t2 = setTimeout(() => { if (!localStorage.getItem(rewardKey)) { const world = routeSubject(); localStorage.setItem(rewardKey, '1'); g.advanceStation({ world, base: WORLD_DONE[world] ?? 0, per: STATION_PER, total: STATION_TOTAL }) }; g.refreshStats().catch(e => g.notice(e.message)) }, 1400)
     return () => { clearTimeout(t); clearTimeout(t2) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const mood = scorePercent < 70 ? { title: 'LET’S TRY AGAIN', message: 'A little practice will make this easier.' } : scorePercent < 95 ? { title: 'GOOD PROGRESS', message: 'You are close. Review the tricky parts and try again.' } : { title: 'MISSION COMPLETE!', message: K.encouragement }

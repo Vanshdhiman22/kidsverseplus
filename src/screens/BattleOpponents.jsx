@@ -14,6 +14,8 @@ import { useTint } from '../lib/accent.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
+import { api } from '../lib/api.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
 
 const ICONS = { robo: Puzzle, lexi: BookOpen, cosmo: FlaskConical, pixel: Grid3x3 }
 
@@ -22,7 +24,28 @@ export default function BattleOpponents() {
   const g = useGame(); const { name, face } = g.state.profile
   const [sel, setSel] = useState('robo')
   const tint = useTint()
-  const bot = BOTS.find(b => b.id === sel)
+  const { data: catalog } = useLiveResource(() => api.challenges(), [], { enabled: true })
+  const challengeId = catalog?.challenges?.[0]?.id
+  const { data: opponentResponse } = useLiveResource(
+    () => api.challengeOpponents(challengeId),
+    [challengeId],
+    { enabled: Boolean(challengeId) },
+  )
+  const opponents = opponentResponse?.opponents ?? []
+  const bots = BOTS.map((bot, index) => {
+    const live = opponents[index]
+    return live ? {
+      ...bot,
+      apiId: live.id,
+      name: live.name,
+      level: live.ai_profile?.level ?? bot.level,
+      subject: live.ai_profile?.subject ?? catalog?.challenges?.[0]?.topic ?? bot.subject,
+      spec: live.ai_profile?.specialty ?? bot.spec,
+      blurb: live.ai_profile?.description ?? bot.blurb,
+      style: live.difficulty ? `${live.difficulty} opponent` : bot.style,
+    } : bot
+  })
+  const bot = bots.find(b => b.id === sel) ?? bots[0]
   return (
     <Page>
       <Scene name="opponents" />
@@ -38,7 +61,7 @@ export default function BattleOpponents() {
       </Stack>
 
       <Stack className="absolute left-[305px] top-[270px] flex gap-[28px]" start={0.6} delay={0.1}>
-        {BOTS.map(b => {
+        {bots.map(b => {
           const on = b.id === sel; const I = ICONS[b.id]
           return (
             <Item key={b.id} v="pop"><Tilt max={6}>

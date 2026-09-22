@@ -7,7 +7,8 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import Logo from '../components/Logo.jsx'
 import { UserChip, StatPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
+import { completeBattle } from '../lib/gameApi.js'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Bar } from '../components/Widgets.jsx'
 import { Vs } from './BattlePreview.jsx'
@@ -47,8 +48,9 @@ function Strengths({ title, rows, className }) {
 
 export default function Battle() {
   const nav = useNavigate(); const [sp] = useSearchParams()
-  const bot = BOTS.find(b => b.id === sp.get('bot')) ?? BOTS[0]
+  const bot = { ...(BOTS.find(b => b.id === sp.get('bot')) ?? BOTS[0]) }
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
+  try { bot.name = JSON.parse(sessionStorage.getItem(`kv:api-opponent:${g.state.activeChildId}`))?.name || bot.name } catch {}
   /* The left fighter is whoever is signed in. girl_02 has a bespoke waist-up battle pose;
      every other face still uses its square head crop. */
   const portrait = charByFace(face).id === 'girl_02' ? '/art/chars/pose/P12/girl_02.webp' : `/art/kid${face}-face.webp`
@@ -84,10 +86,14 @@ export default function Battle() {
     const id = setTimeout(() => { setSecs(x => x - 1); setElapsed(e => e + 1) }, 1000)
     return () => clearTimeout(id)
   }, [secs, done])  // eslint-disable-line react-hooks/exhaustive-deps
-  const submit = () => {
-    if (pick == null) return
+  const submit = async () => {
+    if (pick == null && !done) return
     if (done) {
-      if (round + 1 >= battleQuestions.length) { sfx.whoosh(); nav(`/challenge/result?bot=${bot.id}&me=${score[0]}&bot_s=${score[1]}&t=${elapsed}`); return }
+      if (round + 1 >= battleQuestions.length) {
+        const result = await completeBattle(g.state.activeChildId, score[0] / battleQuestions.length * 100)
+        sessionStorage.setItem('kv:last-battle-result', JSON.stringify(result))
+        sfx.whoosh(); nav(`/challenge/result?bot=${bot.id}&me=${score[0]}&bot_s=${score[1]}&t=${elapsed}`); return
+      }
       setRound(round + 1); setPick(null); setDone(false); setSecs(22); return
     }
     const right = pick === q.answer; setDone(true)
@@ -140,7 +146,7 @@ export default function Battle() {
               <span className="font-display font-extrabold text-[19px] leading-tight">{option.label}</span>
             </Card></Item>) })}
         </Stack>
-        <div className="mt-4 flex justify-center"><Button size="md" arrow className="w-[525px] h-[62px] uppercase text-[24px]" disabled={pick == null} sound="whoosh" onClick={submit}>{done ? (round + 1 >= battleQuestions.length ? 'See result' : 'Next round') : 'Submit answer'}</Button></div>
+        <div className="mt-4 flex justify-center"><Button size="md" arrow className="w-[525px] h-[62px] uppercase text-[24px]" disabled={pick == null && !done} sound="whoosh" onClick={submit}>{done ? (round + 1 >= battleQuestions.length ? 'See result' : 'Next round') : 'Submit answer'}</Button></div>
       </Panel>
     </Page>
   )

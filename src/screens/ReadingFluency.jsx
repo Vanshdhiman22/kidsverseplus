@@ -14,6 +14,7 @@ import { bleedL, bleedR, safeT, safeB } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { speak } from '../lib/voice.js'
 import { cn } from '../lib/utils.js'
+import { completeCompanionActivity } from '../lib/gameApi.js'
 
 const WORDS = 'Under the pale moonlight, Aarav spotted a glowing path across the quiet dunes. He followed the lights and discovered a hidden cave filled with sparkling crystals.'.split(' ')
 const STATS = [[Target, '#ef4444', 'Accuracy', 92, 'Excellent! 🎉'], [Gauge, '#3b82f6', 'Pace', 118, 'Good pace! ⚡', 'Words / min'], [Drama, '#8b5cf6', 'Expression', 78, 'Keep going! 🌟'], [BookOpen, '#0ea5e9', 'Comprehension', 90, 'Great understanding! 📖']]
@@ -102,7 +103,12 @@ export default function ReadingFluency() {
         <span className="pill h-[56px] px-5 text-[16px] font-bold text-ink"><Headphones size={18} /> Listen</span>
       </motion.div>
       <motion.div className="absolute" style={{ ...bleedR(50), ...safeB(24) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow className="w-[430px] h-[76px] uppercase text-[24px]" sound="whoosh" onClick={() => { g.addXp(25, 'Reading session'); g.finishReading(); nav('/extra') }}>Finish reading</Button>
+        <Button size="lg" arrow className="w-[430px] h-[76px] uppercase text-[24px]" sound="whoosh" onClick={async () => {
+          try {
+            await completeCompanionActivity(g.state.activeChildId, ['read', 'reading'])
+            g.addXp(25, 'Reading session'); g.finishReading(); nav('/extra')
+          } catch (error) { g.notice(error.message) }
+        }}>Finish reading</Button>
       </motion.div>
     </Page>
   )

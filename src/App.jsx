@@ -12,6 +12,7 @@ import SettingsSheet from './components/SettingsSheet.jsx'
 import NovaAgent from './components/NovaAgent.jsx'
 import MusicPlayer from './components/MusicPlayer.jsx'
 import Landing from './screens/Landing.jsx'
+import MockInspector from './components/MockInspector.jsx'
 
 const lazyScreen = p => lazy(p)
 const ParentLogin = lazyScreen(() => import('./screens/ParentLogin.jsx'))
@@ -52,6 +53,8 @@ const SwitchStudent = lazyScreen(() => import('./screens/SwitchStudent.jsx'))
 const ParentOverview = lazyScreen(() => import('./screens/ParentOverview.jsx'))
 const ParentEvidence = lazyScreen(() => import('./screens/ParentEvidence.jsx'))
 const ParentPlan = lazyScreen(() => import('./screens/ParentPlan.jsx'))
+const ApiTestLab = lazyScreen(() => import('./screens/ApiTestLab.jsx'))
+const ScreenIndex = lazyScreen(() => import('./screens/ScreenIndex.jsx'))
 
 /* Route list, kept as the single place the screen order is written down. */
 export const SCREENS = [
@@ -64,6 +67,8 @@ export const SCREENS = [
   ['/challenge/opponents', '26 Battle Opponents'], ['/challenge/preview', '27 Battle Preview'], ['/challenge/battle', '28 Battle'], ['/challenge/result', '29 Battle Result'],
   ['/challenge/leaderboard', '30 Leaderboard'], ['/profile', '31 Profile'], ['/profile/journey', '32 Our Journey'], ['/profile/break-passes', '32a Break Passes'], ['/switch', '33 Switch Student'],
   ['/parent', '34 Parent Overview'], ['/parent/evidence', '35 Parent Topic Evidence'], ['/parent/plan', '36 Parent Next Plan'],
+  ['/api-test', 'Dev · API Test Lab'],
+  ['/screens', 'Dev · Screen Index'],
 ]
 
 /* Space-themed placeholder while a lazy chunk loads (a few ms on a warm cache). */
@@ -179,6 +184,8 @@ function Routed() {
           <Route path="/parent" element={<ParentOverview />} />
           <Route path="/parent/evidence" element={<ParentEvidence />} />
           <Route path="/parent/plan" element={<ParentPlan />} />
+          <Route path="/api-test" element={<ApiTestLab />} />
+          <Route path="/screens" element={<ScreenIndex />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
@@ -193,6 +200,7 @@ export default function App() {
         <MotionConfig reducedMotion="user">
           <Cosmos lite />
           <MusicPlayer />
+          <MockInspector />
           <Stage><Routed /><NavDrawer /><BackButton /><Overlays /></Stage>
         </MotionConfig>
       </GameProvider>

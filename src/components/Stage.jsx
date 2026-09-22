@@ -43,6 +43,7 @@ export default function Stage({ children }) {
       root.style.setProperty('--fit-x', String(sx))
       root.style.setProperty('--fit-y', String(sy))
       root.style.setProperty('--bleed', `${Math.max(0, (w / sx - STAGE_W) / 2)}px`)
+      root.style.setProperty('--bleed-y', `${Math.max(0, (h / sy - STAGE_H) / 2)}px`)
       const crop = Math.max(0, (STAGE_H - h / sy) / 2)
       root.style.setProperty('--safe-t', `${crop}px`)
       root.style.setProperty('--safe-b', `${crop}px`)

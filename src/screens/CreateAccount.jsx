@@ -6,7 +6,7 @@ import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
 import { Panel } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
 import { TrustRow } from './Landing.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
@@ -60,7 +60,7 @@ export default function CreateAccount() {
     if (!ready) { sfx.wrong?.(); return }
     sfx.whoosh()
     /* Register the account in the same local family store used by Sign In. */
-    const next = await g.signUp(email.trim())
+    const next = await g.signUp(email.trim(), pw)
     g.setAuthIntent?.('parent')
     nav(next)
   }

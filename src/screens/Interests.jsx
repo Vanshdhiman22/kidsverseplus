@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ChevronLeft, Star } from 'lucide-react'
@@ -6,7 +6,7 @@ import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item, BackButton } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
 import { Check } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Segments } from '../components/Stepper.jsx'
 import { Tilt } from '../components/Widgets.jsx'
@@ -14,11 +14,21 @@ import { INTERESTS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
+import { api, API_MODE } from '../lib/api.js'
+import { useApiCatalog } from '../lib/useApiCatalog.js'
 
 export default function Interests() {
   const nav = useNavigate()
   const g = useGame()
   const sel = g.state.profile.interests
+  const loadInterests = useCallback(() => api.interests().then(response => response.interests.map(item => ({
+    id: item.key,
+    name: item.name,
+    // Keep the polished local art; the server controls the catalog's real IDs/names.
+    img: INTERESTS.find(local => local.id === item.key)?.img || item.thumbnail_url,
+    apiId: item.id,
+  }))), [])
+  const { data: interests, source, loading } = useApiCatalog(loadInterests, INTERESTS)
   const toggle = id => { const on = sel.includes(id); sfx[on ? 'tap' : 'select'](); g.setProfile({ interests: on ? sel.filter(i => i !== id) : [...sel, id] }) }
   const enough = sel.length >= 3
   return (
@@ -30,11 +40,12 @@ export default function Interests() {
         <Item><h1 className="font-display font-extrabold text-[66px] leading-tight text-ink">What makes you curious?</h1></Item>
         <Item className="mt-1 text-[22px] font-semibold text-ink-3">Choose <span className="text-primary-ink font-extrabold">three or more</span>. Nova will weave them into your missions.</Item>
       </Stack>
+      <div className="absolute right-[70px] top-[120px] rounded-full px-4 py-2 text-[13px] font-extrabold" style={{ background: source === 'api' ? (API_MODE === 'mock' ? 'rgba(59,130,246,.16)' : 'rgba(34,197,94,.16)') : 'rgba(245,158,11,.16)', color: source === 'api' ? (API_MODE === 'mock' ? '#1d4ed8' : '#15803d') : '#b45309' }}>{loading ? 'Loading catalog…' : source === 'api' ? `${API_MODE === 'mock' ? 'Mock' : 'Live'} API catalog · ${interests.length} items` : 'Demo catalog fallback'}</div>
 
       <div className="absolute left-[255px] top-[135px]"><SpeechBubble tail="bottom" delay={0.3} className="w-[240px] text-[18px]"><span className="font-extrabold">Great choices!</span><br /><span className="font-semibold text-[16px]">I already have ideas. ✨</span></SpeechBubble></div>
 
       <Stack className="absolute left-[545px] top-[236px] grid grid-cols-4 gap-[22px]" start={0.45} delay={0.07}>
-        {INTERESTS.map(it => {
+        {interests.map(it => {
           const on = sel.includes(it.id)
           return (
             <Item key={it.id} v="pop">
@@ -60,7 +71,7 @@ export default function Interests() {
         </div>
       </motion.div>
       <motion.div className="absolute left-[1085px] top-[800px]" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow className="w-[520px] h-[96px] uppercase text-[30px]" disabled={!enough} sound="whoosh" onClick={() => nav('/onboarding/goals')}>Continue</Button>
+        <Button size="lg" arrow className="w-[520px] h-[96px] uppercase text-[30px]" disabled={!enough} sound="whoosh" onClick={async () => { await g.saveInterests(); nav('/onboarding/goals') }}>Continue</Button>
       </motion.div>
     </Page>
   )

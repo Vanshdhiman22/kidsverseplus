@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Swords, BookOpen, Zap, Calculator, Puzzle, Shield, Lightbulb, Info, Award } from 'lucide-react'
@@ -6,7 +6,8 @@ import Scene, { Cutout, Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip, StatPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
+import { startBattle, battlePreview } from '../lib/gameApi.js'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Bar, Sparkles } from '../components/Widgets.jsx'
 import { BOTS, BATTLE_XP } from '../data/battle.jsx'
@@ -27,7 +28,15 @@ export function Vs({ size = 120, className }) {
 
 export default function BattlePreview() {
   const nav = useNavigate(); const [sp] = useSearchParams()
-  const bot = BOTS.find(b => b.id === sp.get('bot')) ?? BOTS[0]
+  const selectedBot = BOTS.find(b => b.id === sp.get('bot')) ?? BOTS[0]
+  const [preview, setPreview] = useState(null)
+  const [error, setError] = useState('')
+  const bot = { ...selectedBot, name: preview?.opponent?.name || selectedBot.name }
+  useEffect(() => {
+    let active = true
+    battlePreview(BOTS.indexOf(selectedBot)).then(data => { if (active) setPreview(data) }).catch(e => { if (active) setError(e.message) })
+    return () => { active = false }
+  }, [selectedBot.id])
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
   return (
     <Page>
@@ -63,11 +72,11 @@ export default function BattlePreview() {
       <div className="absolute left-[670px] top-[568px]"><SpeechBubble tail="left" delay={0.3} className="w-[440px] text-[20px]"><span className="flex items-center gap-2 font-display font-extrabold text-[18px] text-primary-ink uppercase tracking-wide">✦ Nova's strategy</span><span className="block mt-1 font-bold">{bot.tip}</span></SpeechBubble></div>
 
       <motion.div className="absolute left-[420px] top-[728px] flex items-center gap-5" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow icon={<Swords size={30} />} className="w-[440px] h-[84px] uppercase text-[30px]" sound="whoosh" onClick={() => nav(`/challenge/battle?bot=${bot.id}`)}>Battle now</Button>
+        <Button size="lg" arrow icon={<Swords size={30} />} className="w-[440px] h-[84px] uppercase text-[30px]" sound="whoosh" onClick={async () => { await startBattle(g.state.activeChildId, BOTS.indexOf(selectedBot)); nav(`/challenge/battle?bot=${bot.id}`) }}>Battle now</Button>
         <Button variant="outline" size="lg" icon={<BookOpen size={28} />} className="h-[84px] px-10 uppercase text-[24px] text-sky-600 border-sky-400" onClick={() => nav('/missions/fractions')}>Practise first</Button>
       </motion.div>
       <Panel className="absolute left-[270px] top-[830px] w-[1100px] h-[92px] px-8 grid grid-cols-3 items-center divide-x divide-[var(--line)]" initial="hidden" animate="show">
-        {[[Award, '#f59e0b', 'Win reward', <span className="text-primary-ink">+{BATTLE_XP.win} XP</span>], [Shield, '#3b82f6', 'Fair match', 'Great battle! Even match.'], [Lightbulb, '#f59e0b', 'Tip', 'Keep practising to improve your weak areas!']].map(([I, c, t, s]) => <div key={t} className="flex items-center gap-3 px-4"><span className="icon-orb w-[44px] h-[44px]" style={{ color: c, background: `${c}1f` }}><I size={22} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[17px] text-ink uppercase">{t}</span><span className="block text-[14px] font-semibold text-ink-2">{s}</span></span>{t === 'Fair match' && <Info size={18} className="ml-auto text-ink-3" />}</div>)}
+        {[[Award, '#f59e0b', 'API win reward', <span className="text-primary-ink">{preview ? `+${preview.xp_reward} XP` : error || 'Loading…'}</span>], [Shield, '#3b82f6', 'API rules', preview?.rules || 'Loading…'], [Lightbulb, '#f59e0b', 'Tip', 'Keep practising to improve your weak areas!']].map(([I, c, t, s]) => <div key={t} className="flex items-center gap-3 px-4"><span className="icon-orb w-[44px] h-[44px]" style={{ color: c, background: `${c}1f` }}><I size={22} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[17px] text-ink uppercase">{t}</span><span className="block text-[14px] font-semibold text-ink-2">{s}</span></span></div>)}
       </Panel>
     </Page>
   )

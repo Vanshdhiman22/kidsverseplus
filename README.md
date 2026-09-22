@@ -10,6 +10,22 @@ Every screen is composed on a fixed 1672×941 stage that scales to fit the windo
 pnpm install
 pnpm dev        # http://localhost:5180
 pnpm build
+
+## API configuration
+
+Copy `.env.example` to `.env.local` and set `VITE_API_BASE_URL` to the public
+`/api/v1` origin. The browser receives only this public API DNS; database URLs,
+database credentials, JWT secrets, and other server secrets must never be prefixed
+with `VITE_`.
+
+`src/lib/api.js` is the shared request layer. It sends JSON, attaches a Bearer token
+only when supplied by authenticated state, and returns structured `ApiError` values
+for non-2xx responses. Screens can continue using their bundled demo data until a
+healthy API is available.
+
+Timestamps from the API must be ISO-8601 UTC values (for example
+`2026-09-18T10:30:00Z`). Use `formatBrowserDateTime` from `src/lib/time.js` to
+render them: it automatically uses the visitor's browser timezone and observes DST.
 ```
 
 Press the backtick key (`` ` ``) or click **☰ Screens** (bottom-left) to jump between all 21 screens.

@@ -15,6 +15,7 @@ import { bleedL, bleedR, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 import { useAccent } from '../lib/accent.js'
+import { formatBrowserDateTime } from '../lib/time.js'
 
 
 export default function ParentEvidence() {
@@ -33,7 +34,7 @@ export default function ParentEvidence() {
   const lessonsDone = Object.values(g.state.progress.worldDone ?? {}).reduce((a, b) => a + b, 0)
   const activity = [
     lastTest && [ClipboardCheck, '#7c3aed', 'Mixed Concept Test', 'Practice & track progress',
-                 `Score: ${lastTest.correct}/${lastTest.total}`, `${Math.round(lastTest.seconds / 60)} min`],
+                 `Score: ${lastTest.correct}/${lastTest.total}`, formatBrowserDateTime(lastTest.completedAt)],
     lessonsDone > 0 && [Play, '#8b5cf6', 'Lessons completed', 'Build strong concepts',
                         `${lessonsDone} finished`, 'Across all worlds'],
     (g.state.stats.battles ?? 0) > 0 && [HelpCircle, '#3b82f6', 'Bot battles', 'Quick-fire practice',

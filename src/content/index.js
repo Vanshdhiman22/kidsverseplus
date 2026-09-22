@@ -18,6 +18,8 @@ import fractions from './fractions-equal-parts.json'
 import additionStudio from './packages/addition-introduction.json'
 import { normalizeContentPackage } from './normalize.js'
 import { subjectDemoRaw } from './subject-demos.js'
+import { useGame } from '../state/GameProvider.jsx'
+import { loadMission } from '../lib/gameApi.js'
 
 const addition = normalizeContentPackage(additionStudio, 'addition-introduction', fractions)
 const BUNDLED = { 'fractions-equal-parts': fractions, 'addition-introduction': addition }
@@ -46,12 +48,31 @@ async function fetchRemote(id) {
 
 /** The package for a learning step. Bundled at once, remote when it lands. */
 export function useContent(id) {
+  const g = useGame()
   const [pkg, setPkg] = useState(() => getContent(id))
   useEffect(() => {
     let live = true
-    fetchRemote(id).then(remote => { if (live && remote) setPkg(remote) })
+    setPkg(getContent(id))
+    const subject = id.startsWith('demo-') ? id.slice(5) : 'maths'
+    if (g.state.activeChildId) loadMission(g.state.activeChildId, subject).then(mission => {
+      if (!live) return
+      if (mission.content?.discover && mission.content?.check) {
+        setPkg({ ...mission.content, apiMissionId: mission.id })
+        return
+      }
+      // The current backend supplies mission identity, XP and lifecycle APIs while
+      // dynamic lesson/question content is still pending. Keep the safe bundled lesson,
+      // but bind the live mission metadata so the screen represents the server record.
+      const fallback = getContent(id)
+      setPkg({
+        ...fallback,
+        apiMissionId: mission.id,
+        apiXpReward: mission.xp_reward,
+        mission: { ...fallback.mission, title: mission.name || fallback.mission.title },
+      })
+    }).catch(error => { if (live) g.notice(error.message) })
     return () => { live = false }
-  }, [id])
+  }, [id, g.state.activeChildId])
   return pkg
 }
 

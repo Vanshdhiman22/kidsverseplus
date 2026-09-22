@@ -23,9 +23,17 @@ export default function Scene({ name, wings = 'mirror' }) {
     backgroundPosition: side === 'left' ? 'left top' : 'right top',
     transform: stretch ? undefined : 'scaleX(-1)',
   })
+  const verticalWing = side => ({
+    position: 'absolute', left: 0, width: 1672, height: 'var(--bleed-y, 0px)',
+    [side]: 'calc(0px - var(--bleed-y, 0px))',
+    background: side === 'top'
+      ? 'linear-gradient(180deg, #e2e8ff, #dfe6fb)'
+      : 'linear-gradient(180deg, #dfe6fb, #d9e2fa)',
+  })
   return (
     <motion.div className="scene absolute inset-0 pointer-events-none select-none" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
       <div style={wing('left')} aria-hidden /><div style={wing('right')} aria-hidden />
+      {name === 'nova' && <><div style={verticalWing('top')} aria-hidden /><div style={verticalWing('bottom')} aria-hidden /></>}
       <img src={src} alt="" draggable={false} decoding="async" fetchpriority="high" className="absolute left-0 top-0 w-[1672px] h-[941px] max-w-none" />
     </motion.div>
   )

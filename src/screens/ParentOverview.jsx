@@ -14,13 +14,28 @@ import { useGame } from '../state/GameProvider.jsx'
 import { gradeLabel } from '../data/catalog.js'
 import { bleedR } from '../components/Stage.jsx'
 import { useAccent } from '../lib/accent.js'
+import { api } from '../lib/api.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
 
 const KPIS = [[BookOpen, '#3b82f6', 'School coverage', 68, 'On track', null], [Box, '#7c3aed', 'Kidsverse added', 42, 'Strong practice', 'Personalised practice beyond school'], [Trophy, '#f59e0b', 'Competition readiness', null, 'Building', "Keep going! You're building strong"], [MessageCircle, '#22c55e', 'Reading & confidence', null, 'Improving', 'Great progress in reading and expression']]
 const NEXT = [[Puzzle, '#7c3aed', 'Fractions —', 'word problems need support', 'Focus area', '#7c3aed'], [BookOpen, '#3b82f6', 'Reading —', 'inference improving', 'On track', '#0ea5e9'], [MessageCircle, '#22c55e', 'Confidence —', 'complete sentences improving', 'Improving', '#22c55e']]
 
 export default function ParentOverview() {
   const nav = useNavigate()
-  const g = useGame(); const { name, face, grade, board } = g.state.profile
+  const g = useGame(); const { face, grade, board } = g.state.profile
+  const studentId = g.state.activeChildId
+  const { data: overview } = useLiveResource(() => api.parentOverview(), [studentId], { enabled: Boolean(studentId) })
+  const liveStudent = overview?.students?.find(student => student.student_id === studentId) ?? overview?.students?.[0]
+  const name = liveStudent?.name ?? g.state.profile.name
+  const coverage = liveStudent?.subjects?.length
+    ? Math.round(liveStudent.subjects.reduce((sum, subject) => sum + Number(subject.progress_percent || 0), 0) / liveStudent.subjects.length)
+    : null
+  const kpis = liveStudent ? [
+    [BookOpen, '#3b82f6', 'School coverage', coverage, 'Live progress', 'Across active subjects'],
+    [Box, '#7c3aed', 'Kidsverse added', null, `${Number(liveStudent.total_xp || 0).toLocaleString()} XP`, 'Total XP earned'],
+    [Trophy, '#f59e0b', 'Recent test score', Number(liveStudent.recent_test_score || 0), 'Latest result', 'Most recent completed test'],
+    [MessageCircle, '#22c55e', 'Learning streak', null, `${liveStudent.day_streak || 0} days`, 'Current live streak'],
+  ] : KPIS
   const ac = useAccent()
   return (
     <Page>
@@ -41,7 +56,7 @@ export default function ParentOverview() {
       <Cutout id="parent-0" delay={0.17} amp={10} />
 
       <Stack className="absolute left-[245px] top-[480px] flex gap-[16px]" start={0.7} delay={0.1}>
-        {KPIS.map(([I, c0, t, v, st, s]) => { const c = ac(c0); return <Item key={t} v="pop"><Card hover className="w-[190px] h-[305px] p-4 flex flex-col items-center text-center"><span className="icon-orb w-[74px] h-[74px]" style={{ color: c, background: `${c}1f` }}><I size={36} /></span><span className="mt-3 text-[17px] font-extrabold text-ink leading-tight">{t}</span>{v != null ? <><span className="font-display font-extrabold text-[44px] leading-none mt-2" style={{ color: c }}><Counter to={v} delay={0.3} />%</span><Bar value={v / 100} h={8} className="mt-3 w-full" delay={0.3} /></> : <span className="font-display font-extrabold text-[30px] leading-none mt-3" style={{ color: c }}>{st}{t.startsWith('Reading') && <TrendingUp size={22} className="inline ml-1" />}</span>}<span className="mt-2 text-[14px] font-extrabold" style={{ color: c }}>{v != null ? st : ''}</span><span className="mt-auto text-[12px] font-semibold text-ink-3 leading-tight">{s ?? `Based on ${board} ${gradeLabel(grade)} syllabus`}</span></Card></Item> })}
+        {kpis.map(([I, c0, t, v, st, s]) => { const c = ac(c0); return <Item key={t} v="pop"><Card hover className="w-[190px] h-[305px] p-4 flex flex-col items-center text-center"><span className="icon-orb w-[74px] h-[74px]" style={{ color: c, background: `${c}1f` }}><I size={36} /></span><span className="mt-3 text-[17px] font-extrabold text-ink leading-tight">{t}</span>{v != null ? <><span className="font-display font-extrabold text-[44px] leading-none mt-2" style={{ color: c }}><Counter to={v} delay={0.3} />%</span><Bar value={v / 100} h={8} className="mt-3 w-full" delay={0.3} /></> : <span className="font-display font-extrabold text-[30px] leading-none mt-3" style={{ color: c }}>{st}{t.startsWith('Reading') && <TrendingUp size={22} className="inline ml-1" />}</span>}<span className="mt-2 text-[14px] font-extrabold" style={{ color: c }}>{v != null ? st : ''}</span><span className="mt-auto text-[12px] font-semibold text-ink-3 leading-tight">{s ?? `Based on ${board} ${gradeLabel(grade)} syllabus`}</span></Card></Item> })}
       </Stack>
       <Panel className="absolute left-[245px] top-[800px] w-[785px] h-[100px] px-6 flex items-center gap-5" initial="hidden" animate="show">
         <span className="icon-orb w-[60px] h-[60px] text-white" style={{ background: 'var(--grad-primary)' }}><Star size={30} fill="currentColor" /></span>

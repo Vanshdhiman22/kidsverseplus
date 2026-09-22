@@ -14,6 +14,8 @@ import { gradeLabel } from '../data/catalog.js'
 import { sfx } from '../lib/sound.js'
 import { MyCardSection } from '../components/StudentCard.jsx'
 import { onColor, useAccent } from '../lib/accent.js'
+import { api } from '../lib/api.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
 
 /* Was four literals -- 42 days, 32 missions, 18 reading sessions, 6 battles -- identical
  * for every child and frozen no matter how much they played. Built from state now. */
@@ -49,7 +51,20 @@ const BADGES = ['#7c3aed', '#3b82f6', '#22c55e', '#ef4444', '#8b5cf6', '#f59e0b'
 
 export default function Profile() {
   const nav = useNavigate()
-  const g = useGame(); const { name, face, grade, board } = g.state.profile; const { streak, badges } = g.state.stats
+  const g = useGame()
+  const studentId = g.state.activeChildId
+  const { data: liveProfile } = useLiveResource(
+    () => api.studentProfile(studentId),
+    [studentId],
+    { enabled: Boolean(studentId) },
+  )
+  const { face } = g.state.profile
+  const name = liveProfile?.name ?? g.state.profile.name
+  const grade = liveProfile?.grade ?? g.state.profile.grade
+  const board = liveProfile?.board ?? g.state.profile.board
+  const streak = liveProfile?.day_streak ?? g.state.stats.streak
+  const badges = g.state.stats.badges
+  const liveState = liveProfile ? { ...g.state, stats: { ...g.state.stats, xp: liveProfile.total_xp, streak: liveProfile.day_streak } } : g.state
   const ac = useAccent()
   const mileDone = milestonesFor(g.state).filter(m => m[4]).length
   /* Six shelf slots; the first `badgesWon` are lit. A streak badge needs a streak, a
@@ -77,7 +92,7 @@ export default function Profile() {
       </Panel>
 
       <Panel className="absolute left-[815px] top-[95px] w-[775px] h-[225px] p-5" initial="hidden" animate="show">
-        <div className="grid grid-cols-4 divide-x divide-[var(--line)]">{statsFor(g.state).map(([I, c0, t, v, u]) => { const c = ac(c0); return <div key={t} className="flex flex-col items-center text-center"><I size={34} style={{ color: c }} /><span className="mt-2 text-[16px] font-bold text-ink-2">{t}</span><span className="font-display font-extrabold text-[40px] leading-none" style={{ color: c }}><Counter to={v} delay={0.24} /></span><span className="text-[15px] font-bold text-ink-3">{u}</span></div> })}</div>
+        <div className="grid grid-cols-4 divide-x divide-[var(--line)]">{statsFor(liveState).map(([I, c0, t, v, u]) => { const c = ac(c0); return <div key={t} className="flex flex-col items-center text-center"><I size={34} style={{ color: c }} /><span className="mt-2 text-[16px] font-bold text-ink-2">{t}</span><span className="font-display font-extrabold text-[40px] leading-none" style={{ color: c }}><Counter to={v} delay={0.24} /></span><span className="text-[15px] font-bold text-ink-3">{u}</span></div> })}</div>
         {/* Said "12 days" while the live streak sat two panels away saying 7. It is a readout,
             not a link, so it no longer offers a chevron and a hover it cannot honour. */}
         <div className="card mt-4 h-[48px] px-5 flex items-center gap-3 text-[16px] font-bold text-ink"><Flame size={20} className="text-orange-500" fill="currentColor" /> Best streak <span className="ml-auto font-extrabold">{Math.max(streak, g.state.stats.bestStreak ?? 0)} days</span></div>

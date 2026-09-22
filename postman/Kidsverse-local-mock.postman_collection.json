@@ -1,0 +1,1549 @@
+{
+  "info": {
+    "name": "Kidsverse local mock — sequential integration tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Local mock ONLY. Start frontend Vite on port 5180. This is not the senior's exported collection and does not test a production DB. Uses dummy accounts in memory. Run in listed order; five test questions belong to the bundled maths fixture."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5180/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "email",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Mock health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Database explicitly NOT tested",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/health/database"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.test(\"Not a DB test\", () => pm.expect(pm.response.json().status).to.equal(\"not_tested\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Signup dummy parent",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/parent/signup",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"MockPass123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"email\", `postman.${Date.now()}@example.com`);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"token\", pm.response.json().token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/parent/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"MockPass123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"token\", pm.response.json().token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Wrong password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/parent/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"WrongPassword\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Parent me",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/parent/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Create child",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Explorer\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"studentId\", pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Grade and board",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/grade-board",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"grade\": \"4\",\n  \"board\": \"CBSE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Characters",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/avatar/characters"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"characterId\", pm.response.json().characters[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Outfits",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/avatar/items"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"outfitId\", pm.response.json().items[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Save avatar",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/avatar",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"character_id\": \"{{characterId}}\",\n  \"outfit_item_id\": \"{{outfitId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Interests",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/interests"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"interest0\", pm.response.json().interests[0].id);",
+              "pm.collectionVariables.set(\"interest1\", pm.response.json().interests[1].id);",
+              "pm.collectionVariables.set(\"interest2\", pm.response.json().interests[2].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 Save interests",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/interests",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"interest_ids\": [\n    \"{{interest0}}\",\n    \"{{interest1}}\",\n    \"{{interest2}}\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 Goals",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/goals"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"goalId\", pm.response.json().goals[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 Save goals",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/goals",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"goal_ids\": [\n    \"{{goalId}}\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 Lobby complete",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/onboarding/steps/lobby/complete",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 Nova greet",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/nova/greet",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 Onboarding status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/onboarding/status"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.test(\"Onboarding complete\", () => pm.expect(pm.response.json().is_complete).to.equal(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 Family readback",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/parent/students"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 Subjects",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/subjects"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"subjectId\", pm.response.json().subjects.find(s => s.slug === \"maths\").id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "21 Topics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/subjects/{{subjectId}}/topics"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"topicId\", pm.response.json().topics[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "22 Topic detail",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/topics/{{topicId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"missionId\", pm.response.json().nodes[0].mission_id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "23 Mission content",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/missions/{{missionId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.response.json().content.assessments.test_questions.forEach((q,i) => pm.collectionVariables.set(\"answer\"+(i+1), q.answer));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "24 Start mission",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/missions/{{missionId}}/start",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "25 Complete mission",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/missions/{{missionId}}/complete",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"score\": 80\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "26 Tests",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/topics/{{topicId}}/tests"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"testId\", pm.response.json().tests[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "27 Start test",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/tests/{{testId}}/attempts",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"attemptId\", pm.response.json().attempt_id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "28.1 Read question 1",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/questions/1"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"questionId\", pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "29.1 Submit answer 1",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/answers",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question_id\": \"{{questionId}}\",\n  \"selected_answer\": \"{{answer1}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "28.2 Read question 2",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/questions/2"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"questionId\", pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "29.2 Submit answer 2",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/answers",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question_id\": \"{{questionId}}\",\n  \"selected_answer\": \"{{answer2}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "28.3 Read question 3",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/questions/3"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"questionId\", pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "29.3 Submit answer 3",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/answers",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question_id\": \"{{questionId}}\",\n  \"selected_answer\": \"{{answer3}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "28.4 Read question 4",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/questions/4"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"questionId\", pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "29.4 Submit answer 4",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/answers",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question_id\": \"{{questionId}}\",\n  \"selected_answer\": \"{{answer4}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "28.5 Read question 5",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/questions/5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"questionId\", pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "29.5 Submit answer 5",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/answers",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question_id\": \"{{questionId}}\",\n  \"selected_answer\": \"{{answer5}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "30 Complete test",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/complete",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "31 Test result",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tests/attempts/{{attemptId}}/result"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.test(\"100% score\", () => pm.expect(pm.response.json().score).to.equal(100));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "32 Challenges",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/challenges"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"challengeId\", pm.response.json().challenges[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "33 Opponents",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/challenges/{{challengeId}}/opponents"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"opponentId\", pm.response.json().opponents[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "34 Battle preview",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/challenges/{{challengeId}}/preview?opponent_id={{opponentId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "35 Start battle",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/challenge-battles",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"challenge_id\": \"{{challengeId}}\",\n  \"opponent_id\": \"{{opponentId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));",
+              "pm.collectionVariables.set(\"battleId\", pm.response.json().battle_id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "36 Complete battle",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/challenge-battles/{{battleId}}/complete",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"score\": 80\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "37 Battle result",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/challenge-battles/{{battleId}}/result"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "38 Home saved XP",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/home"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "39 Parent overview",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/parent/overview"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "40 Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}/profile"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "41 Simulated 500",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Mock-Scenario",
+            "value": "500"
+          }
+        ],
+        "url": "{{baseUrl}}/goals"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 500\", () => pm.response.to.have.status(500));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "42 Simulated 401",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Mock-Scenario",
+            "value": "401"
+          }
+        ],
+        "url": "{{baseUrl}}/goals"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "43 Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/parent/logout",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Local mock only\", () => pm.expect(pm.response.headers.get(\"X-Kidsverse-Source\")).to.equal(\"local-mock\"));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

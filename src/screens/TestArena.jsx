@@ -12,11 +12,28 @@ import { ArtIcon, Tilt } from '../components/Widgets.jsx'
 import { QUESTIONS, TESTS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { cn } from '../lib/utils.js'
+import { listTopicTests } from '../lib/gameApi.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
 
 export default function TestArena() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile; const { streak, coins, xp } = g.state.stats
-  const row1 = TESTS.slice(0, 5), row2 = TESTS.slice(5)
+  const studentId = g.state.activeChildId
+  const subject = g.state.progress.world || 'maths'
+  const { data: testCatalog } = useLiveResource(
+    () => listTopicTests(studentId, subject),
+    [studentId, subject],
+    { enabled: Boolean(studentId) },
+  )
+  const liveTest = testCatalog?.tests?.[0]
+  const tests = TESTS.map(test => test.id === 'mixed' && liveTest ? {
+    ...test,
+    name: liveTest.name,
+    desc: liveTest.intro_text || test.desc,
+    q: `${liveTest.question_count} Questions`,
+    time: `${liveTest.estimated_minutes} min`,
+  } : test)
+  const row1 = tests.slice(0, 5), row2 = tests.slice(5)
   const TestCard = ({ t, wide, i }) => (
     <Item v="pop"><Tilt max={5}>
       <Card hover selected={t.recommended} className={cn('relative p-5 flex flex-col', wide ? 'w-[470px] h-[124px] p-4' : t.recommended ? 'w-[335px] h-[228px] -mt-[10px] z-10' : 'w-[285px] h-[180px]')} onClick={() => t.id === 'mixed' && nav('/tests/mixed/intro')}>

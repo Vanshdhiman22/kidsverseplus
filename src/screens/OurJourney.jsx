@@ -12,15 +12,27 @@ import { Counter, Sparkles } from '../components/Widgets.jsx'
 import { statsFor, milestonesFor } from './Profile.jsx'
 import { cn } from '../lib/utils.js'
 import { useGame } from '../state/GameProvider.jsx'
+import { api } from '../lib/api.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
 
 export default function OurJourney() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile
+  const studentId = g.state.activeChildId
+  const { data: liveJourney } = useLiveResource(
+    () => api.studentJourneySummary(studentId),
+    [studentId],
+    { enabled: Boolean(studentId) },
+  )
   /* Was the frozen STATS list plus a literal 12-day best streak. */
   const st = g.state
-  const miles = milestonesFor(st)
+  const localMiles = milestonesFor(st)
+  const liveEarned = liveJourney?.milestones_completed
+  const miles = localMiles.map((milestone, index) => liveEarned == null ? milestone : [...milestone.slice(0, 4), index < liveEarned])
   const earned = miles.filter(m => m[4]).length
-  const stats = [...statsFor(st), [Flame, '#f97316', 'Best streak', Math.max(st.stats.streak, st.stats.bestStreak ?? 0), 'days']]
+  const stats = [...statsFor(st), liveJourney
+    ? [Award, '#f97316', 'Milestones', liveJourney.milestones_completed, `of ${liveJourney.total_milestones}`]
+    : [Flame, '#f97316', 'Best streak', Math.max(st.stats.streak, st.stats.bestStreak ?? 0), 'days']]
   return (
     <Page>
       <Scene name="ourjourney" />

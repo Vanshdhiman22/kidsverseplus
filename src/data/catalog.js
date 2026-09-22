@@ -76,6 +76,10 @@ export const lessonProgress = (worldDone = {}) => {
 }
 
 export const FACES = [1, 2, 3, 4].map(n => ({ id: n, thumb: `/art/kid${n}-face.webp`, sm: `/art/kid${n}-face-sm.webp` }))
+/* Only these two characters currently have the complete approved full-screen
+   pose set. Keep the full API catalog above, but expose this release-safe subset
+   in the avatar picker so a selection never changes appearance later. */
+export const APPROVED_FACES = FACES.filter(face => face.id === 1 || face.id === 4)
 export const OUTFITS = [
   { id: 'explorer', name: "Explorer's Jacket", blurb: 'Ready for every adventure, near or far.', thumb: '/art/avatar/body-explorer.webp', colors: ['#7c5cff', '#fbbf24', '#e5e7eb'] },
   { id: 'astro', name: 'Orbit Suit', blurb: 'Built for zero gravity and big ideas.', thumb: '/art/avatar/body-astro.webp', colors: ['#f97316', '#e5e7eb', '#3b82f6'] },
@@ -89,7 +93,10 @@ export const OUTFITS = [
    preview never lies silently. */
 const FACE_ART = { 1: OUTFITS.map(o => o.id), 2: OUTFITS.map(o => o.id), 3: OUTFITS.map(o => o.id), 4: OUTFITS.map(o => o.id) }
 export const hasFaceArt = (outfit, face) => (FACE_ART[face] ?? []).includes(outfit)
-export const spriteFor = (outfit = 'explorer', face = 1) => `/art/avatar/full-kid${face}-${hasFaceArt(outfit, face) ? outfit : 'explorer'}.webp`
+export const spriteFor = (outfit = 'explorer', face = 1) => {
+  const approvedFace = [1, 4].includes(Number(face)) ? Number(face) : 1
+  return `/art/avatar/full-kid${approvedFace}-${hasFaceArt(outfit, approvedFace) ? outfit : 'explorer'}.webp`
+}
 
 export const INTERESTS = [
   { id: 'space', name: 'Space' }, { id: 'animals', name: 'Animals' }, { id: 'art', name: 'Art' }, { id: 'sports', name: 'Sports' },

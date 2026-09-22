@@ -9,6 +9,8 @@ import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import { Tilt, Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
+import { api } from '../lib/api.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
 
 const CARDS = [
   { I: CalendarDays, c: '#7c3aed', t: 'Daily Challenge', s: 'New challenge every day!', tag: '+30 XP', btn: 'Start', to: '/tests/mixed/intro?source=challenge', primary: true },
@@ -20,6 +22,13 @@ const CARDS = [
 export default function ChallengeHome() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
+  const { data: challengeResponse } = useLiveResource(() => api.challenges(), [], { enabled: true })
+  const liveChallenge = challengeResponse?.challenges?.[0]
+  const cards = CARDS.map(card => card.t === 'Battle Arena' && liveChallenge ? {
+    ...card,
+    t: liveChallenge.name,
+    s: liveChallenge.description || `Battle for ${liveChallenge.topic || 'your next win'}.`,
+  } : card)
   return (
     <Page>
       <Scene name="challenge" />
@@ -34,7 +43,7 @@ export default function ChallengeHome() {
       <Sparkles n={6} seed={25} className="left-[40px] top-[120px] w-[700px] h-[280px]" />
 
       <Stack className="absolute left-[45px] top-[405px] flex gap-[22px]" start={0.7} delay={0.1}>
-        {CARDS.map(c => (
+        {cards.map(c => (
           <Item key={c.t} v="pop"><Tilt max={5}>
             <Card hover className="w-[378px] h-[235px] p-5 flex flex-col" onClick={() => nav(c.to)}>
               <div className="flex items-start gap-4"><span className="icon-orb w-[86px] h-[86px]" style={{ color: c.c, background: `${c.c}1f` }}><c.I size={44} /></span><span className="flex-1 leading-tight"><span className="block font-display font-extrabold text-[24px] text-ink">{c.t}</span><span className="block mt-1 text-[16px] font-semibold text-ink-2">{c.s}</span>{c.tag && <span className="block mt-2 text-[16px] font-extrabold text-orange-500 text-right">{c.tag}</span>}</span></div>

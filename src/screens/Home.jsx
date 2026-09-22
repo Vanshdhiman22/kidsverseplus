@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { api } from '../lib/api.js'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -80,6 +81,13 @@ function Hex({ icon: Icon, color, label, delay }) {
 export default function Home() {
   const nav = useNavigate()
   const g = useGame()
+  const [apiHome, setApiHome] = useState(null)
+  const [apiError, setApiError] = useState('')
+  useEffect(() => {
+    let active = true
+    if (g.state.activeChildId) api.studentHome(g.state.activeChildId).then(data => { if (active) { setApiHome(data); g.dispatch({ type: 'remoteStats', stats: data.stats }) } }).catch(error => { if (active) setApiError(error.message) })
+    return () => { active = false }
+  }, [g.state.activeChildId])
   const { name, face } = g.state.profile
   const { streak, xp } = g.state.stats
   const level = g.level
@@ -131,7 +139,7 @@ export default function Home() {
         initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1, y: [0, -5, 0] }}
         transition={{ opacity: { delay: lead(0.7) }, scale: { type: 'spring', stiffness: 420, damping: 22, delay: lead(0.7) }, y: { duration: 5, repeat: Infinity, ease: 'easeInOut', delay: lead(0.7) + 0.5 } }}>
         <span className="tail" />
-        Ready to learn something amazing today? <span className="text-gold">✨</span>
+        {apiError ? `API: ${apiError}` : apiHome?.greeting || 'Ready to learn something amazing today?'} <span className="text-gold">✨</span>
       </motion.div>
 
       {/* ---------- subjects ---------- */}

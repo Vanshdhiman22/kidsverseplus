@@ -6,7 +6,8 @@ import Scene, { Cutout } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
+import Button from '../components/ApiButton.jsx'
+import { getTestQuestion, submitAnswer, completeTest } from '../lib/gameApi.js'
 import Character from '../components/Character.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { QUESTIONS as LEGACY_QUESTIONS } from '../data/catalog.js'
@@ -33,6 +34,8 @@ export default function TestQuestion() {
   const START = 8 * 60 + 15
   const [correct, setCorrect] = useState(0)
   const [review, setReview] = useState([])
+  const [apiQuestion, setApiQuestion] = useState(null)
+  const [questionError, setQuestionError] = useState(null)
   const pkg = useRouteContent()
   const legacyQuestions = LEGACY_QUESTIONS.map((item, index) => ({
     question_id: `legacy-${index}`,
@@ -43,37 +46,64 @@ export default function TestQuestion() {
     feedback_correct: 'Great job! That is correct.',
     explanation: 'Look at the green answer.',
   }))
-  const assessmentSource = searchParams.get('source') === 'challenge' ? 'challenge_questions' : 'test_questions'
+  const assessmentSource = 'test_questions'
   const source = `${routeSubject()}:${assessmentSource}`
   const QUESTIONS = pkg.assessments?.[assessmentSource]?.length ? pkg.assessments[assessmentSource] : legacyQuestions
-  const q = QUESTIONS[qi]
+  useEffect(() => {
+    let active = true
+    setApiQuestion(null)
+    setQuestionError(null)
+    getTestQuestion(g.state.activeChildId, routeSubject(), qi + 1)
+      .then(item => {
+        if (!active) return
+        const options = Array.isArray(item.options) ? item.options.map((option, index) => {
+          if (option && typeof option === 'object') {
+            const value = option.value ?? option.key ?? option.id ?? option.label ?? option.text
+            return { key: String(value ?? `option_${index + 1}`), label: String(option.label ?? option.text ?? value ?? '') }
+          }
+          return { key: String(option), label: String(option) }
+        }) : []
+        setApiQuestion({
+          question_id: item.id,
+          instruction: item.question_text,
+          options,
+          answer: null,
+          models: [],
+          explanation: 'Your final result is calculated by the API.',
+        })
+      })
+      .catch(error => { if (active) setQuestionError(error) })
+    return () => { active = false }
+  }, [g.state.activeChildId, qi])
+  const q = apiQuestion || QUESTIONS[qi]
   /* Was `total = 10, shown = qi + 3` -- staged for the design render. The child now
      arrives here straight from the daily mission, so the count has to be the real one. */
   const total = QUESTIONS.length, shown = qi + 1
   useEffect(() => { const id = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000); return () => clearInterval(id) }, [])
   useEffect(() => {
     if (secs !== 0) return
-    const run = { correct, total: QUESTIONS.length, seconds: START, subject: routeSubject(), source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test', review, attemptId: crypto.randomUUID(), completedAt: Date.now() }
-    sessionStorage.setItem('kv:last-test-run', JSON.stringify(run)); sessionStorage.removeItem('kv:test-progress')
-    nav(withSubject('/tests/mixed/result'), { replace: true, state: run })
+    // Keep the expired screen visible; Finish Test retries an unsuccessful API save.
+    setSubmitted(true)
   }, [secs]) // eslint-disable-line react-hooks/exhaustive-deps
   const mm = String(Math.floor(secs / 60)).padStart(2, '0'), ss = String(secs % 60).padStart(2, '0')
-  const submit = () => {
-    if (pick == null) return
-    if (submitted) {
-      if (qi + 1 >= QUESTIONS.length) {
+  const submit = async () => {
+    if (pick == null && secs > 0) return
+    if (submitted || secs === 0) {
+      if (qi + 1 >= QUESTIONS.length || secs === 0) {
         sfx.whoosh()
-        const run = { correct, total: QUESTIONS.length, seconds: START - secs, subject: routeSubject(), source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test', review, attemptId: crypto.randomUUID(), completedAt: Date.now() }
+        const result = await completeTest(g.state.activeChildId, routeSubject())
+        const run = { correct: result.correct_count, total: result.total_questions, seconds: START - secs, subject: routeSubject(), source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test', review, attemptId: result.attemptId, completedAt: result.completed_at, xpAwarded: result.xp_awarded, apiSaved: true }
         sessionStorage.setItem('kv:last-test-run', JSON.stringify(run)); sessionStorage.removeItem('kv:test-progress')
         nav(withSubject('/tests/mixed/result'), { state: run })
         return
       }
       setQi(qi + 1); setPick(null); setSubmitted(false); sfx.tap(); return
     }
+    const saved = await submitAnswer(g.state.activeChildId, routeSubject(), qi + 1, pick, q.instruction)
     setSubmitted(true)
-    const isCorrect = pick === q.answer
+    const isCorrect = saved.is_correct
     const selectedLabel = q.options.find(option => option.key === pick)?.label
-    const answerLabel = q.options.find(option => option.key === q.answer)?.label
+    const answerLabel = q.answer ? q.options.find(option => option.key === q.answer)?.label : 'Calculated by API'
     setReview(items => [...items, { question: q.instruction, selectedLabel, answerLabel, correct: isCorrect, explanation: q.explanation || q.feedback_correct, model: q.models?.[0] }])
     if (isCorrect) { setCorrect(c => c + 1); sfx.success() } else sfx.wrong()
   }
@@ -112,6 +142,7 @@ export default function TestQuestion() {
       <motion.div className="absolute left-[1384px] top-[720px] pill h-[62px] px-4 gap-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><img src="/art/22-novahead.webp" alt="" className="w-[42px]" /><span className="leading-tight"><span className="block font-display font-extrabold text-[18px] text-ink">Nova</span><span className="block text-[12px] font-semibold text-primary-ink">Learning buddy</span></span></motion.div>
 
       <Panel className="absolute left-[336px] top-[142px] w-[1000px] h-[590px] p-7" initial="hidden" animate="show">
+        {questionError && <div className="mb-3 text-center text-[15px] font-extrabold text-red-500">{questionError.message}</div>}
         <motion.div key={`q${qi}`} initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="text-center font-display font-extrabold text-[30px] text-ink leading-tight">{q.instruction}</motion.div>
         <div className="mx-auto mt-3 h-[190px] w-[520px] rounded-[20px] overflow-hidden"><QuestionVisual question={q.instruction} model={q.models?.[0]} /></div>
         <Stack key={`o${qi}`} className={cn('mx-auto mt-4 grid gap-4', q.options.length <= 4 ? 'grid-cols-2 max-w-[720px]' : 'grid-cols-3 max-w-[880px]')} start={0.2} delay={0.08}>
@@ -128,7 +159,7 @@ export default function TestQuestion() {
         </Stack>
       </Panel>
       <motion.div className="absolute left-[576px] top-[748px] text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button arrow className="w-[520px] h-[66px] uppercase text-[21px]" disabled={pick == null} sound="whoosh" onClick={submit}>{submitted ? (qi + 1 >= QUESTIONS.length ? 'Finish Test' : 'Next Question') : 'Check Answer'}</Button>
+        <Button arrow className="w-[520px] h-[66px] uppercase text-[21px]" disabled={!apiQuestion || (pick == null && secs > 0)} sound="whoosh" onClick={submit}>{!apiQuestion ? 'Loading API Question…' : secs === 0 ? 'Time up — Finish Test' : submitted ? (qi + 1 >= QUESTIONS.length ? 'Finish Test' : 'Next Question') : 'Check Answer'}</Button>
         <p className="mt-2 text-[13px] font-extrabold text-ink-2">{pick == null ? 'Choose one answer to continue' : submitted ? 'Answer saved — results appear after the test' : 'Ready to lock in your answer'}</p>
       </motion.div>
     </Page>

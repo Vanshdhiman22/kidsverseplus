@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test:mock": "node --test mock/*.test.mjs src/state/family.test.js",
+    "test:mock:http": "node mock/smoke-http.mjs",
+    "test:postman": "node mock/check-collection.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },

@@ -13,6 +13,8 @@ import { bleedL, bleedR } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 import { spriteFor } from '../data/catalog.js'
+import { api } from '../lib/api.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
 
 /* Car sprite, in design pixels (public/art/chars/journey-0.webp ships at 2x). */
 const CAR = { w: 211, h: 203 }   // 0.62 of the source art: a map token, not a hero
@@ -180,8 +182,30 @@ export default function Journey() {
   const subject = g.state.progress.world ?? 'maths'
   const setSubject = id => g.setProgress({ world: id })
   const done = g.state.progress.worldDone?.[subject] ?? WORLD_DONE[subject] ?? 0
-  const stations = deriveStations(subject, done)
-  const worldName = WORLDS.find(w => w.id === subject)?.name ?? 'Maths'
+  const localStations = deriveStations(subject, done)
+  const studentId = g.state.activeChildId
+  const { data: journey } = useLiveResource(
+    () => api.studentJourney(studentId, subject),
+    [studentId, subject],
+    { enabled: Boolean(studentId) },
+  )
+  const apiWorlds = journey?.worlds ?? []
+  const stations = apiWorlds.length ? localStations.map((station, index) => {
+    const live = apiWorlds[index]
+    if (!live) return station
+    const state = live.status === 'completed' ? 'done' : live.status === 'current' || live.status === 'in_progress' ? 'here' : live.status === 'unlocked' ? 'next' : 'locked'
+    return { ...station, id: live.topic_id, name: live.world_name, sub: live.tagline || live.world_name, state }
+  }) : localStations
+  const worldName = journey?.subject ?? WORLDS.find(w => w.id === subject)?.name ?? 'Maths'
+  const activities = journey?.companion_activities ?? []
+  const completeActivity = async index => {
+    const activity = activities[index]
+    if (!activity) return g.notice('This activity is not available from the live API yet.')
+    try {
+      await api.completeCompanionActivity(studentId, activity.id)
+      g.notice(`${activity.name} completed and saved.`)
+    } catch (error) { g.notice(error.message) }
+  }
   const road = useRoad(STATION_SPOTS)
   return (
     <Page>
@@ -205,7 +229,7 @@ export default function Journey() {
       <Panel className="absolute top-[640px] w-[315px] p-5" style={bleedL(40)} initial="hidden" animate="show">
         <div className="text-[18px] font-extrabold text-ink-2">Companion Moments</div>
         <Stack className="mt-3 flex flex-col gap-2" start={0.9}>
-          {[[Flag, 'Raise the Flag', '#ef4444', () => g.notice('Flag raised! Your grown-up will see it.')], [BookOpen, 'Read Together', '#8b5cf6', () => g.notice('Reading together is coming soon.')], [Mic, 'Talk with Nova', '#3b82f6', () => window.dispatchEvent(new Event('kv:agent'))]].map(([I, l, c, fn]) => <Item key={l} v="soft"><Card hover className="h-[50px] px-4 flex items-center gap-3 text-[17px] font-extrabold text-ink" onClick={() => { sfx.tap(); fn() }}><I size={22} style={{ color: c }} />{l}<ChevronRight size={20} className="ml-auto text-ink-3" /></Card></Item>)}
+          {[[Flag, activities[0]?.name || 'Raise the Flag', '#ef4444', () => completeActivity(0)], [BookOpen, activities[1]?.name || 'Read Together', '#8b5cf6', () => completeActivity(1)], [Mic, activities[2]?.name || 'Talk with Nova', '#3b82f6', () => completeActivity(2)]].map(([I, l, c, fn]) => <Item key={l} v="soft"><Card hover className="h-[50px] px-4 flex items-center gap-3 text-[17px] font-extrabold text-ink" onClick={() => { sfx.tap(); fn() }}><I size={22} style={{ color: c }} />{l}<ChevronRight size={20} className="ml-auto text-ink-3" /></Card></Item>)}
         </Stack>
       </Panel>
     </Page>

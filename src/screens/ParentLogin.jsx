@@ -48,7 +48,9 @@ export default function ParentLogin() {
     }
     if (pw.length < 6) { setErr('Password must contain at least 6 characters.'); sfx.wrong?.(); return }
     setErr(''); setBusy(true)
-    nav(await g.signIn(email, pw))
+    try { nav(await g.signIn(email, pw)) }
+    catch (error) { setErr(error.message || 'Sign in failed. Please retry.') }
+    finally { setBusy(false) }
   }
   return (
     <Page>
@@ -75,6 +77,10 @@ export default function ParentLogin() {
           </Item>
           {err && <Item v="soft"><div className="text-[17px] font-bold text-red-500">{err}</div></Item>}
           <Item v="pop"><Button size="md" arrow icon={<Lock size={24} strokeWidth={2.4} />} className="w-full h-[62px] uppercase text-[21px]" sound="whoosh" disabled={busy} onClick={signIn}>{busy ? 'Signing in…' : 'Login to Kidsverse'}</Button></Item>
+          <Item v="soft" className="text-center text-[17px] font-semibold text-ink-3">
+            Don&apos;t have an account?{' '}
+            <button type="button" className="font-extrabold text-primary-ink hover:underline" onClick={() => nav('/parent/create-account')}>Create account</button>
+          </Item>
           <Item v="soft" className="flex items-center gap-4 text-[17px] font-bold text-ink-3"><span className="hairline flex-1" />or continue with<span className="hairline flex-1" /></Item>
           <Item v="soft" className="grid grid-cols-3 gap-4">
             <Social label="Google"><svg width="24" height="24" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.4z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.8 9.4 6 12 6z"/></svg></Social>
