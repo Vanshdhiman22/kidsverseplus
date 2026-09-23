@@ -1,29 +1,25 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Lightbulb, Volume2, Star, Clock, Lock, Music, Headphones, ChevronDown } from 'lucide-react'
+import { Lightbulb, Volume2, Star, Clock, Music, Headphones, ChevronDown } from 'lucide-react'
 import { Child } from '../components/Scene.jsx'
 import Page from '../components/Page.jsx'
 import { Panel } from '../components/Panel.jsx'
 import Button from '../components/ApiButton.jsx'
-import { startMission } from '../lib/gameApi.js'
 import { LessonVisual } from '../components/LessonModels.jsx'
 import { useGame } from '../state/GameProvider.jsx'
-import { useRouteContent, discoverContent, withSubject, routeSubject } from '../content/index.js'
+import { useRouteContent, discoverContent, withSubject } from '../content/index.js'
 import { sfx } from '../lib/sound.js'
 import { speak } from '../lib/voice.js'
-import { cn } from '../lib/utils.js'
 
 
 export default function LessonDiscover() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
-  const [opened, setOpened] = React.useState(0)      // hints revealed so far
   /* Everything this screen says comes from the learning package; the JSX is the template. */
   const pkg = useRouteContent()
   const C = discoverContent(pkg)
   const M = pkg.mission
-  const HINTS = C.hints
   const liveModel = /^https?:\/\//i.test(C.model.image ?? '') ? C.model : { ...C.model, image: null }
 
   return (
@@ -95,7 +91,7 @@ export default function LessonDiscover() {
       </motion.div>
 
       {/* the mission itself */}
-      <Panel className="absolute left-[305px] top-[90px] w-[1140px] h-[760px] p-7">
+      <Panel className="absolute left-[305px] right-[25px] top-[90px] h-[760px] p-7">
         <div className="flex items-start gap-4">
           <span className="w-[60px] h-[60px] rounded-[18px] grid place-items-center font-display font-extrabold text-[26px] text-white shrink-0" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }}>{M.code}</span>
           <div className="leading-tight">
@@ -111,7 +107,7 @@ export default function LessonDiscover() {
 
         <div className="mt-5 rounded-[28px] border-[1.5px] border-[var(--line)] bg-[var(--glass)] h-[455px] relative overflow-hidden">
           {/* Generated package content replaces the old hardcoded astronaut crew. */}
-          <motion.div className="absolute left-[28px] top-[28px] w-[580px] h-[399px] flex flex-col gap-4"
+          <motion.div className={`absolute left-[28px] top-[28px] ${liveModel.image ? 'w-[580px]' : 'right-[28px]'} h-[399px] flex flex-col gap-4`}
             initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35 }}>
             <div className="card px-6 py-4">
               <div className="text-[12px] font-extrabold tracking-[0.14em] text-primary-ink uppercase">Concept</div>
@@ -125,52 +121,16 @@ export default function LessonDiscover() {
             </div>
           </motion.div>
 
-          <motion.div className="absolute right-[28px] top-[28px] w-[450px] h-[399px] card overflow-hidden"
+          {liveModel.image && <motion.div className="absolute right-[28px] top-[28px] w-[590px] h-[399px] card overflow-hidden"
             initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
-{liveModel.image && <LessonVisual model={liveModel} fill />}
-          </motion.div>
+            <LessonVisual model={liveModel} fill />
+          </motion.div>}
         </div>
 
         <div className="mt-4 rounded-[20px] border-[1.5px] border-[var(--line)] bg-[var(--glass)] h-[62px] px-5 flex items-center gap-3">
           <span className="icon-orb w-[36px] h-[36px] shrink-0"><Lightbulb size={20} /></span>
           <p className="text-[17px] font-semibold text-ink-2">Think about: {(C.think_about.emphasis ? C.think_about.text.split(C.think_about.emphasis) : [C.think_about.text]).map((part, i, arr) => <React.Fragment key={i}>{part}{i < arr.length - 1 && <span className="font-extrabold text-primary-ink">{C.think_about.emphasis}</span>}</React.Fragment>)}</p>
-          <Button size="sm" arrow className="ml-auto h-[46px] px-6 uppercase text-[17px]" sound="whoosh" onClick={async () => { await startMission(g.state.activeChildId, routeSubject()); nav(withSubject('/missions/fractions/learn')) }}>Start Learning</Button>
-        </div>
-      </Panel>
-
-      {/* right rail: help, offered before it is asked for */}
-      <Panel className="absolute top-[90px] h-[760px] p-4 flex flex-col"
-        style={{ right: 'calc(17px - var(--bleed, 0px))', width: 'calc(195px + var(--bleed, 0px))' }}>
-        <div className="flex items-center gap-2"><Lightbulb size={19} className="text-gold" /><span className="font-display font-extrabold text-[17px] text-ink">NEED A HINT?</span></div>
-        <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug text-pretty">Stuck? Get a little help to move ahead.</p>
-
-        <div className="mt-3 flex flex-col gap-2.5">
-          {HINTS.map((h, i) => {
-            const open = i < opened, next = i === opened
-            return (
-              <motion.button key={i} type="button" disabled={!open && !next}
-                className={cn('text-left rounded-[16px] border-[1.5px] p-3 transition-colors', open ? 'border-[var(--primary)] bg-[var(--tint-primary)]' : 'border-[var(--line)] bg-[var(--glass)]', next && 'hover:border-[var(--primary)]')}
-                onClick={() => { if (next) { sfx.tap(); setOpened(o => o + 1) } }}
-                initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 + i * 0.07 }}>
-                <div className="flex items-center gap-1.5">
-                  {open ? <Lightbulb size={14} className="text-gold" /> : <Lock size={13} className="text-ink-3" />}
-                  <span className={cn('font-display font-extrabold text-[15px]', open ? 'text-primary-ink' : 'text-ink-2')}>Hint {i + 1}</span>
-                </div>
-                {/* The text used to render regardless of `open`, so the lock, the disabled
-                    state and the Hint button were all theatre -- every hint was readable
-                    from the first paint. */}
-                <p className={cn('mt-1 text-[13px] font-semibold leading-snug', open ? 'text-ink-2' : 'text-ink-3')}>
-                  {open ? h : next ? 'Tap to reveal' : `Tap hint ${i} first`}
-                </p>
-              </motion.button>
-            )
-          })}
-        </div>
-
-        <div className="mt-auto">
-          <div className="font-display font-extrabold text-[15px] text-ink">Still not sure?</div>
-          <p className="mt-1 text-[13px] font-semibold text-ink-3 leading-snug text-pretty">Review the concept image and learning objective together.</p>
-          <div className="mt-3 card p-3 text-[13px] font-semibold text-ink-2 leading-snug text-pretty">{C.think_about.text}</div>
+          <Button size="sm" arrow className="ml-auto h-[46px] px-6 uppercase text-[17px]" sound="whoosh" onClick={() => nav(withSubject('/missions/fractions/learn'))}>Start Learning</Button>
         </div>
       </Panel>
 
@@ -180,8 +140,7 @@ export default function LessonDiscover() {
         <span className="icon-orb w-[40px] h-[40px]"><Volume2 size={20} /></span>
         <span className="leading-tight"><span className="block text-[15px] font-extrabold text-ink">Tap to hear the mission</span><span className="block text-[12px] font-semibold text-ink-3">Listen anytime!</span></span>
       </motion.button>
-      <Button variant="outline" size="sm" icon={<Lightbulb size={19} className="text-gold" />} className="absolute left-[360px] bottom-[26px] h-[56px] px-6 text-[18px]" onClick={() => setOpened(o => Math.min(HINTS.length, o + 1))}>Hint</Button>
-      <Button variant="outline" size="sm" icon={<Headphones size={19} />} className="absolute left-[500px] bottom-[26px] h-[56px] px-6 text-[18px]" sound="tap" onClick={() => speak(C.prompt.statement)}>Listen</Button>
+      <Button variant="outline" size="sm" icon={<Headphones size={19} />} className="absolute left-[360px] bottom-[26px] h-[56px] px-6 text-[18px]" sound="tap" onClick={() => speak(C.prompt.statement)}>Listen</Button>
     </Page>
   )
 }

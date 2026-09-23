@@ -265,3 +265,15 @@
 }
 
 }
+/* Keep lesson controls clear of the global navigation drawer while it is open. */
+.learning-top,
+.learning-panel,
+.learning-check,
+.learning-footer {
+  transition: left 240ms ease, width 240ms ease;
+}
+
+html[data-nav-drawer='open'] .learning-top { left: 250px; right: 55px; }
+html[data-nav-drawer='open'] .learning-panel { left: 250px; width: 845px; }
+html[data-nav-drawer='open'] .learning-check,
+html[data-nav-drawer='open'] .learning-footer { left: 250px; }

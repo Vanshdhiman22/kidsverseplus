@@ -9,6 +9,7 @@ import { Panel } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import { TrustRow } from './Landing.jsx'
 import { useGame } from '../state/GameProvider.jsx'
+import { API_MODE } from '../lib/api.js'
 import { sfx } from '../lib/sound.js'
 
 const Field = ({ label, icon: Icon, type = 'text', placeholder, value, onChange, right }) => (
@@ -52,6 +53,15 @@ export default function ParentLogin() {
     catch (error) { setErr(error.message || 'Sign in failed. Please retry.') }
     finally { setBusy(false) }
   }
+  const startDemo = async () => {
+    setErr(''); setBusy(true)
+    try {
+      const random = crypto.randomUUID()
+      const next = await g.signUp(`demo-${random}@example.invalid`, crypto.randomUUID())
+      nav(next)
+    } catch (error) { setErr(error.message || 'Could not start the local demo. Please retry.') }
+    finally { setBusy(false) }
+  }
   return (
     <Page>
       <Scene name="login" />
@@ -77,6 +87,10 @@ export default function ParentLogin() {
           </Item>
           {err && <Item v="soft"><div className="text-[17px] font-bold text-red-500">{err}</div></Item>}
           <Item v="pop"><Button size="md" arrow icon={<Lock size={24} strokeWidth={2.4} />} className="w-full h-[62px] uppercase text-[21px]" sound="whoosh" disabled={busy} onClick={signIn}>{busy ? 'Signing in…' : 'Login to Kidsverse'}</Button></Item>
+          {API_MODE === 'mock' && <Item v="soft" className="text-center text-[16px] font-semibold text-ink-3">
+            Local mock accounts reset when the server restarts.{' '}
+            <button type="button" className="font-extrabold text-primary-ink hover:underline" disabled={busy} onClick={startDemo}>Continue with demo account</button>
+          </Item>}
           <Item v="soft" className="text-center text-[17px] font-semibold text-ink-3">
             Don&apos;t have an account?{' '}
             <button type="button" className="font-extrabold text-primary-ink hover:underline" onClick={() => nav('/parent/create-account')}>Create account</button>

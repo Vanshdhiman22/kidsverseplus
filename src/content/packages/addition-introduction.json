@@ -25,6 +25,58 @@
     "nova_script": "Hi there! I am Nova! Ready to do some counting? Let's join groups together to see how many we have!",
     "nova_feedback": "Great job! You are getting the hang of combining groups!"
   },
+  "learn_before_test": {
+    "required": true,
+    "order": ["understand", "example", "remember"],
+    "starts_quiz_after": "remember",
+    "steps": [
+      {
+        "step_key": "understand",
+        "title": "Addition means putting groups together",
+        "teaching_text": "Join two groups, then count every object to find how many there are altogether.",
+        "key_idea": "The plus sign tells us to combine groups.",
+        "image_url": "/art/generated/addition-scene-background.png",
+        "image_prompt": "Two small groups of colourful objects ready to be joined, with no text or characters.",
+        "nova_script": "Addition starts when we put two groups together. Count everything after you join them.",
+        "mini_question": {
+          "question": "What does addition mean?",
+          "options": ["Putting groups together", "Taking a group away", "Hiding the objects"],
+          "answer": "Putting groups together",
+          "explanation": "Addition combines two or more groups to find the total."
+        }
+      },
+      {
+        "step_key": "example",
+        "title": "Let’s see how it works",
+        "teaching_text": "Count 3 apples, then count 2 more apples. Together, the two groups make 5 apples.",
+        "key_idea": "3 + 2 = 5",
+        "image_url": "/art/generated/addition-scene-background.png",
+        "image_prompt": "Three apples beside two apples, clearly separated into two groups, with no text or characters.",
+        "nova_script": "Count the first group, then keep counting the second group from the next number.",
+        "mini_question": {
+          "question": "3 apples plus 2 apples makes how many apples?",
+          "options": ["4", "5", "6"],
+          "answer": "5",
+          "explanation": "Three and two more make five: 3 + 2 = 5."
+        }
+      },
+      {
+        "step_key": "remember",
+        "title": "Remember the addition rule",
+        "teaching_text": "Put the groups together, count all the objects, and name the answer as the total or sum.",
+        "key_idea": "Join, count, total.",
+        "image_url": "/art/generated/addition-scene-background.png",
+        "image_prompt": "A simple visual sequence showing join, count, and total, with no text or characters.",
+        "nova_script": "Remember: join the groups, count everything, and the answer is the total.",
+        "mini_question": {
+          "question": "What is the answer in an addition problem called?",
+          "options": ["The total", "The difference", "The half"],
+          "answer": "The total",
+          "explanation": "The answer after adding is called the total or the sum."
+        }
+      }
+    ]
+  },
   "check_for_understanding": [
     {
       "question": "If you have 2 red balls and 1 blue ball, how many balls do you have altogether?",

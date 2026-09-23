@@ -68,8 +68,8 @@ export function normalizeContentPackage(raw, id, fallback) {
   if (!generated.length) throw new Error('studio package has no questions')
 
   const questions = generated.map((question, index) => studioQuestion(question, index, learning))
-  if (questions.some(question => !question.instruction || !question.options.length || !question.answer || !question.models[0].image)) {
-    throw new Error('studio questions require text, options, an answer and an image')
+  if (questions.some(question => !question.instruction || !question.options.length || !question.answer)) {
+    throw new Error('studio questions require text, options and an answer')
   }
 
   const questionKey = question => String(question.question ?? question.instruction ?? question.prompt ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ')

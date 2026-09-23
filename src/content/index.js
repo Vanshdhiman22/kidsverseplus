@@ -26,8 +26,21 @@ const BUNDLED = { 'fractions-equal-parts': fractions, 'addition-introduction': a
 for (const subject of ['literacy', 'evs', 'computer', 'general']) BUNDLED[`demo-${subject}`] = normalizeContentPackage(subjectDemoRaw(subject), `demo-${subject}`, addition)
 export const ACTIVE_CONTENT_ID = import.meta.env.VITE_LEARNING_PACKAGE_ID || 'addition-introduction'
 const API = import.meta.env.VITE_CONTENT_API
+const FRONTEND_ONLY = import.meta.env.VITE_API_MODE === 'mock'
 
 const cache = new Map()
+const previewStepImages = new Map()
+
+export function clearPreviewStepImages() {
+  for (const url of previewStepImages.values()) URL.revokeObjectURL(url)
+  previewStepImages.clear()
+}
+
+export function setPreviewStepImage(stepKey, file) {
+  const previous = previewStepImages.get(stepKey)
+  if (previous) URL.revokeObjectURL(previous)
+  previewStepImages.set(stepKey, URL.createObjectURL(file))
+}
 
 export function getContent(id) {
   const pkg = BUNDLED[id]
@@ -49,12 +62,33 @@ async function fetchRemote(id) {
 /** The package for a learning step. Bundled at once, remote when it lands. */
 export function useContent(id) {
   const g = useGame()
-  const [pkg, setPkg] = useState(() => getContent(id))
+  const preview = new URLSearchParams(window.location.search).has('contentPreview')
+  const previewPackage = () => {
+    if (!preview) return null
+    try {
+      const saved = sessionStorage.getItem('kidsverse-content-preview')
+      if (!saved) return null
+      const content = JSON.parse(saved)
+      const steps = content.learn_before_test?.steps
+      if (Array.isArray(steps)) content.learn_before_test.steps = steps.map(step => ({
+        ...step,
+        image_url: previewStepImages.get(step.step_key) ?? step.image_url,
+      }))
+      return normalizeContentPackage(content, id, getContent(id))
+    } catch (error) {
+      console.warn('[content] preview package not used:', error.message)
+      return null
+    }
+  }
+  const [pkg, setPkg] = useState(() => previewPackage() ?? getContent(id))
   useEffect(() => {
     let live = true
+    const imported = previewPackage()
+    if (imported) { setPkg(imported); return () => { live = false } }
     setPkg(getContent(id))
+    if (!FRONTEND_ONLY) fetchRemote(id).then(remote => { if (live && remote) setPkg(remote) })
     const subject = id.startsWith('demo-') ? id.slice(5) : 'maths'
-    if (g.state.activeChildId) loadMission(g.state.activeChildId, subject).then(mission => {
+    if (!FRONTEND_ONLY && g.state.activeChildId) loadMission(g.state.activeChildId, subject).then(mission => {
       if (!live) return
       if (mission.content?.discover && mission.content?.check) {
         setPkg({ ...mission.content, apiMissionId: mission.id })
@@ -63,16 +97,15 @@ export function useContent(id) {
       // The current backend supplies mission identity, XP and lifecycle APIs while
       // dynamic lesson/question content is still pending. Keep the safe bundled lesson,
       // but bind the live mission metadata so the screen represents the server record.
-      const fallback = getContent(id)
-      setPkg({
-        ...fallback,
+      setPkg(current => ({
+        ...current,
         apiMissionId: mission.id,
         apiXpReward: mission.xp_reward,
-        mission: { ...fallback.mission, title: mission.name || fallback.mission.title },
-      })
+        mission: { ...current.mission, title: mission.name || current.mission.title },
+      }))
     }).catch(error => { if (live) g.notice(error.message) })
     return () => { live = false }
-  }, [id, g.state.activeChildId])
+  }, [id, g.state.activeChildId, preview])
   return pkg
 }
 

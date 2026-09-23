@@ -29,7 +29,6 @@ const Home = lazyScreen(() => import('./screens/Home.jsx'))
 const LearnHub = lazyScreen(() => import('./screens/LearnHub.jsx'))
 const Journey = lazyScreen(() => import('./screens/Journey.jsx'))
 const Topic = lazyScreen(() => import('./screens/Topic.jsx'))
-const LessonDiscover = lazyScreen(() => import('./screens/LessonDiscover.jsx'))
 const GuidedLearning = lazyScreen(() => import('./screens/GuidedLearning.jsx'))
 const SpotMistake = lazyScreen(() => import('./screens/SpotMistake.jsx'))
 const MissionComplete = lazyScreen(() => import('./screens/MissionComplete.jsx'))
@@ -55,6 +54,7 @@ const ParentEvidence = lazyScreen(() => import('./screens/ParentEvidence.jsx'))
 const ParentPlan = lazyScreen(() => import('./screens/ParentPlan.jsx'))
 const ApiTestLab = lazyScreen(() => import('./screens/ApiTestLab.jsx'))
 const ScreenIndex = lazyScreen(() => import('./screens/ScreenIndex.jsx'))
+const ContentPreview = lazyScreen(() => import('./screens/ContentPreview.jsx'))
 
 /* Route list, kept as the single place the screen order is written down. */
 export const SCREENS = [
@@ -160,8 +160,9 @@ function Routed() {
           <Route path="/learn" element={<LearnHub />} />
           <Route path="/journey" element={<Journey />} />
           <Route path="/learn/topics/:world" element={<Topic />} />
-          <Route path="/missions/fractions" element={<LessonDiscover />} />
+          <Route path="/missions/fractions" element={<Navigate to={`/missions/fractions/learn${location.search}`} replace />} />
           <Route path="/missions/fractions/learn" element={<GuidedLearning />} />
+          <Route path="/content-preview" element={<ContentPreview />} />
           <Route path="/missions/fractions/spot-mistake" element={<SpotMistake />} />
           <Route path="/missions/fractions/complete" element={<MissionComplete />} />
           <Route path="/tests" element={<TestArena />} />

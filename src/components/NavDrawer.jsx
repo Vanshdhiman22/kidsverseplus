@@ -114,6 +114,10 @@ export default function NavDrawer({ pinned = false }) {
      the child just asked for. */
   useEffect(() => { setOpen(false) }, [pathname])
   useEffect(() => {
+    document.documentElement.dataset.navDrawer = open ? 'open' : 'closed'
+    return () => { document.documentElement.dataset.navDrawer = 'closed' }
+  }, [open])
+  useEffect(() => {
     if (!open) return
     const esc = e => { if (e.key === 'Escape') setOpen(false) }
     window.addEventListener('keydown', esc)

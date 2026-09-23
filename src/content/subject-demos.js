@@ -39,5 +39,10 @@ export function subjectDemoRaw(subject) {
   const data = SUBJECTS[subject]
   if (!data) return null
   const learning = { teaching_method: data.teaching, explanation: data.example, hints: [data.teaching.split('.')[0] + '.', data.example, data.rule], nova_script: `Let’s explore ${data.concept.name} together!`, nova_feedback: data.rule, image_url: `/art/world-${subject}.webp`, image_alt: `${data.concept.name} learning world` }
-  return { curriculum: data.curriculum, concept: data.concept, theme_interest: 'Everyday Life', learning_content: learning, check_for_understanding: data.learn, test_questions: { one_time: false, questions: data.test }, battle_questions: data.test.slice(0, 3), challenge: { one_time: false, questions: data.test.slice(2, 3) } }
+  const steps = [
+    { step_key: 'understand', title: data.concept.name, teaching_text: data.teaching, key_idea: data.concept.learning_objective, image_url: subject === 'literacy' ? '/art/generated/literacy-maya-helps-bird.png' : learning.image_url, image_alt: subject === 'literacy' ? 'Maya gives water to a small bird in a garden' : learning.image_alt, nova_script: `Let’s learn ${data.concept.name} together. ${data.teaching.split('.')[0]}.`, mini_question: data.learn[0] },
+    { step_key: 'example', title: 'Watch the idea in action', teaching_text: data.example, alternate_teaching_text: data.rule, key_idea: data.rule, nova_script: `Let’s follow this example. ${data.example}`, mini_question: data.learn[1] },
+    { step_key: 'remember', title: 'Keep this idea with you', teaching_text: subject === 'literacy' ? 'In a story, name the character, say what happened, then tell the big idea in your own words.' : data.rule, key_idea: data.rule, nova_script: `You’ve got it. ${data.rule}`, mini_question: data.learn[2] },
+  ]
+  return { curriculum: data.curriculum, concept: data.concept, theme_interest: 'Everyday Life', learning_content: learning, learn_before_test: { required: true, order: ['understand', 'example', 'remember'], starts_quiz_after: 'remember', steps }, check_for_understanding: data.learn, test_questions: { one_time: false, questions: data.test }, battle_questions: data.test.slice(0, 3), challenge: { one_time: false, questions: data.test.slice(2, 3) } }
 }
