@@ -48,16 +48,21 @@
       {
         "step_key": "example",
         "title": "Let’s see how it works",
-        "teaching_text": "Count 3 apples, then count 2 more apples. Together, the two groups make 5 apples.",
-        "key_idea": "3 + 2 = 5",
-        "image_url": "/art/generated/addition-scene-background.png",
-        "image_prompt": "Three apples beside two apples, clearly separated into two groups, with no text or characters.",
-        "nova_script": "Count the first group, then keep counting the second group from the next number.",
+        "teaching_text": "Put 2 pizza slices next to 1 more slice. Count them all: 1, 2, 3. There are 3 slices altogether.",
+        "explanation_ways": [
+          { "label": "Try chocolate", "teaching_text": "Now use chocolate squares. You have 3 squares and get 2 more. Put them together and count 5 squares. The same joining idea works with chocolate.", "key_idea": "3 + 2 = 5 chocolate squares", "image_url": "/art/generated/addition-chocolate-way-2.svg", "image_alt": "Three chocolate squares plus two chocolate squares", "nova_script": "Three chocolate squares and two more make five. Count every square together.", "mini_question": { "question": "3 chocolate squares plus 2 squares makes how many?", "options": ["4", "5", "6"], "answer": "5", "explanation": "Three squares and two more squares make five." } },
+          { "label": "Try ice cream", "teaching_text": "Imagine 1 ice cream cone and then 2 more cones. Point to each cone as you count: 1, 2, 3. The total is 3 cones.", "key_idea": "1 + 2 = 3 ice cream cones", "image_url": "/art/generated/addition-icecream-way-3.svg", "image_alt": "One ice cream cone plus two ice cream cones", "nova_script": "One cone and two more cones make three. The objects changed, but we still add by counting together.", "mini_question": { "question": "1 ice cream cone plus 2 cones makes how many?", "options": ["2", "3", "4"], "answer": "3", "explanation": "One cone and two more cones make three cones." } }
+        ],
+        "key_idea": "2 + 1 = 3 pizza slices",
+        "image_url": "/art/generated/addition-pizza-way-1.svg",
+        "image_alt": "Two pizza slices plus one pizza slice",
+        "image_prompt": "Two pizza slices beside one more slice, clearly separated into two groups.",
+        "nova_script": "Two pizza slices and one more make three. Count every slice together.",
         "mini_question": {
-          "question": "3 apples plus 2 apples makes how many apples?",
-          "options": ["4", "5", "6"],
-          "answer": "5",
-          "explanation": "Three and two more make five: 3 + 2 = 5."
+          "question": "2 pizza slices plus 1 slice makes how many?",
+          "options": ["2", "3", "4"],
+          "answer": "3",
+          "explanation": "Two slices and one more slice make three."
         }
       },
       {

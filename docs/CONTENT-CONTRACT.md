@@ -118,6 +118,44 @@ without generating or storing a video.
 Generated concept images should contain the lesson objects and environment without Nova;
 the frontend layers the canonical animated Nova character over every scene.
 
+**Try another way on the Example step.** The `example` step may include two
+`explanation_ways` in addition to its primary `teaching_text`, `image_url`,
+`nova_script`, `key_idea`, and `mini_question`. Each way teaches the same learning
+objective with a different concrete object or scene. Give each way its own image,
+matching words and Nova script, and optionally its own tiny check. For example:
+
+```json
+{
+  "step_key": "example",
+  "teaching_text": "The red kite flew high. What flew high? The kite.",
+  "image_url": "/art/kite.webp",
+  "mini_question": { "question": "What flew high?", "options": ["Kite", "Tree"], "answer": "Kite" },
+  "explanation_ways": [
+    {
+      "label": "Try a plane",
+      "teaching_text": "A plane flew high. What flew high? The plane.",
+      "image_url": "/art/plane.webp",
+      "image_alt": "A plane flying above a park",
+      "nova_script": "Look up at the plane. It flew high.",
+      "mini_question": { "question": "What flew high?", "options": ["Plane", "Tree"], "answer": "Plane" }
+    },
+    {
+      "label": "Try a bird",
+      "teaching_text": "A bird flew high. What flew high? The bird.",
+      "image_url": "/art/bird.webp",
+      "image_alt": "A bird flying above a garden",
+      "mini_question": { "question": "What flew high?", "options": ["Bird", "Flower"], "answer": "Bird" }
+    }
+  ]
+}
+```
+
+The screen switches the visual, explanation, Nova line, key idea (if supplied),
+and tiny check together. Answers are stored separately per way. If the Studio does
+not author alternate image URLs, the frontend cannot invent them; those fallback
+ways show text only. The currently deployed Studio must add these fields before
+remote content can provide three authored visual examples.
+
 **Content Studio payloads.** Set `VITE_CONTENT_API` to the service that exposes
 `GET /learning-packages/:contentId`. The client accepts either this native contract or
 the payload downloaded by the Kidsverse Content Studio. For Studio payloads it reads
