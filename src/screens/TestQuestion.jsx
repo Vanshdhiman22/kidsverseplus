@@ -18,6 +18,7 @@ import { cn } from '../lib/utils.js'
 import { useRouteContent, routeSubject, withSubject } from '../content/index.js'
 import QuestionVisual from '../components/QuestionVisual.jsx'
 import { speak } from '../lib/voice.js'
+import { assessmentBank, cmsQuestions, finishCmsAssessment, reviewAnswer } from '../content/assessment.js'
 
 const LETTERS = ['A', 'B', 'C', 'D']
 
@@ -34,6 +35,7 @@ export default function TestQuestion() {
   const START = 8 * 60 + 15
   const [correct, setCorrect] = useState(0)
   const [review, setReview] = useState([])
+  const [hintLevel, setHintLevel] = useState(0)
   const [apiQuestion, setApiQuestion] = useState(null)
   const [questionError, setQuestionError] = useState(null)
   const pkg = useRouteContent()
@@ -46,10 +48,13 @@ export default function TestQuestion() {
     feedback_correct: 'Great job! That is correct.',
     explanation: 'Look at the green answer.',
   }))
-  const assessmentSource = 'test_questions'
-  const source = `${routeSubject()}:${assessmentSource}`
-  const QUESTIONS = pkg.assessments?.[assessmentSource]?.length ? pkg.assessments[assessmentSource] : legacyQuestions
+  const mode = searchParams.get('source') === 'challenge' ? 'challenge' : 'test'
+  const assessmentSource = assessmentBank(mode)
+  const authoredQuestions = cmsQuestions(pkg, mode)
+  const source = `${pkg.content_id}:${pkg.content_version}:${routeSubject()}:${assessmentSource}`
+  const QUESTIONS = authoredQuestions ?? (pkg.assessments?.[assessmentSource]?.length ? pkg.assessments[assessmentSource] : legacyQuestions)
   useEffect(() => {
+    if (authoredQuestions) { setApiQuestion(null); setQuestionError(null); return }
     let active = true
     setApiQuestion(null)
     setQuestionError(null)
@@ -74,8 +79,8 @@ export default function TestQuestion() {
       })
       .catch(error => { if (active) setQuestionError(error) })
     return () => { active = false }
-  }, [g.state.activeChildId, qi])
-  const q = apiQuestion || QUESTIONS[qi]
+  }, [g.state.activeChildId, qi, Boolean(authoredQuestions)])
+  const q = authoredQuestions ? QUESTIONS[qi] : apiQuestion || QUESTIONS[qi]
   /* Was `total = 10, shown = qi + 3` -- staged for the design render. The child now
      arrives here straight from the daily mission, so the count has to be the real one. */
   const total = QUESTIONS.length, shown = qi + 1
@@ -91,20 +96,20 @@ export default function TestQuestion() {
     if (submitted || secs === 0) {
       if (qi + 1 >= QUESTIONS.length || secs === 0) {
         sfx.whoosh()
-        const result = await completeTest(g.state.activeChildId, routeSubject())
-        const run = { correct: result.correct_count, total: result.total_questions, seconds: START - secs, subject: routeSubject(), source: searchParams.get('source') === 'challenge' ? 'challenge' : 'test', review, attemptId: result.attemptId, completedAt: result.completed_at, xpAwarded: result.xp_awarded, apiSaved: true }
+        const run = authoredQuestions
+          ? finishCmsAssessment({ questions: QUESTIONS, review, seconds: START - secs, subject: routeSubject(), mode })
+          : await completeTest(g.state.activeChildId, routeSubject()).then(result => ({ correct: result.correct_count, total: result.total_questions, seconds: START - secs, subject: routeSubject(), source: mode, review, attemptId: result.attemptId, completedAt: result.completed_at, xpAwarded: result.xp_awarded, apiSaved: true }))
         sessionStorage.setItem('kv:last-test-run', JSON.stringify(run)); sessionStorage.removeItem('kv:test-progress')
-        nav(withSubject('/tests/mixed/result'), { state: run })
+        nav(withSubject(`/tests/mixed/result${mode === 'challenge' ? '?source=challenge' : ''}`), { state: run })
         return
       }
-      setQi(qi + 1); setPick(null); setSubmitted(false); sfx.tap(); return
+      setQi(qi + 1); setPick(null); setSubmitted(false); setHintLevel(0); sfx.tap(); return
     }
-    const saved = await submitAnswer(g.state.activeChildId, routeSubject(), qi + 1, pick, q.instruction)
+    const saved = authoredQuestions ? null : await submitAnswer(g.state.activeChildId, routeSubject(), qi + 1, pick, q.instruction)
     setSubmitted(true)
-    const isCorrect = saved.is_correct
-    const selectedLabel = q.options.find(option => option.key === pick)?.label
-    const answerLabel = q.answer ? q.options.find(option => option.key === q.answer)?.label : 'Calculated by API'
-    setReview(items => [...items, { question: q.instruction, selectedLabel, answerLabel, correct: isCorrect, explanation: q.explanation || q.feedback_correct, model: q.models?.[0] }])
+    const isCorrect = authoredQuestions ? pick === q.answer : saved.is_correct
+    const localReview = reviewAnswer(q, pick)
+    setReview(items => [...items, authoredQuestions ? localReview : { ...localReview, correct: isCorrect, answerLabel: 'Calculated by API' }])
     if (isCorrect) { setCorrect(c => c + 1); sfx.success() } else sfx.wrong()
   }
   useEffect(() => {
@@ -120,7 +125,7 @@ export default function TestQuestion() {
     <Page>
       <Scene name="question" />
       <TopBar right={<motion.div className="pill h-[84px] px-6 gap-4" animate={secs < 60 ? { scale: [1, 1.04, 1] } : {}} transition={{ duration: 1, repeat: Infinity }}><span className="icon-orb w-[50px] h-[50px]"><AlarmClock size={28} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[36px] text-ink tabular-nums leading-none">{mm}:{ss}</span><span className="label-caps">Time remaining</span></span></motion.div>} showControls={false} />
-      <motion.div className="absolute left-[360px] top-[36px] pl-6 border-l-2 border-[var(--line)]" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}><div className="eyebrow text-[15px]">Test Mode · {pkg.subject}</div><div className="font-display font-extrabold text-[26px] leading-none text-ink uppercase">{pkg.mission.title} Test</div><div className="text-[15px] font-semibold text-ink-3">Focused assessment. You've got this! 🚀</div></motion.div>
+      <motion.div className="absolute left-[360px] top-[24px] w-[400px] pl-6 border-l-2 border-[var(--line)]" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}><div className="eyebrow text-[13px]">{mode === 'challenge' ? 'Challenge' : 'Test'} Mode · {pkg.subject}</div><div className="font-display font-extrabold text-[21px] leading-tight text-ink uppercase">{pkg.mission.title} {mode === 'challenge' ? 'Challenge' : 'Test'}</div><div className="text-[13px] font-semibold text-ink-3">{authoredQuestions ? `${q.difficulty} · ${mode === 'challenge' ? `${q.xp_on_correct} practice XP` : `${q.marks} mark${q.marks === 1 ? '' : 's'}`}` : 'Focused assessment. You’ve got this! 🚀'}</div></motion.div>
       <motion.div className="absolute left-[795px] top-[50px] flex items-center gap-5" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <span className="pill h-[50px] px-5 font-display font-extrabold text-[19px] text-primary-ink uppercase">Question {shown} / {total}</span>
         <div className="relative w-[270px] h-[12px] rounded-full bg-[var(--lavender-2)] overflow-hidden"><motion.div className="absolute left-0 top-0 h-full rounded-full" style={{ background: 'var(--grad-primary)' }} animate={{ width: `${(shown / total) * 100}%` }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} /></div>
@@ -137,7 +142,8 @@ export default function TestQuestion() {
       <Character src={childSrc(face, 'question')} w={225} x={55} y={220} delay={0.14} podium />
       <motion.div className="absolute left-[48px] top-[720px] pill h-[62px] px-4 gap-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><span className="icon-orb w-[40px] h-[40px] text-gold" style={{ background: 'rgba(251,191,36,.16)' }}><Star size={21} fill="currentColor" /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[18px] text-ink">{name}</span><span className="block text-[12px] font-semibold text-primary-ink">Explorer in Learning</span></span></motion.div>
       <Character src="/art/hd/q-nova.webp" w={190} x={1420} y={395} delay={0.17} amp={8} />
-      <div className="absolute left-[1395px] top-[190px]"><SpeechBubble tail="bottom" text="Take your time. Use the picture to help." delay={0.3} className="w-[210px] text-[15px]" /></div>
+      <div className="absolute left-[1395px] top-[190px]"><SpeechBubble tail="bottom" text={authoredQuestions ? q.nova?.speech || 'Take your time. Use the picture to help.' : 'Take your time. Use the picture to help.'} delay={0.3} className="w-[210px] text-[15px]" /></div>
+      {authoredQuestions && <div className="absolute left-[1395px] top-[350px] w-[230px] rounded-2xl border border-white/80 bg-white/85 p-3 text-[14px] font-semibold text-ink-2"><button type="button" className="font-extrabold text-primary-ink" onClick={() => setHintLevel(level => Math.min(level + 1, q.models?.[0]?.hints?.length || 0))}>Need a hint? {hintLevel}/3</button>{hintLevel > 0 && <p className="mt-2">{q.models?.[0]?.hints?.[hintLevel - 1]}</p>}</div>}
       <motion.button aria-label="Hear question" className="absolute left-[1580px] top-[285px] w-[52px] h-[52px] rounded-full pill justify-center text-primary-ink" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }} onClick={() => speak(`${q.instruction}. ${q.options.map(option => option.label).join('. ')}`)} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}><Volume2 size={23} /></motion.button>
       <motion.div className="absolute left-[1384px] top-[720px] pill h-[62px] px-4 gap-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><img src="/art/22-novahead.webp" alt="" className="w-[42px]" /><span className="leading-tight"><span className="block font-display font-extrabold text-[18px] text-ink">Nova</span><span className="block text-[12px] font-semibold text-primary-ink">Learning buddy</span></span></motion.div>
 
@@ -157,10 +163,11 @@ export default function TestQuestion() {
                 )
               })}
         </Stack>
+        {authoredQuestions && submitted && <p className="mx-auto mt-3 max-w-[720px] text-center text-[15px] font-bold text-ink-2">{q.explanation || q.feedback_correct}</p>}
       </Panel>
       <motion.div className="absolute left-[576px] top-[748px] text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button arrow className="w-[520px] h-[66px] uppercase text-[21px]" disabled={!apiQuestion || (pick == null && secs > 0)} sound="whoosh" onClick={submit}>{!apiQuestion ? 'Loading API Question…' : secs === 0 ? 'Time up — Finish Test' : submitted ? (qi + 1 >= QUESTIONS.length ? 'Finish Test' : 'Next Question') : 'Check Answer'}</Button>
-        <p className="mt-2 text-[13px] font-extrabold text-ink-2">{pick == null ? 'Choose one answer to continue' : submitted ? 'Answer saved — results appear after the test' : 'Ready to lock in your answer'}</p>
+        <Button arrow className="w-[520px] h-[66px] uppercase text-[21px]" disabled={(!authoredQuestions && !apiQuestion) || (pick == null && secs > 0 && !submitted)} sound="whoosh" onClick={submit}>{!authoredQuestions && !apiQuestion ? 'Loading API Question…' : secs === 0 ? `Finish ${mode === 'challenge' ? 'Challenge' : 'Test'}` : submitted ? (qi + 1 >= QUESTIONS.length ? `Finish ${mode === 'challenge' ? 'Challenge' : 'Test'}` : 'Next Question') : 'Check Answer'}</Button>
+        <p className="mt-2 text-[13px] font-extrabold text-ink-2">{pick == null ? 'Choose one answer to continue' : submitted ? (authoredQuestions ? 'Review the explanation, then continue' : 'Answer saved — results appear after the test') : 'Ready to lock in your answer'}</p>
       </motion.div>
     </Page>
   )

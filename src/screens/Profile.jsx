@@ -10,7 +10,7 @@ import Button from '../components/Button.jsx'
 import { Counter, Sparkles } from '../components/Widgets.jsx'
 import { cn } from '../lib/utils.js'
 import { useGame } from '../state/GameProvider.jsx'
-import { gradeLabel } from '../data/catalog.js'
+import { gradeLabel, lessonProgress } from '../data/catalog.js'
 import { sfx } from '../lib/sound.js'
 import { MyCardSection } from '../components/StudentCard.jsx'
 import { onColor, useAccent } from '../lib/accent.js'
@@ -21,16 +21,16 @@ import { useLiveResource } from '../lib/useLiveResource.js'
  * for every child and frozen no matter how much they played. Built from state now. */
 export const statsFor = st => [
   [CalendarDays, '#3b82f6', 'Together for', st.stats.day, 'days'],
-  [CheckCircle2, '#f59e0b', 'Missions', Object.values(st.progress.worldDone ?? {}).reduce((a, b) => a + b, 0), 'completed'],
+  [CheckCircle2, '#f59e0b', 'Journey stops', lessonProgress(st.progress.worldDone).done, 'reached'],
   [BookOpen, '#a855f7', 'Reading', st.stats.reading, 'sessions'],
   [Swords, '#38bdf8', 'Bot Battles', st.stats.battles, 'battles'],
 ]
 /* All four used to render as achieved the moment the screen opened, on a brand new
  * account with nothing done. Each one now hangs off the event it claims. */
 export const milestonesFor = st => {
-  const lessons = Object.values(st.progress.worldDone ?? {}).reduce((a, b) => a + b, 0)
+  const lessons = lessonProgress(st.progress.worldDone).done
   return [
-    [Flag, '#22c55e', 'Entered Number Forest', 'You began your adventure!', lessons > 0],
+    [Flag, '#22c55e', 'Started your journey', 'You began your adventure!', lessons > 0],
     [BookOpen, '#3b82f6', 'Unlocked your first book', 'Great start, champion!', (st.stats.reading ?? 0) > 0],
     [Mic, '#7c3aed', 'Cracked your first quiz', 'Words make you stronger!', (st.progress.quizzesDone ?? 0) > 0],
     [Trophy, '#f59e0b', 'Earned your first trophy', 'Keep going, superstar!', (st.stats.battles ?? 0) > 0],
@@ -42,7 +42,7 @@ export const milestonesFor = st => {
 const MENU = [
   [Star, '#f59e0b', 'My Interests', 'Topics & themes you love', '/onboarding/interests'],
   [Map, '#3b82f6', 'My Journey', "See how far you've come", '/profile/journey'],
-  [Medal, '#f59e0b', 'My Best Scores', 'Top performance', '/challenge/leaderboard', 'View'],
+  [Medal, '#f59e0b', 'Leaderboard', 'Live rankings are not available yet', null],
   [Trophy, '#7c3aed', 'My Achievements', 'Badges & trophies', null],
   [Flame, '#f97316', 'My Streak', 'Keep the flame going', null],
   [Ticket, '#a855f7', 'Break Passes', 'Protect your learning streak', '/profile/break-passes'],
@@ -73,7 +73,7 @@ export default function Profile() {
   return (
     <Page>
       <Scene name="profile" />
-      <TopBar back={false} logo="planet" right={<><IconPill className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill><UserChip name={`Hi, ${name}!`} sub="Keep Exploring!" face={face} /></>} showControls={false} />
+      <TopBar back={false} logo="planet" right={<UserChip name={`Hi, ${name}!`} sub="Keep Exploring!" face={face} />} showControls={false} />
 
       <Panel soft className="absolute left-[115px] top-[95px] w-[665px] h-[465px] p-8" initial="hidden" animate="show">
         <Sparkles n={5} seed={31} />

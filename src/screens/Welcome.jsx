@@ -54,7 +54,7 @@ export default function Welcome() {
               Spot the Mistake -- and nothing else. The copy now says what the child gets. */}
           <p className="mt-1 text-[17px] font-semibold text-ink-3 leading-snug">Two playful activities help Nova understand how you learn. No scores. No pressure.</p>
           <div className="mt-3 flex gap-3">
-            {[[Calculator, 'Discover Fractions', '#0ea5e9'], [Puzzle, 'Spot the Mistake', '#22c55e']].map(([I, t, c0]) => { const c = ac(c0); return <span key={t} className="chip h-[40px] px-4 text-[16px]" style={{ color: c, background: `${c}18`, border: `1.5px solid ${c}55` }}><I size={18} /> {t}</span> })}
+            {[[Calculator, 'Understand the idea', '#0ea5e9'], [Puzzle, 'Try a question', '#22c55e']].map(([I, t, c0]) => { const c = ac(c0); return <span key={t} className="chip h-[40px] px-4 text-[16px]" style={{ color: c, background: `${c}18`, border: `1.5px solid ${c}55` }}><I size={18} /> {t}</span> })}
           </div>
           <div className="mt-3 flex items-center gap-6 text-[17px] font-bold text-ink-2"><span className="flex items-center gap-2"><Clock size={20} className="text-primary-ink" /> 6–8 min</span><span className="w-px h-6 bg-[var(--line)]" /><span className="flex items-center gap-2"><Award size={20} className="text-gold" /> Cosmic Explorer badge</span></div>
         </div>

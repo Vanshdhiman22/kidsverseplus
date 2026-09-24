@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
+import { getToken } from '../lib/api.js'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -47,19 +48,6 @@ const SUBJECT_STYLE = {
 }
 const SUBJECTS = WORLDS.map(w => ({ ...SUBJECT_STYLE[w.id], t: w.name, to: `/learn/topics/${w.id}` }))
 
-const MISSIONS = [
-  [BookOpen, '#3b82f6', 'Read a new story', 30],
-  [FlaskConical, '#8b5cf6', 'Explore a science fact', 30],
-  [Heart, '#ec4899', 'Be kind today', 20],
-]
-
-const BADGES = [
-  [Star, '#3b82f6', 'First Steps'],
-  [Trophy, '#f59e0b', 'Math Whiz'],
-  [Brain, '#a855f7', 'Curious Mind'],
-  [Heart, '#ec4899', 'Kind Explorer'],
-]
-
 /* The dark frame the design wraps the page in: rail down the left, strip along
    the bottom. Both reach the true window edge on wide screens. */
 const FRAME = 'linear-gradient(180deg,rgba(22,26,78,.88) 0%,rgba(17,21,62,.9) 55%,rgba(12,15,44,.93) 100%)'
@@ -82,10 +70,11 @@ export default function Home() {
   const nav = useNavigate()
   const g = useGame()
   const [apiHome, setApiHome] = useState(null)
-  const [apiError, setApiError] = useState('')
   useEffect(() => {
     let active = true
-    if (g.state.activeChildId) api.studentHome(g.state.activeChildId).then(data => { if (active) { setApiHome(data); g.dispatch({ type: 'remoteStats', stats: data.stats }) } }).catch(error => { if (active) setApiError(error.message) })
+    if (g.state.activeChildId && getToken()) api.studentHome(g.state.activeChildId)
+      .then(data => { if (active) { setApiHome(data); if (data.stats) g.dispatch({ type: 'remoteStats', stats: data.stats }) } })
+      .catch(() => { if (active) setApiHome(null) })
     return () => { active = false }
   }, [g.state.activeChildId])
   const { name, face } = g.state.profile
@@ -95,7 +84,15 @@ export default function Home() {
      literals -- 65%, 12/20, 8/15, 4/10 -- that never moved, while Level in the same
      header did, so the panel visibly contradicted itself after a mission. */
   const lessons = lessonProgress(g.state.progress.worldDone)
-  const quizzes = { done: g.state.progress.quizzesDone ?? 0, total: 15 }
+  const quizzesDone = g.state.progress.quizzesDone ?? 0
+  const activeWorld = g.state.progress.world || 'maths'
+  const activeWorldName = WORLDS.find(world => world.id === activeWorld)?.name ?? 'Maths'
+  const activity = [
+    [BookOpen, '#3b82f6', `${lessons.done} journey stops`],
+    [Trophy, '#f59e0b', `${quizzesDone} quizzes`],
+    [Brain, '#a855f7', `${g.state.stats.battles ?? 0} battles`],
+    [Heart, '#ec4899', `${g.state.stats.reading ?? 0} reading sessions`],
+  ]
   const toNext = XP_PER_LEVEL - (xp % XP_PER_LEVEL)
   /* The grown-up area sits behind a four-digit code, set on first use. */
   const [gate, setGate] = useState(false)
@@ -111,10 +108,6 @@ export default function Home() {
       {/* ---------- top bar ---------- */}
       <motion.div className="absolute top-[22px] flex items-center gap-4 z-20" style={bleedR(24)}
         initial={{ y: -24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: lead(0.2) }}>
-        <button className="relative w-[52px] h-[52px] rounded-full bg-[var(--surface)] border border-[var(--line)] grid place-items-center text-ink shadow-sm shrink-0" onClick={() => sfx.tap()}>
-          <Bell size={21} />
-          <span className="absolute top-[10px] right-[12px] w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" />
-        </button>
         <button className="h-[56px] pl-2 pr-4 rounded-full bg-[var(--surface)] border border-[var(--line)] flex items-center gap-3 shadow-sm shrink-0" onClick={() => { sfx.tap(); nav('/profile') }}>
           <img src={`/art/kid${face}-face-sm.webp`} alt="" className="w-[42px] h-[42px] rounded-full object-cover border-2 border-white" />
           <span className="leading-tight text-left">
@@ -139,7 +132,7 @@ export default function Home() {
         initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1, y: [0, -5, 0] }}
         transition={{ opacity: { delay: lead(0.7) }, scale: { type: 'spring', stiffness: 420, damping: 22, delay: lead(0.7) }, y: { duration: 5, repeat: Infinity, ease: 'easeInOut', delay: lead(0.7) + 0.5 } }}>
         <span className="tail" />
-        {apiError ? `API: ${apiError}` : apiHome?.greeting || 'Ready to learn something amazing today?'} <span className="text-gold">✨</span>
+        {apiHome?.greeting || 'Ready to learn something amazing today?'} <span className="text-gold">✨</span>
       </motion.div>
 
       {/* ---------- subjects ---------- */}
@@ -190,21 +183,21 @@ export default function Home() {
           <Ring size={132} stroke={14} value={lessons.pct / 100} id="home-ring" delay={lead(0.7)} track="#e8e6ff">
             <div className="text-center leading-none">
               <div className="font-display font-extrabold text-[30px] text-primary-ink"><Counter to={lessons.pct} delay={lead(0.7)} />%</div>
-              <div className="mt-1 text-[11px] font-bold text-ink-3">Overall Progress</div>
+              <div className="mt-1 text-[11px] font-bold text-ink-3">Journey Progress</div>
             </div>
           </Ring>
           <div className="flex-1 flex flex-col gap-[10px]">
             {/* "Projects" is gone: nothing in the app ever creates one, so that row could
                 only ever be a fixed number. XP toward the next level is real and moves on
                 every mission, quiz and challenge. */}
-            {[[BookOpen, '#3b82f6', `${lessons.done}/${lessons.total} Lessons`, lessons.done / lessons.total],
-              [Trophy, '#f59e0b', `${quizzes.done}/${quizzes.total} Quizzes`, quizzes.done / quizzes.total],
+            {[[BookOpen, '#3b82f6', `${lessons.done}/${lessons.total} Journey stops`, lessons.done / lessons.total],
+              [Trophy, '#f59e0b', `${quizzesDone} Quizzes completed`, null],
               [Lightbulb, '#a855f7', `${XP_PER_LEVEL - toNext}/${XP_PER_LEVEL} XP to Level ${level + 1}`, (XP_PER_LEVEL - toNext) / XP_PER_LEVEL]].map(([I, c, t, v]) => (
               <div key={t} className="rounded-[14px] bg-[var(--lavender)]/60 px-3 py-2 flex items-center gap-3">
                 <span className="w-[30px] h-[30px] rounded-[10px] grid place-items-center bg-[var(--surface-2)] shrink-0" style={{ color: c }}><I size={17} /></span>
                 <span className="flex-1">
                   <span className="block text-[14px] font-extrabold text-ink leading-none">{t}</span>
-                  <Bar value={v} h={6} className="mt-2" delay={lead(0.8)} />
+                  {v != null && <Bar value={v} h={6} className="mt-2" delay={lead(0.8)} />}
                 </span>
               </div>
             ))}
@@ -218,33 +211,28 @@ export default function Home() {
         initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: lead(0.65) }}>
         <div className="flex items-center gap-2">
           <span className="w-[26px] h-[26px] rounded-[9px] grid place-items-center text-white" style={{ background: 'linear-gradient(140deg,#f87171,#ef4444)' }}><Target size={15} /></span>
-          <span className="font-display font-extrabold text-[19px] text-ink">Today's Mission</span>
+          <span className="font-display font-extrabold text-[19px] text-ink">Choose your next step</span>
           <button className="ml-auto text-[13px] font-extrabold text-primary-ink flex items-center gap-1" onClick={() => nav('/journey')}>See All <ArrowRight size={13} strokeWidth={3} /></button>
         </div>
-        {/* Straight into the questions. The mission is "solve 5 fun questions", so the
-            lesson screen in between is a detour -- that screen is where progress is read,
-            not where a challenge starts. */}
         <motion.button className="mt-2 w-full rounded-[16px] px-3 py-[10px] flex items-center gap-3 text-left"
           style={{ background: 'var(--tint-primary)', border: '1.5px solid var(--tint-primary-line)' }}
-          whileHover={{ y: -2 }} onClick={() => { sfx.whoosh(); nav('/tests/mixed/intro') }}>
-          <span className="w-[42px] h-[42px] rounded-[13px] grid place-items-center bg-[var(--surface-2)] shrink-0 text-amber-500"><Trophy size={22} /></span>
+          whileHover={{ y: -2 }} onClick={() => { sfx.whoosh(); nav(`/missions/fractions/learn?subject=${activeWorld}`) }}>
+          <span className="w-[42px] h-[42px] rounded-[13px] grid place-items-center bg-[var(--surface-2)] shrink-0 text-amber-500"><BookOpen size={22} /></span>
           <span className="flex-1 leading-tight">
-            <span className="block text-[15px] font-extrabold text-ink">Complete a Math Challenge</span>
-            <span className="block text-[12px] font-semibold text-ink-3">Solve 5 fun questions</span>
-            <span className="mt-1 inline-flex items-center gap-1 text-[12px] font-extrabold text-amber-600"><Star size={12} fill="currentColor" /> +50 XP</span>
+            <span className="block text-[15px] font-extrabold text-ink">Continue {activeWorldName} learning</span>
+            <span className="block text-[12px] font-semibold text-ink-3">Understand → Example → Remember</span>
           </span>
           <span className="w-[28px] h-[28px] rounded-full grid place-items-center text-white shrink-0" style={{ background: 'var(--grad-primary)' }}><ArrowRight size={16} strokeWidth={3} /></span>
         </motion.button>
         <div className="mt-2 flex flex-col gap-[6px]">
-          {MISSIONS.map(([I, c, t, xp]) => (
-            <div key={t} className="rounded-[13px] bg-[var(--lavender)]/50 px-3 py-[6px] flex items-center gap-3">
+          {[[Trophy, '#f59e0b', 'Take a test', '/tests'], [Brain, '#a855f7', 'Try a challenge', '/challenge'], [BookOpen, '#3b82f6', 'Explore subjects', '/learn']].map(([I, c, t, to]) => (
+            <button key={t} type="button" className="w-full rounded-[13px] bg-[var(--lavender)]/50 px-3 py-[6px] flex items-center gap-3 text-left" onClick={() => nav(to)}>
               <span className="w-[26px] h-[26px] rounded-[9px] grid place-items-center bg-[var(--surface-2)] shrink-0" style={{ color: c }}><I size={14} /></span>
               <span className="flex-1 leading-tight">
                 <span className="block text-[13px] font-extrabold text-ink">{t}</span>
-                <span className="block text-[11px] font-bold text-ink-3">+{xp} XP</span>
               </span>
-              <span className="w-[22px] h-[22px] rounded-full grid place-items-center border-2 border-green-400 text-green-500"><Check size={12} strokeWidth={4} /></span>
-            </div>
+              <ArrowRight size={16} className="text-primary-ink" />
+            </button>
           ))}
         </div>
       </motion.section>
@@ -255,11 +243,11 @@ export default function Home() {
         initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: lead(0.75) }}>
         <div className="flex items-center gap-2">
           <span className="w-[26px] h-[26px] rounded-[9px] grid place-items-center text-white" style={{ background: 'linear-gradient(140deg,#fbbf24,#f59e0b)' }}><Medal size={15} /></span>
-          <span className="font-display font-extrabold text-[19px] text-ink">Achievements</span>
+          <span className="font-display font-extrabold text-[19px] text-ink">Your Activity</span>
           <button className="ml-auto text-[13px] font-extrabold text-primary-ink flex items-center gap-1" onClick={() => nav('/profile')}>See All <ArrowRight size={13} strokeWidth={3} /></button>
         </div>
         <div className="mt-4 grid grid-cols-4 gap-2">
-          {BADGES.map(([I, c, l], i) => <Hex key={l} icon={I} color={c} label={l} delay={lead(0.8) + i * 0.06} />)}
+          {activity.map(([I, c, l], i) => <Hex key={l} icon={I} color={c} label={l} delay={lead(0.8) + i * 0.06} />)}
         </div>
         <motion.button className="mt-4 w-full rounded-[16px] px-4 py-3 flex items-center gap-3 text-left"
           style={{ background: 'var(--tint-warm)', border: '1.5px solid var(--tint-warm-line)' }}

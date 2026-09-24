@@ -10,7 +10,7 @@ import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import { Ring, Counter, Fraction } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
-import { gradeLabel } from '../data/catalog.js'
+import { gradeLabel, lessonProgress } from '../data/catalog.js'
 import { bleedL, bleedR, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
@@ -31,12 +31,12 @@ export default function ParentEvidence() {
   /* Was three literal rows -- a 7/10 mixed test, a completed lesson, a 2/3 quiz, each with
      a "Today" timestamp -- printed under a panel that correctly reported no test taken. Only
      what the app records appears here now. */
-  const lessonsDone = Object.values(g.state.progress.worldDone ?? {}).reduce((a, b) => a + b, 0)
+  const journeyStops = lessonProgress(g.state.progress.worldDone).done
   const activity = [
     lastTest && [ClipboardCheck, '#7c3aed', 'Mixed Concept Test', 'Practice & track progress',
                  `Score: ${lastTest.correct}/${lastTest.total}`, formatBrowserDateTime(lastTest.completedAt)],
-    lessonsDone > 0 && [Play, '#8b5cf6', 'Lessons completed', 'Build strong concepts',
-                        `${lessonsDone} finished`, 'Across all worlds'],
+    journeyStops > 0 && [Play, '#8b5cf6', 'Journey stops', 'Progress through the subject maps',
+                        `${journeyStops} reached`, 'Across all worlds'],
     (g.state.stats.battles ?? 0) > 0 && [HelpCircle, '#3b82f6', 'Bot battles', 'Quick-fire practice',
                                          `${g.state.stats.battles} played`, 'Challenge arena'],
   ].filter(Boolean)
@@ -56,27 +56,26 @@ export default function ParentEvidence() {
     <Page>
       <Scene name="evidence" />
       <ParentRail />
-      <motion.div className="absolute flex items-center gap-3" style={{ ...bleedR(30), ...safeT(20) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><IconPill><Search size={22} /></IconPill><IconPill className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill><UserChip name={`Parent of ${name}`} face={face} /></motion.div>
+      <motion.div className="absolute flex items-center gap-3" style={{ ...bleedR(30), ...safeT(20) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><UserChip name={`Parent of ${name}`} face={face} /></motion.div>
 
       <Panel soft className="absolute left-[295px] top-[90px] w-[1345px] h-[800px] p-8" initial="hidden" animate="show">
         <div className="flex items-center gap-5">
           <button className="pill w-[48px] h-[48px] justify-center text-ink" onClick={() => { sfx.tap(); nav('/parent') }}><ArrowLeft size={22} /></button>
           <img src="/art/planet-sm.webp" alt="" className="w-[90px] floaty" />
-          <div><h1 className="font-display font-extrabold text-[54px] leading-none text-ink">Fractions</h1><div className="mt-1 text-[20px] font-semibold text-ink-2">{board} {gradeLabel(grade)} <span className="mx-2 text-ink-3">|</span> <span className="text-green-600 font-bold">Verified</span> <ShieldCheck size={20} className="inline text-green-500" /></div></div>
-          <button className="ml-auto flex items-center gap-2 text-[14px] font-extrabold text-primary-ink uppercase tracking-wide" onClick={() => { sfx.tap(); setWhy(w => !w) }}>Why this was recommended <Info size={18} /></button>
+          <div><h1 className="font-display font-extrabold text-[54px] leading-none text-ink">Learning activity</h1><div className="mt-1 text-[20px] font-semibold text-ink-2">{board} {gradeLabel(grade)} <span className="mx-2 text-ink-3">|</span> Recorded sessions</div></div>
+          <button className="ml-auto flex items-center gap-2 text-[14px] font-extrabold text-primary-ink uppercase tracking-wide" onClick={() => { sfx.tap(); setWhy(w => !w) }}>How this is calculated <Info size={18} /></button>
         </div>
         {why && (
           <div className="mt-3 card px-5 py-4 text-[15px] font-semibold text-ink-2 leading-snug">
-            Nova recommends the topic {name} has worked on most recently and scored lowest on.
-            Everything below comes from {name}&rsquo;s own sessions: the last test they finished,
-            and the quizzes and battles they have completed.
+            This page shows only the lessons, tests and battles recorded for {name} in this game.
+            Grade and board are the profile choices; they are not a curriculum-verification result.
           </div>
         )}
         <div className="mt-6 grid grid-cols-[335px_1fr] gap-5">
           <Stack className="flex flex-col gap-4" start={0.6}>
-            <Item v="soft"><Card className="p-5 flex items-start gap-4"><span className="icon-orb w-[54px] h-[54px] text-white" style={{ background: 'var(--grad-primary)' }}><GraduationCap size={28} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[20px] text-primary-ink">School Coverage</span><span className="block mt-1 text-[17px] font-bold text-ink">{board} {gradeLabel(grade)}</span><span className="block text-[14px] font-bold text-green-600">Verified ✓</span><span className="block mt-1 text-[13px] font-semibold text-ink-3">Aligned to your child's curriculum</span></span></Card></Item>
-            <Item v="soft"><Card className="p-5"><div className="font-display font-extrabold text-[20px] text-primary-ink">Kidsverse Plus</div><div className="mt-3 flex flex-col gap-3">{[[LayoutTemplate, 'Visual models', 'Understand with pictures and models'], [Briefcase, 'Word problems', 'Solve real-world questions'], [LayoutGrid, 'Applications', 'Use fractions in daily life']].map(([I, t, s]) => <div key={t} className="flex items-center gap-3"><span className="icon-orb w-[48px] h-[48px] text-white shrink-0" style={{ background: 'var(--grad-primary)' }}><I size={24} /></span><span className="leading-tight"><span className="block text-[17px] font-extrabold text-ink">{t}</span><span className="block text-[13px] font-semibold text-ink-3">{s}</span></span></div>)}</div></Card></Item>
-            <Item v="soft"><Card className="p-5"><div className="font-display font-extrabold text-[20px] text-primary-ink">Competition Edge</div><div className="mt-3 flex items-center gap-3"><span className="icon-orb w-[48px] h-[48px] text-white shrink-0" style={{ background: 'var(--grad-primary)' }}><Trophy size={24} /></span><span className="leading-tight"><span className="block text-[17px] font-extrabold text-ink">Higher-order fraction reasoning</span><span className="block text-[13px] font-semibold text-ink-3">Builds deep thinking & accuracy</span></span></div></Card></Item>
+            <Item v="soft"><Card className="p-5 flex items-start gap-4"><span className="icon-orb w-[54px] h-[54px] text-white" style={{ background: 'var(--grad-primary)' }}><GraduationCap size={28} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[20px] text-primary-ink">Learning profile</span><span className="block mt-1 text-[17px] font-bold text-ink">{board} {gradeLabel(grade)}</span><span className="block mt-1 text-[13px] font-semibold text-ink-3">Chosen during setup</span></span></Card></Item>
+            <Item v="soft"><Card className="p-5"><div className="font-display font-extrabold text-[20px] text-primary-ink">What is recorded</div><div className="mt-3 flex flex-col gap-3">{[[BookOpen, 'Journey stops', `${journeyStops} reached`], [ClipboardCheck, 'Latest test', lastTest?.total ? `${lastTest.correct}/${lastTest.total} correct` : 'Not taken yet'], [HelpCircle, 'Practice', `${practised} quizzes and battles`]].map(([I, t, s]) => <div key={t} className="flex items-center gap-3"><span className="icon-orb w-[48px] h-[48px] text-white shrink-0" style={{ background: 'var(--grad-primary)' }}><I size={24} /></span><span className="leading-tight"><span className="block text-[17px] font-extrabold text-ink">{t}</span><span className="block text-[13px] font-semibold text-ink-3">{s}</span></span></div>)}</div></Card></Item>
+            <Item v="soft"><Card className="p-5"><div className="font-display font-extrabold text-[20px] text-primary-ink">When results appear</div><p className="mt-2 text-[15px] font-semibold text-ink-2">Test scores appear here after {name} completes an assessment.</p></Card></Item>
           </Stack>
           <div className="flex flex-col gap-5">
             <Card className="p-6 flex gap-6">
@@ -85,14 +84,11 @@ export default function ParentEvidence() {
                     they finished it; the second counts the practice the app actually records. */}
                 {evidence.map(([t, v, s, c0, h, d], i) => { const c = ac(c0); return <div key={t} className="card p-4"><div className="text-[16px] font-bold text-ink">{t}</div><div className="mt-2 flex items-center gap-3"><Ring size={96} stroke={12} value={v} id={`ev${i}`} delay={0.3} track="var(--lavender-2)" /><span className="font-display font-extrabold text-[30px] text-ink">{s}</span></div><div className="mt-2 font-extrabold text-[16px]" style={{ color: c }}>{h}</div><div className="text-[13px] font-semibold text-ink-3">{d}</div></div> })}</div>
               </div>
-              <div className="w-[330px] flex flex-col items-center pt-8">
-                {[[1, 2, '#ddd6fe', 1], [1, 4, '#fecdd3', 2], [1, 8, '#fde68a', 4]].map(([n, d, c, k]) => <div key={d} className="flex gap-2 mb-2 w-[300px]">{Array.from({ length: k }, (_, i) => <motion.div key={i} className="flex-1 h-[48px] rounded-md grid place-items-center" style={{ background: c, color: '#1b1a5e' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.1 + k * 0.1 + i * 0.05 }}><Fraction n={n} d={d} size={14} /></motion.div>)}</div>)}
-                <p className="mt-3 text-[15px] font-semibold text-ink-2 leading-snug text-center">Think of fractions as equal parts of a whole. The more you practice, the easier it gets! <span className="text-gold">✦</span></p>
-              </div>
+              <div className="w-[330px] flex flex-col justify-center rounded-2xl bg-[var(--lavender)]/60 p-6"><BookOpen size={40} className="text-primary-ink" /><h3 className="mt-3 font-display font-extrabold text-[21px] text-ink">Progress has a source</h3><p className="mt-2 text-[15px] font-semibold text-ink-2">Counts and results here update when {name} completes activities.</p></div>
             </Card>
             <div className="grid grid-cols-[1fr_420px] gap-5">
               <Card className="p-5"><div className="font-display font-extrabold text-[20px] text-ink">Recent activity</div><div className="mt-3 flex flex-col gap-3">{activity.map(([I, c, t, s, r, when]) => <div key={t} className="flex items-center gap-3"><span className="icon-orb w-[46px] h-[46px] text-white shrink-0" style={{ background: c }}><I size={22} /></span><span className="flex-1 leading-tight"><span className="block text-[16px] font-extrabold text-ink">{t}</span><span className="block text-[13px] font-semibold text-ink-3">{s}</span></span><span className="text-right leading-tight"><span className={cn('block text-[14px] font-extrabold', r === 'Completed' ? 'text-green-600' : 'text-ink-2')}>{r}</span><span className="block text-[12px] font-semibold text-ink-3">{when}</span></span></div>)}{activity.length === 0 && <div className="text-[15px] font-semibold text-ink-3 leading-snug">Nothing yet. Lessons, tests and battles appear here as {name} completes them.</div>}</div></Card>
-              <Card className="relative p-5 pl-[150px]"><div className="font-display font-extrabold text-[20px] text-ink">Nova's insight <span className="text-primary-ink">✦</span></div><p className="mt-1 text-[15px] font-bold text-ink-2 leading-snug">{name} understands fraction basics really well!</p><p className="mt-2 text-[14px] font-semibold text-ink-3 leading-snug">{name} just needs more practice with word problems to feel even more confident.</p><Button size="md" arrow className="mt-3 w-full h-[50px] uppercase text-[16px]" sound="whoosh" onClick={() => nav('/parent/plan')}>View Nova's next plan</Button></Card>
+              <Card className="p-5"><div className="font-display font-extrabold text-[20px] text-ink">What to do next <span className="text-primary-ink">✦</span></div><p className="mt-1 text-[15px] font-bold text-ink-2 leading-snug">{lastTest?.total ? `Latest test: ${lastTest.correct}/${lastTest.total} correct.` : 'No test result yet.'}</p><p className="mt-2 text-[14px] font-semibold text-ink-3 leading-snug">Choose a lesson or test; this is not an automatic diagnosis.</p><Button size="md" arrow className="mt-3 w-full h-[50px] uppercase text-[16px]" sound="whoosh" onClick={() => nav('/parent/plan')}>See suggested steps</Button></Card>
             </div>
           </div>
         </div>

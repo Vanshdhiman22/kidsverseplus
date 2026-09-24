@@ -12,6 +12,7 @@ import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Bar, Sparkles } from '../components/Widgets.jsx'
 import { BOTS, BATTLE_XP } from '../data/battle.jsx'
 import { useGame } from '../state/GameProvider.jsx'
+import { useRouteContent, withSubject } from '../content/index.js'
 
 const ICONS = { Maths: Calculator, Literacy: BookOpen, Speed: Zap }
 const COLORS = { Maths: '#3b82f6', Literacy: '#a855f7', Speed: '#22c55e' }
@@ -31,12 +32,15 @@ export default function BattlePreview() {
   const selectedBot = BOTS.find(b => b.id === sp.get('bot')) ?? BOTS[0]
   const [preview, setPreview] = useState(null)
   const [error, setError] = useState('')
+  const pkg = useRouteContent()
+  const cmsBattle = Boolean(pkg.studio && pkg.assessments?.battle_questions?.length)
   const bot = { ...selectedBot, name: preview?.opponent?.name || selectedBot.name }
   useEffect(() => {
+    if (cmsBattle) return
     let active = true
     battlePreview(BOTS.indexOf(selectedBot)).then(data => { if (active) setPreview(data) }).catch(e => { if (active) setError(e.message) })
     return () => { active = false }
-  }, [selectedBot.id])
+  }, [selectedBot.id, cmsBattle])
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
   return (
     <Page>
@@ -62,7 +66,7 @@ export default function BattlePreview() {
       <Sparkles n={5} seed={27} className="left-[480px] top-[90px] w-[700px] h-[200px]" />
 
       <Panel className="absolute left-[555px] top-[275px] w-[535px] p-6 pb-5" initial="hidden" animate="show">
-        <div className="text-center font-display font-extrabold text-[22px] text-ink uppercase tracking-wide">{bot.name} strengths</div>
+        <div className="text-center font-display font-extrabold text-[22px] text-ink uppercase tracking-wide">{bot.name}'s character traits</div>
         <Stack className="mt-4 flex flex-col gap-3" start={0.8}>
           {bot.strengths.map(([k, v]) => { const I = ICONS[k]; const c = COLORS[k]; return <Item key={k} v="soft" className="flex items-center gap-4"><span className="icon-orb w-[48px] h-[48px] text-white" style={{ background: c }}><I size={24} /></span><span className="w-[110px] font-display font-bold text-[20px] text-ink">{k}</span><Bar value={v / 5} h={12} className="flex-1" delay={0.3} /><span className="w-[50px] text-right font-display font-extrabold text-[20px] text-ink">{v}/5</span></Item> })}
         </Stack>
@@ -72,11 +76,11 @@ export default function BattlePreview() {
       <div className="absolute left-[670px] top-[568px]"><SpeechBubble tail="left" delay={0.3} className="w-[440px] text-[20px]"><span className="flex items-center gap-2 font-display font-extrabold text-[18px] text-primary-ink uppercase tracking-wide">✦ Nova's strategy</span><span className="block mt-1 font-bold">{bot.tip}</span></SpeechBubble></div>
 
       <motion.div className="absolute left-[420px] top-[728px] flex items-center gap-5" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow icon={<Swords size={30} />} className="w-[440px] h-[84px] uppercase text-[30px]" sound="whoosh" onClick={async () => { await startBattle(g.state.activeChildId, BOTS.indexOf(selectedBot)); nav(`/challenge/battle?bot=${bot.id}`) }}>Battle now</Button>
-        <Button variant="outline" size="lg" icon={<BookOpen size={28} />} className="h-[84px] px-10 uppercase text-[24px] text-sky-600 border-sky-400" onClick={() => nav('/missions/fractions')}>Practise first</Button>
+        <Button size="lg" arrow icon={<Swords size={30} />} className="w-[440px] h-[84px] uppercase text-[30px]" sound="whoosh" onClick={async () => { if (!cmsBattle) await startBattle(g.state.activeChildId, BOTS.indexOf(selectedBot)); nav(withSubject(`/challenge/battle?bot=${bot.id}`)) }}>Battle now</Button>
+        <Button variant="outline" size="lg" icon={<BookOpen size={28} />} className="h-[84px] px-10 uppercase text-[24px] text-sky-600 border-sky-400" onClick={() => nav(withSubject('/missions/fractions'))}>Practise first</Button>
       </motion.div>
       <Panel className="absolute left-[270px] top-[830px] w-[1100px] h-[92px] px-8 grid grid-cols-3 items-center divide-x divide-[var(--line)]" initial="hidden" animate="show">
-        {[[Award, '#f59e0b', 'API win reward', <span className="text-primary-ink">{preview ? `+${preview.xp_reward} XP` : error || 'Loading…'}</span>], [Shield, '#3b82f6', 'API rules', preview?.rules || 'Loading…'], [Lightbulb, '#f59e0b', 'Tip', 'Keep practising to improve your weak areas!']].map(([I, c, t, s]) => <div key={t} className="flex items-center gap-3 px-4"><span className="icon-orb w-[44px] h-[44px]" style={{ color: c, background: `${c}1f` }}><I size={22} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[17px] text-ink uppercase">{t}</span><span className="block text-[14px] font-semibold text-ink-2">{s}</span></span></div>)}
+        {[[Award, '#f59e0b', cmsBattle ? 'CMS practice' : 'API win reward', <span className="text-primary-ink">{cmsBattle ? `${pkg.assessments.battle_questions.length} authored rounds` : preview ? `+${preview.xp_reward} XP` : error || 'Loading…'}</span>], [Shield, '#3b82f6', 'Practice rules', cmsBattle ? 'A miss gives the game character a point. No live XP is awarded.' : 'A miss gives the game character a point.'], [Lightbulb, '#f59e0b', 'Tip', 'Read the whole question before you choose.']].map(([I, c, t, s]) => <div key={t} className="flex items-center gap-3 px-4"><span className="icon-orb w-[44px] h-[44px]" style={{ color: c, background: `${c}1f` }}><I size={22} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[17px] text-ink uppercase">{t}</span><span className="block text-[14px] font-semibold text-ink-2">{s}</span></span></div>)}
       </Panel>
     </Page>
   )

@@ -62,7 +62,7 @@ async function fetchRemote(id) {
 /** The package for a learning step. Bundled at once, remote when it lands. */
 export function useContent(id) {
   const g = useGame()
-  const preview = new URLSearchParams(window.location.search).has('contentPreview')
+  const preview = new URLSearchParams(window.location.search).has('contentPreview') || sessionStorage.getItem('kidsverse-content-preview-active') === '1'
   const previewPackage = () => {
     if (!preview) return null
     try {
@@ -91,7 +91,9 @@ export function useContent(id) {
     if (!FRONTEND_ONLY && g.state.activeChildId) loadMission(g.state.activeChildId, subject).then(mission => {
       if (!live) return
       if (mission.content?.discover && mission.content?.check) {
-        setPkg({ ...mission.content, apiMissionId: mission.id })
+        setPkg(current => current.studio
+          ? { ...current, apiMissionId: mission.id, apiXpReward: mission.xp_reward }
+          : { ...mission.content, apiMissionId: mission.id })
         return
       }
       // The current backend supplies mission identity, XP and lifecycle APIs while
@@ -110,7 +112,12 @@ export function useContent(id) {
 }
 
 export const routeSubject = () => new URLSearchParams(window.location.search).get('subject') || 'maths'
-export const withSubject = (path, subject = routeSubject()) => `${path}${path.includes('?') ? '&' : '?'}subject=${subject}`
+export const withSubject = (path, subject = routeSubject()) => {
+  const url = new URL(path, window.location.origin)
+  url.searchParams.set('subject', subject)
+  if (new URLSearchParams(window.location.search).has('contentPreview') || sessionStorage.getItem('kidsverse-content-preview-active') === '1') url.searchParams.set('contentPreview', '1')
+  return `${url.pathname}${url.search}`
+}
 export function useRouteContent() {
   const subject = routeSubject()
   return useContent(subject === 'maths' ? ACTIVE_CONTENT_ID : `demo-${subject}`)

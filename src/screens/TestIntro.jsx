@@ -11,7 +11,8 @@ import { startTest } from '../lib/gameApi.js'
 import { Switch, Sparkles } from '../components/Widgets.jsx'
 import { QUESTIONS as LEGACY_QUESTIONS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
-import { useRouteContent, routeSubject } from '../content/index.js'
+import { useRouteContent, routeSubject, withSubject } from '../content/index.js'
+import { cmsQuestions } from '../content/assessment.js'
 
 function Portal({ x, y, size }) {
   return (
@@ -29,19 +30,19 @@ export default function TestIntro() {
   const g = useGame(); const { name, face } = g.state.profile; const { readAloud } = g.state.settings
   const pkg = useRouteContent()
   const source = searchParams.get('source') === 'challenge' ? 'challenge' : 'test'
-  const selectedQuestions = pkg.assessments?.test_questions
+  const selectedQuestions = cmsQuestions(pkg, source) ?? pkg.assessments?.[source === 'challenge' ? 'challenge_questions' : 'test_questions']
   const questionCount = selectedQuestions?.length || LEGACY_QUESTIONS.length
   return (
     <Page>
       <Scene name="intro" />
       <Child screen="intro" delay={0.4} />
-      <TopBar logo="planet" center={<span className="pill h-[56px] pl-7 pr-2 gap-4 font-display font-extrabold text-[24px] text-ink uppercase tracking-wide">19. Test Intro <img src="/art/planet-sm.webp" alt="" className="w-[52px] floaty" /></span>} right={<><LangPill /><UserChip name={`Hi, ${name}! 👋`} sub={<span className="flex items-center gap-2">Explorer Level {g.level} <span className="w-[70px] h-[8px] rounded-full bg-[var(--lavender-2)] inline-block overflow-hidden"><span className="block h-full rounded-full" style={{ width: `${g.levelPct}%`, background: 'var(--grad-primary)' }} /></span></span>} face={face} /></>} showControls={false} />
+      <TopBar logo="planet" center={<span className="pill h-[56px] pl-7 pr-2 gap-4 font-display font-extrabold text-[24px] text-ink uppercase tracking-wide">{source === 'challenge' ? 'Challenge' : 'Test'} Preview <img src="/art/planet-sm.webp" alt="" className="w-[52px] floaty" /></span>} right={<><LangPill /><UserChip name={`Hi, ${name}! 👋`} sub={<span className="flex items-center gap-2">Explorer Level {g.level} <span className="w-[70px] h-[8px] rounded-full bg-[var(--lavender-2)] inline-block overflow-hidden"><span className="block h-full rounded-full" style={{ width: `${g.levelPct}%`, background: 'var(--grad-primary)' }} /></span></span>} face={face} /></>} showControls={false} />
 
       <Panel className="absolute left-[880px] top-[118px] w-[750px] p-10" initial="hidden" animate="show">
         <Sparkles n={4} seed={3} />
         <div className="flex items-center gap-6">
           <motion.span className="w-[92px] h-[92px] rounded-full grid place-items-center text-white shrink-0" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }} initial={{ scale: 0, rotate: -40 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: 0.17 }}><BookOpen size={44} strokeWidth={2} /></motion.span>
-          <div><h1 className="font-display font-extrabold text-[44px] leading-none text-ink uppercase">{source === 'challenge' ? 'Concept Challenge' : `${pkg.mission.title} Test`}</h1><div className="mt-2 text-[20px] font-semibold text-ink-3">{source === 'challenge' ? 'Take on the generated challenge' : `${pkg.subject} demo assessment`}</div></div>
+          <div><h1 className="font-display font-extrabold text-[44px] leading-none text-ink uppercase">{source === 'challenge' ? 'Concept Challenge' : `${pkg.mission.title} Test`}</h1><div className="mt-2 text-[20px] font-semibold text-ink-3">{source === 'challenge' ? 'Practise with the available challenge questions' : `Practise and review ${pkg.subject} questions`}</div></div>
           <img src="/art/planet-sm.webp" alt="" className="ml-auto w-[80px] floaty" />
         </div>
         <Stack className="mt-8 grid grid-cols-3 gap-5" start={0.7} delay={0.1}>
@@ -52,7 +53,7 @@ export default function TestIntro() {
           <div className="card flex-1 px-6 py-4 text-[21px] font-semibold text-ink-2 leading-snug relative"><span className="absolute -left-[12px] top-1/2 -mt-[10px] w-[20px] h-[20px] rotate-45" style={{ background: 'var(--glass-strong)', borderLeft: '1.5px solid var(--glass-border)', borderBottom: '1.5px solid var(--glass-border)' }} />I'll guide you through this.<br />Take your time.<br />Tap me to read instructions.</div>
         </motion.div>
         <Stack className="mt-7 flex flex-col gap-4" start={1.3}>
-          <Item v="pop"><Button size="lg" arrow icon={<Rocket size={30} strokeWidth={2.4} />} className="w-full h-[84px] uppercase text-[30px]" sound="whoosh" onClick={async () => { await startTest(g.state.activeChildId, routeSubject()); sessionStorage.removeItem('kv:test-progress'); nav(`/tests/mixed/question?subject=${routeSubject()}${source === 'challenge' ? '&source=challenge' : ''}`) }}>Start {source === 'challenge' ? 'Challenge' : 'Test'}</Button></Item>
+          <Item v="pop"><Button size="lg" arrow icon={<Rocket size={30} strokeWidth={2.4} />} className="w-full h-[84px] uppercase text-[30px]" sound="whoosh" onClick={async () => { if (!cmsQuestions(pkg, source)) await startTest(g.state.activeChildId, routeSubject()); sessionStorage.removeItem('kv:test-progress'); nav(withSubject(`/tests/mixed/question${source === 'challenge' ? '?source=challenge' : ''}`)) }}>Start {source === 'challenge' ? 'Challenge' : 'Test'}</Button></Item>
           <Item v="pop"><Button variant="outline" size="md" className="w-full h-[60px] uppercase text-[20px] tracking-wide" onClick={() => nav('/tests')}>Not now</Button></Item>
           <Item v="pop" className="flex justify-center"><span className="pill h-[54px] px-6 gap-4 text-[18px] font-bold text-ink-2"><Volume2 size={22} className="text-primary-ink" /> Read instructions aloud <Switch on={readAloud} onChange={v => g.setSettings({ readAloud: v })} /></span></Item>
         </Stack>

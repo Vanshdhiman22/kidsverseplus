@@ -16,6 +16,7 @@ import { bleedL, bleedR, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { api } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
+import { withSubject } from '../content/index.js'
 
 const ICONS = { robo: Puzzle, lexi: BookOpen, cosmo: FlaskConical, pixel: Grid3x3 }
 
@@ -56,7 +57,7 @@ export default function BattleOpponents() {
 
       <Stack className="absolute left-[480px] top-[85px] w-[720px] text-center" start={0.2}>
         <Item><h1 className="font-display font-extrabold text-[66px] leading-none text-ink">Choose an <span className="grad-text">Opponent</span> <img src="/art/planet-sm.webp" alt="" className="inline w-[52px] floaty align-middle" /></h1></Item>
-        <Item className="mt-2 text-[22px] font-semibold text-ink-2">Pick your AI opponent and start the battle!</Item>
+        <Item className="mt-2 text-[22px] font-semibold text-ink-2">Pick a game character for your practice battle. It earns a point when you miss.</Item>
         <Item v="pop" className="mt-3"><span className="pill h-[48px] px-6 text-[17px] font-bold text-ink"><Lock size={18} className="text-primary-ink" /> 100% Kids Safe • Privacy Protected</span></Item>
       </Stack>
 
@@ -70,7 +71,7 @@ export default function BattleOpponents() {
                 <motion.img src={b.img} alt="" className="h-[235px] w-full object-cover rounded-[16px]" animate={on ? { y: [0, -6, 0] } : { y: 0 }} transition={{ duration: 3, repeat: Infinity }} />
                 <div className="mt-3 flex items-center justify-between"><span className="font-display font-extrabold text-[26px] text-ink uppercase leading-none">{b.name}</span><span className="chip h-[28px] px-3 text-[13px]">Level {b.level}</span></div>
                 <div className="text-[16px] font-bold text-ink-2">{b.subject}</div>
-                <div className="mt-1 flex items-center gap-1 text-[14px] font-bold text-ink-3">Strengths: {[0, 1, 2].map(i => <Star key={i} size={16} className="text-gold" fill="currentColor" />)}</div>
+                <div className="mt-1 flex items-center gap-1 text-[14px] font-bold text-ink-3">Character traits: {[0, 1, 2].map(i => <Star key={i} size={16} className="text-gold" fill="currentColor" />)}</div>
                 <div className="mt-auto card px-3 py-2 flex items-center gap-2 text-[12px] font-semibold text-ink-2 leading-tight"><span className="icon-orb w-[30px] h-[30px] shrink-0" style={{ color: b.c, background: `${b.c}22` }}><I size={16} /></span><span><span className="block font-extrabold text-ink text-[13px]">Specialty</span>{b.spec}</span></div>
               </Card>
             </Tilt></Item>
@@ -88,8 +89,8 @@ export default function BattleOpponents() {
           </motion.div>
         </AnimatePresence>
         <div className="flex flex-col gap-2 w-[285px]">
-          <Button size="md" arrow className="h-[56px] uppercase text-[20px]" sound="whoosh" onClick={() => nav(`/challenge/preview?bot=${bot.id}`)}>View {bot.name}</Button>
-          <Button variant="ghost" size="md" icon={<ArrowLeft size={18} />} className="h-[44px] text-[16px]" onClick={() => nav('/challenge')}>Back to Challenge</Button>
+          <Button size="md" arrow className="h-[56px] uppercase text-[20px]" sound="whoosh" onClick={() => nav(withSubject(`/challenge/preview?bot=${bot.id}`))}>View {bot.name}</Button>
+          <Button variant="ghost" size="md" icon={<ArrowLeft size={18} />} className="h-[44px] text-[16px]" onClick={() => nav(withSubject('/challenge'))}>Back to Challenge</Button>
         </div>
       </Panel>
     </Page>

@@ -45,7 +45,7 @@ export default function LearnHub() {
       <Scene name="learn" />
       <Child screen="learn" delay={0.3} amp={5} />
       <TopBar logo="planet" back="/home" backLabel="Home" />
-      <div className="absolute left-[345px] top-[420px] z-20"><SpeechBubble tail="left" text="Fractions will unlock the next Maths world. ✨" delay={0.3} className="w-[175px] text-[16px] px-4 py-3" /></div>
+      <div className="absolute left-[345px] top-[420px] z-20"><SpeechBubble tail="left" text="Choose a world and start learning. ✨" delay={0.3} className="w-[175px] text-[16px] px-4 py-3" /></div>
 
       <Stack className="absolute left-[545px] top-[80px]" start={0.2}>
         <Item className="eyebrow text-[19px] flex items-center gap-2"><Home size={22} strokeWidth={2.4} /> Learn Hub</Item>

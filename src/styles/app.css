@@ -45,7 +45,12 @@
 @layer components {
 
 /* ---------- Stage ---------- */
-.stage-root { position: fixed; inset: 0; overflow: hidden; display: grid; place-items: center; }
+.stage-root {
+  position: fixed; inset: 0; overflow: hidden; display: grid; place-items: center;
+  /* A fitted 16:9 game leaves space on taller windows. Keep that space an
+     intentional game frame instead of exposing the page's pale background. */
+  background: #17295a;
+}
 /* Sizing is set by Stage.jsx: `zoom` where the engine has it (text and vectors
    re-render at the screen's real resolution), transform scale as a fallback. */
 .stage {

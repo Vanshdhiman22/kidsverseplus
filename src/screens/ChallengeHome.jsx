@@ -11,23 +11,22 @@ import { Tilt, Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { api } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
+import { ACTIVE_CONTENT_ID, useContent, withSubject } from '../content/index.js'
 
 const CARDS = [
-  { I: CalendarDays, c: '#7c3aed', t: 'Daily Challenge', s: 'New challenge every day!', tag: '+30 XP', btn: 'Start', to: '/tests/mixed/intro?source=challenge', primary: true },
-  { I: Swords, c: '#3b82f6', t: 'Battle Arena', s: 'Compete with AI opponents.', btn: 'Enter Battle', to: '/challenge/opponents', primary: true },
-  { I: Trophy, c: '#f59e0b', grad: 'linear-gradient(100deg,#f59e0b,#f97316)', t: 'Leaderboard', s: 'See how you rank.', btn: 'View Leaderboard', to: '/challenge/leaderboard' },
-  { I: Medal, c: '#f97316', grad: 'linear-gradient(100deg,#fb923c,#ea580c)', t: 'Personal Best', s: 'Track your top scores.', btn: 'View Stats', to: '/profile' },
+  { I: CalendarDays, c: '#7c3aed', t: 'Challenge practice', s: 'Answer the available challenge questions.', btn: 'Start', to: '/tests/mixed/intro?source=challenge', primary: true },
+  { I: Swords, c: '#3b82f6', t: 'Battle Arena', s: 'Practise against a game opponent.', btn: 'Enter Battle', to: '/challenge/opponents', primary: true },
+  { I: Medal, c: '#f97316', grad: 'linear-gradient(100deg,#fb923c,#ea580c)', t: 'My Progress', s: 'See your recorded activity.', btn: 'View Profile', to: '/profile' },
 ]
 
 export default function ChallengeHome() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
-  const { data: challengeResponse } = useLiveResource(() => api.challenges(), [], { enabled: true })
-  const liveChallenge = challengeResponse?.challenges?.[0]
-  const cards = CARDS.map(card => card.t === 'Battle Arena' && liveChallenge ? {
+  const subject = new URLSearchParams(window.location.search).get('subject') || g.state.progress.world || 'maths'
+  const pkg = useContent(subject === 'maths' ? ACTIVE_CONTENT_ID : `demo-${subject}`)
+  const cards = CARDS.map(card => card.t === 'Challenge practice' && pkg.studio?.challenge?.questions?.length ? {
     ...card,
-    t: liveChallenge.name,
-    s: liveChallenge.description || `Battle for ${liveChallenge.topic || 'your next win'}.`,
+    s: `${pkg.studio.challenge.questions.length} question${pkg.studio.challenge.questions.length === 1 ? '' : 's'} about ${pkg.mission.title}.`,
   } : card)
   return (
     <Page>
@@ -42,23 +41,17 @@ export default function ChallengeHome() {
       </Stack>
       <Sparkles n={6} seed={25} className="left-[40px] top-[120px] w-[700px] h-[280px]" />
 
-      <Stack className="absolute left-[45px] top-[405px] flex gap-[22px]" start={0.7} delay={0.1}>
+      <Stack className="absolute left-[180px] top-[405px] flex gap-[30px]" start={0.7} delay={0.1}>
         {cards.map(c => (
           <Item key={c.t} v="pop"><Tilt max={5}>
-            <Card hover className="w-[378px] h-[235px] p-5 flex flex-col" onClick={() => nav(c.to)}>
+            <Card hover className="w-[450px] h-[235px] p-5 flex flex-col" onClick={() => nav(withSubject(c.to, subject))}>
               <div className="flex items-start gap-4"><span className="icon-orb w-[86px] h-[86px]" style={{ color: c.c, background: `${c.c}1f` }}><c.I size={44} /></span><span className="flex-1 leading-tight"><span className="block font-display font-extrabold text-[24px] text-ink">{c.t}</span><span className="block mt-1 text-[16px] font-semibold text-ink-2">{c.s}</span>{c.tag && <span className="block mt-2 text-[16px] font-extrabold text-orange-500 text-right">{c.tag}</span>}</span></div>
-              <div className="mt-auto">{c.primary ? <Button size="md" arrow={c.t !== 'Daily Challenge'} className="w-full h-[54px] text-[19px] uppercase" sound="whoosh" onClick={e => { e.stopPropagation(); nav(c.to) }}>{c.btn}{c.t === 'Daily Challenge' && <ChevronRight size={22} className="ml-auto" />}</Button> : <Button size="md" className="w-full h-[54px] text-[18px] uppercase text-white" style={{ background: c.grad, boxShadow: `0 14px 30px -14px ${c.c}` }} onClick={e => { e.stopPropagation(); nav(c.to) }}>{c.btn}<ChevronRight size={22} className="ml-auto" /></Button>}</div>
+              <div className="mt-auto">{c.primary ? <Button size="md" arrow className="w-full h-[54px] text-[19px] uppercase" sound="whoosh" onClick={e => { e.stopPropagation(); nav(withSubject(c.to, subject)) }}>{c.btn}</Button> : <Button size="md" className="w-full h-[54px] text-[18px] uppercase text-white" style={{ background: c.grad, boxShadow: `0 14px 30px -14px ${c.c}` }} onClick={e => { e.stopPropagation(); nav(withSubject(c.to, subject)) }}>{c.btn}<ChevronRight size={22} className="ml-auto" /></Button>}</div>
             </Card>
           </Tilt></Item>
         ))}
       </Stack>
 
-      <Panel className="absolute left-[45px] top-[665px] w-[1580px] h-[140px] px-6 flex items-center gap-6 overflow-hidden" initial="hidden" animate="show">
-        <motion.img src="/art/crops/mystery.webp" alt="" className="h-[120px] rounded-[18px]" animate={{ y: [0, -6, 0], rotate: [0, 2, 0] }} transition={{ duration: 4, repeat: Infinity }} />
-        <div className="flex-1"><div className="font-display font-extrabold text-[44px] leading-none grad-text uppercase">Today's Mystery <span className="text-gold">✦</span></div><div className="mt-1 text-[22px] font-semibold text-ink-2">Can you solve it?</div></div>
-        <motion.img src="/art/crops/dragon.webp" alt="" className="h-[120px] rounded-[18px]" animate={{ y: [0, -8, 0] }} transition={{ duration: 3.2, repeat: Infinity }} />
-        <Button size="md" className="h-[60px] px-9 text-[20px] uppercase" sound="whoosh" onClick={() => nav('/tests/mixed/intro')}>Solve now <HelpCircle size={22} /></Button>
-      </Panel>
     </Page>
   )
 }

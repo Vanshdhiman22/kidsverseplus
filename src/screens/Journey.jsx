@@ -7,7 +7,7 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
-import { deriveStations, STATION_SPOTS, WORLD_DONE, WORLDS } from '../data/catalog.js'
+import { deriveStations, STATION_SPOTS, WORLDS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
@@ -181,7 +181,7 @@ export default function Journey() {
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
   const subject = g.state.progress.world ?? 'maths'
   const setSubject = id => g.setProgress({ world: id })
-  const done = g.state.progress.worldDone?.[subject] ?? WORLD_DONE[subject] ?? 0
+  const done = g.state.progress.worldDone?.[subject] ?? 0
   const localStations = deriveStations(subject, done)
   const studentId = g.state.activeChildId
   const { data: journey } = useLiveResource(
@@ -212,7 +212,7 @@ export default function Journey() {
       <Scene name="journey" />
       <Car key={`car-${subject}`} face={face} stations={stations} road={road} seen={g.state.progress.journeySeen?.[subject]} onArrive={i => g.markJourneySeen(subject, i)} />
       {stations.map((n, i) => <Node key={subject + n.id} n={n} i={i} />)}
-      <motion.div key={subject} className="absolute z-10 left-[1268px] top-[535px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="sm" arrow className="h-[52px] px-6 text-[18px] uppercase" sound="whoosh" onClick={() => nav(`/learn/topics/${subject}`)}>Continue {stations.find(s => s.state === 'here')?.sub ?? 'Fractions'}</Button></motion.div>
+      <motion.div key={subject} className="absolute z-10 left-[1268px] top-[535px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="sm" arrow className="h-[52px] px-6 text-[18px] uppercase" sound="whoosh" onClick={() => nav(`/learn/topics/${subject}`)}>Continue {stations.find(s => s.state === 'here')?.sub ?? 'learning'}</Button></motion.div>
 
       <TopBar right={<><div className="pill h-[60px] px-5 gap-4 text-[20px] font-extrabold text-ink"><span className="flex items-center gap-2 text-orange-500"><Flame size={22} fill="currentColor" /> <span className="text-ink">{xp.toLocaleString()}</span></span><span className="w-px h-6 bg-[var(--line)]" /><span className="flex items-center gap-2 text-gold"><Star size={22} fill="currentColor" /> <span className="text-ink">{g.state.stats.badges}</span></span></div><UserChip name={name} face={face} /></>} showControls={false} />
       <Stack className="absolute top-[125px] w-[330px]" style={bleedL(55)} start={0.25}>
