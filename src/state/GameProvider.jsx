@@ -4,8 +4,9 @@ import { setVoiceEnabled } from '../lib/voice.js'
 
 import { emptyProfile, emptyStats, emptyProgress, beginChild, finishChild, selectChild, migrateFamily, loginRoute, openAccount, hydrateRemoteFamily, beginRemoteChild } from './family.js'
 import { api as remote, apiRequest, API_MODE, setToken, warmCatalogs } from '../lib/api.js'
+import { isReviewMode } from '../lib/reviewMode.js'
 
-const KEY = `kidsverse-plus-v3-${API_MODE}`
+const KEY = `kidsverse-plus-v3-${API_MODE}${isReviewMode() ? '-review' : ''}`
 /* A finished mission pays about 45 XP; 400 per level keeps a level within a few sittings. */
 export const XP_PER_LEVEL = 1000
 export const levelOf = xp => 1 + Math.floor(xp / XP_PER_LEVEL)

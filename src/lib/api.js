@@ -1,3 +1,5 @@
+import { isReviewMode } from './reviewMode.js'
+
 /**
  * One place for all browser-to-API traffic.  The origin is public configuration,
  * while database details and JWT signing secrets stay exclusively on the server.
@@ -52,6 +54,8 @@ function parseBody(response) {
  * Pass the JWT from authenticated app state; it is never baked into source code.
  */
 export async function apiRequest(path, { method = 'GET', token = getToken(), body, signal } = {}) {
+  // Shared live review links show the UI without ever contacting the production API.
+  if (isReviewMode()) throw new ApiError('Review mode is UI-only. No live API request was sent.')
   if (!API_BASE_URL && !isDummyApiActive()) throw new ApiError('API is not configured. Set VITE_API_BASE_URL in .env.local.')
 
   if (API_MODE === 'mock' && API_BASE_URL !== '/api/v1' && !isDummyApiActive()) throw new ApiError('Mock mode requires the local /api/v1 base URL. No request sent.')

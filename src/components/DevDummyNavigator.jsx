@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useGame } from '../state/GameProvider.jsx'
 import { activateDummyApi, isDummyApiActive, requestLog } from '../lib/api.js'
 import { startBattle, startMission, startTest } from '../lib/gameApi.js'
+import { exitReviewMode, isReviewMode } from '../lib/reviewMode.js'
 
 const RESULT_FIXTURES = {
   '/missions/fractions/complete': ['kv:last-mission-score', () => ({ attemptId: `dummy-mission-${crypto.randomUUID()}`, score: 2, total: 3, xpAwarded: 0, local: true, review: [
@@ -32,7 +33,7 @@ function nextScreen(pathname, screens) {
   return null
 }
 
-/** Developer-only route escape hatch for live API testing. Never bundled into production UI. */
+/** Local dummy API in development; UI-only walkthrough behind ?review=1 on live. */
 export default function DevDummyNavigator({ screens }) {
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
@@ -41,6 +42,7 @@ export default function DevDummyNavigator({ screens }) {
   const [error, setError] = useState('')
   const [apiError, setApiError] = useState('')
   const [dummy, setDummy] = useState(isDummyApiActive)
+  const review = isReviewMode()
   const next = nextScreen(pathname, screens)
 
   useEffect(() => {
@@ -61,13 +63,21 @@ export default function DevDummyNavigator({ screens }) {
     }
   }, [])
 
-  if (!import.meta.env.DEV || !next) return null
+  if ((!import.meta.env.DEV && !review) || !next) return null
 
   const continueWithDummy = async () => {
     if (busy) return
     setBusy(true)
     setError('')
     try {
+      if (review) {
+        if (!game.state.profile.name) game.dispatch({ type: 'profile', patch: { name: 'Reviewer', grade: '1', board: 'CBSE' } })
+        const fixture = RESULT_FIXTURES[next]
+        if (fixture) sessionStorage.setItem(fixture[0], JSON.stringify(fixture[1]()))
+        if (next === '/challenge/result') navigate(`${next}?me=2&bot_s=1&t=45`)
+        else navigate(`${next}${search && !['/parent', '/home', '/switch'].includes(next) ? search : ''}`)
+        return
+      }
       const { students } = await activateDummyApi(game.state.profile, game.state.activeChildId)
       const studentId = students[0].id
       if (!game.state.activeChildId) game.dispatch({ type: 'remoteFamily', email: 'dummy@kidsverse.local', students })
@@ -87,8 +97,9 @@ export default function DevDummyNavigator({ screens }) {
   }
 
   return <div data-testid="developer-dummy-control" style={{ position: 'fixed', left: '50%', bottom: 12, transform: 'translateX(-50%)', zIndex: 100001, maxWidth: 'min(94vw, 520px)', display: 'flex', alignItems: 'center', gap: 8, padding: 7, borderRadius: 14, color: '#fff', background: '#171d43', boxShadow: '0 8px 28px #11173980', font: '13px/1.3 system-ui' }}>
-    <span style={{ padding: '0 6px', whiteSpace: 'nowrap' }}>{dummy ? 'Dummy API active · local only' : apiError || 'Developer testing'}</span>
+    <span style={{ padding: '0 6px', whiteSpace: 'nowrap' }}>{review ? 'UI review · no live API' : dummy ? 'Dummy API active · local only' : apiError || 'Developer testing'}</span>
     <button type="button" disabled={busy} onClick={continueWithDummy} style={{ border: 0, borderRadius: 9, padding: '9px 12px', background: '#baf7df', color: '#123830', fontWeight: 800, cursor: busy ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>{busy ? 'Preparing…' : 'Dummy → Next'}</button>
+    {review && <button type="button" onClick={exitReviewMode} style={{ border: 0, borderRadius: 9, padding: '9px 12px', background: '#fff', color: '#171d43', fontWeight: 700, cursor: 'pointer' }}>Exit</button>}
     {error && <span role="alert" style={{ color: '#ffd2d2', maxWidth: 210 }}>{error}</span>}
   </div>
 }
