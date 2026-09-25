@@ -7,12 +7,30 @@ const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL
 export const API_BASE_URL = configuredBaseUrl?.replace(/\/$/, '') || ''
 export const API_MODE = import.meta.env.VITE_API_MODE || 'live'
 const SESSION_KEY = `kidsverse-session:${API_MODE}:${API_BASE_URL}`
-export const getToken = () => sessionStorage.getItem(SESSION_KEY) || ''
+const DUMMY_BASE_URL = '/__dummy/api/v1'
+let dummyToken = ''
+export const isDummyApiActive = () => import.meta.env.DEV && Boolean(dummyToken)
+export const getToken = () => isDummyApiActive() ? dummyToken : sessionStorage.getItem(SESSION_KEY) || ''
 export const setToken = token => token ? sessionStorage.setItem(SESSION_KEY, token) : sessionStorage.removeItem(SESSION_KEY)
 export const requestLog = []
 const catalogCache = new Map()
+// Local developer escape hatch: seed the Vite mock with the currently selected
+// child. It never writes to the live API or awards production XP.
+export async function activateDummyApi(profile = {}, studentId) {
+  if (!import.meta.env.DEV) throw new Error('Dummy API is available only in the local developer build.')
+  const response = await fetch(`${DUMMY_BASE_URL}/__bootstrap`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ student_id: studentId || undefined, name: profile.name || 'Demo Explorer', grade: profile.grade || '1', board: profile.board || 'CBSE', face: profile.face || 1 }),
+  })
+  const data = await response.json()
+  if (!response.ok || !data?.token) throw new ApiError(data?.detail || 'Could not start dummy API.', { status: response.status, data })
+  dummyToken = data.token
+  catalogCache.clear()
+  window.dispatchEvent(new Event('kidsverse-dummy-api'))
+  return data
+}
 const redact = value => Array.isArray(value) ? value.map(redact) : value && typeof value === 'object'
-  ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, /password|token|authorization/i.test(k) ? '[redacted]' : redact(v)])) : value
+  ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, /password|token|authorization|^code$|dev_code|otp/i.test(k) ? '[redacted]' : redact(v)])) : value
 
 export class ApiError extends Error {
   constructor(message, { status, data } = {}) {
@@ -34,10 +52,13 @@ function parseBody(response) {
  * Pass the JWT from authenticated app state; it is never baked into source code.
  */
 export async function apiRequest(path, { method = 'GET', token = getToken(), body, signal } = {}) {
-  if (!API_BASE_URL) throw new ApiError('API is not configured. Set VITE_API_BASE_URL in .env.local.')
+  if (!API_BASE_URL && !isDummyApiActive()) throw new ApiError('API is not configured. Set VITE_API_BASE_URL in .env.local.')
 
-  if (API_MODE === 'mock' && API_BASE_URL !== '/api/v1') throw new ApiError('Mock mode requires the local /api/v1 base URL. No request sent.')
-  const entry = { at: new Date().toISOString(), method, path, request: redact(body), status: 'pending' }
+  if (API_MODE === 'mock' && API_BASE_URL !== '/api/v1' && !isDummyApiActive()) throw new ApiError('Mock mode requires the local /api/v1 base URL. No request sent.')
+  const dummy = isDummyApiActive()
+  const baseUrl = dummy ? DUMMY_BASE_URL : API_BASE_URL
+  if (dummy) token = dummyToken
+  const entry = { at: new Date().toISOString(), source: dummy ? 'local-dummy' : API_MODE, method, path, request: redact(body), status: 'pending' }
   requestLog.unshift(entry); requestLog.splice(100)
   const started = performance.now()
   const controller = new AbortController()
@@ -46,14 +67,14 @@ export async function apiRequest(path, { method = 'GET', token = getToken(), bod
   signal?.addEventListener('abort', abort, { once: true })
   if (signal?.aborted) controller.abort()
   try {
-  const response = await fetch(`${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`, {
+  const response = await fetch(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
     method,
     signal: controller.signal,
     headers: {
       Accept: 'application/json',
       ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(API_MODE === 'mock' ? { 'X-Mock-Scenario': sessionStorage.getItem('kidsverse-mock-scenario') || 'success' } : {}),
+      ...(API_MODE === 'mock' && !dummy ? { 'X-Mock-Scenario': sessionStorage.getItem('kidsverse-mock-scenario') || 'success' } : {}),
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   })
@@ -106,6 +127,8 @@ export const api = {
   signUp: body => apiRequest('/auth/parent/signup', { method: 'POST', body }),
   login: body => apiRequest('/auth/parent/login', { method: 'POST', body }),
   parentMe: token => apiRequest('/parent/me', { token }),
+  startParentVerification: body => apiRequest('/parent/verification/start', { method: 'POST', body }),
+  verifyParentPhone: body => apiRequest('/parent/verification/verify', { method: 'POST', body }),
   parentOverview: () => apiRequest('/parent/overview'),
   studentHome: (studentId, token) => apiRequest(`/students/${studentId}/home`, { token }),
   studentSubjects: studentId => apiRequest(`/students/${studentId}/subjects`),

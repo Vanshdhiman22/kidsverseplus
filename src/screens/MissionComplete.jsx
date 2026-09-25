@@ -51,7 +51,11 @@ export default function MissionComplete() {
     if (!validResult) { nav(withSubject('/missions/fractions/spot-mistake'), { replace: true }); return }
     const t = setTimeout(() => sfx.unlock(), 300)
     const rewardKey = `kv:rewarded:${result.attemptId}`
-    const t2 = setTimeout(() => { if (!localStorage.getItem(rewardKey)) { const world = routeSubject(); localStorage.setItem(rewardKey, '1'); g.advanceStation({ world, base: 0, per: STATION_PER, total: STATION_TOTAL }) }; g.refreshStats().catch(e => g.notice(e.message)) }, 1400)
+    const t2 = setTimeout(() => {
+      if (result.local) return // Dummy walkthroughs never update progress or remote stats.
+      if (!localStorage.getItem(rewardKey)) { const world = routeSubject(); localStorage.setItem(rewardKey, '1'); g.advanceStation({ world, base: 0, per: STATION_PER, total: STATION_TOTAL }) }
+      g.refreshStats().catch(e => g.notice(e.message))
+    }, 1400)
     return () => { clearTimeout(t); clearTimeout(t2) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const mood = scorePercent < 70 ? { title: 'LET’S TRY AGAIN', message: 'A little practice will make this easier.' } : scorePercent < 95 ? { title: 'GOOD PROGRESS', message: 'You are close. Review the tricky parts and try again.' } : { title: 'MISSION COMPLETE!', message: K.encouragement }

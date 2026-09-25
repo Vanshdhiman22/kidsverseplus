@@ -23,6 +23,11 @@ await request('POST', '/auth/parent/login', { email, password: 'wrong-password' 
 let student = (await request('GET', '/parent/students')).students.find(s => s.name === 'Game Tester')
 student ||= await request('POST', '/students', { name: 'Game Tester' }, 201)
 const root = `/students/${student.id}`
+const parent = await request('GET', '/parent/me')
+if (!parent.phone_verified_at) {
+  const verification = await request('POST', '/parent/verification/start', { student_id: student.id, full_name: 'Game Tester Parent', relationship: 'parent', phone: '+919876543210' }, 201)
+  assert.equal((await request('POST', '/parent/verification/verify', { challenge_id: verification.challenge_id, code: verification.dev_code })).phone_verified, true)
+}
 await request('PATCH', `${root}/grade-board`, { grade: '4', board: 'CBSE' })
 const characters = (await request('GET', '/avatar/characters')).characters
 const items = (await request('GET', '/avatar/items')).items

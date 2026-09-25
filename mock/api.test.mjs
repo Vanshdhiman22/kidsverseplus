@@ -14,6 +14,16 @@ test('complete parent and child onboarding persists responses and validates owne
   const child = await call('POST', '/students', { name: 'Local Explorer' })
   assert.equal(child.status, 201)
   assert.match(child.data.id, /^[0-9a-f-]{36}$/)
+  assert.equal((await call('PATCH', `/students/${child.data.id}/grade-board`, { grade: '4', board: 'CBSE' })).status, 403)
+  const details = { student_id: child.data.id, full_name: 'Test Parent', relationship: 'parent', phone: '+919876543210' }
+  assert.equal((await call('POST', '/parent/verification/start', { ...details, phone: '1234' })).status, 400)
+  const verification = await call('POST', '/parent/verification/start', details)
+  assert.equal(verification.status, 201)
+  assert.match(verification.data.dev_code, /^\d{6}$/)
+  assert.equal((await call('POST', '/parent/verification/verify', { challenge_id: verification.data.challenge_id, code: 'bad' })).status, 400)
+  assert.equal((await call('POST', '/parent/verification/verify', { challenge_id: verification.data.challenge_id, code: verification.data.dev_code })).data.phone_verified, true)
+  assert.equal((await call('POST', '/parent/verification/verify', { challenge_id: verification.data.challenge_id, code: verification.data.dev_code })).status, 400)
+  assert.equal((await call('GET', '/parent/me')).data.phone, details.phone)
   const root = `/students/${child.data.id}`
   assert.equal((await call('POST', `${root}/nova/greet`)).status, 400)
   assert.equal((await call('PATCH', `${root}/grade-board`, { grade: '4', board: 'CBSE' })).status, 200)

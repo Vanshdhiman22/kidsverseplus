@@ -4,8 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 import { mockApiPlugin } from './mock/api.mjs'
 
-export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), ...(loadEnv(mode, process.cwd()).VITE_API_MODE === 'mock' ? [mockApiPlugin()] : [])],
+export default defineConfig(({ mode, command }) => ({
+  plugins: [react(), tailwindcss(), ...(command === 'serve' ? [mockApiPlugin('/__dummy/api/v1')] : []), ...(loadEnv(mode, process.cwd()).VITE_API_MODE === 'mock' ? [mockApiPlugin()] : [])],
   resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
   base: '/',
   server: { port: Number(process.env.PORT) || 5180 },

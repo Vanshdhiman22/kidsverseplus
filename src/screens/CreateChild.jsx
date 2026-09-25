@@ -11,7 +11,7 @@ import { Steps } from '../components/Stepper.jsx'
 import { Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 
-export const ONBOARDING_STEPS = ['Create Child', 'Learning Setup', 'Goals', 'Meet Nova']
+export const ONBOARDING_STEPS = ['Child', 'Parent Check', 'Learning Setup', 'Goals', 'Meet Nova']
 
 export default function CreateChild() {
   const nav = useNavigate()
@@ -24,7 +24,7 @@ export default function CreateChild() {
     <Page>
       <Scene name="child" />
       <Child screen="child" delay={0.14} />
-      <TopBar center={<Steps steps={ONBOARDING_STEPS} current={0} className="w-[820px]" />} right={<span className="pill h-[52px] px-5 text-[18px] font-bold text-ink"><User size={20} className="text-primary-ink" /> Parent Account</span>} showControls={false} />
+      <TopBar center={<Steps steps={ONBOARDING_STEPS} current={0} className="w-[900px]" />} right={<span className="pill h-[52px] px-5 text-[18px] font-bold text-ink"><User size={20} className="text-primary-ink" /> Parent Account</span>} showControls={false} />
       <Stack className="absolute left-[170px] top-[160px] w-[560px]" start={0.25}>
         <Item><h1 className="font-display font-extrabold text-[56px] leading-[1.05] text-ink">Let's build your<br />explorer profile. <span className="text-gold">✦</span></h1></Item>
         <Item className="mt-5 text-[22px] font-semibold text-ink-3 leading-snug w-[460px]">This helps us tailor a safe, joyful and personalised learning experience.</Item>
@@ -40,7 +40,7 @@ export default function CreateChild() {
 
       <Panel className="absolute left-[820px] top-[150px] w-[740px] px-14 py-12" initial="hidden" animate="show">
         <Stack start={0.5}>
-          <Item v="pop"><span className="chip h-[44px] px-5 text-[15px] tracking-[0.14em] uppercase">Step 1 of 4</span></Item>
+          <Item v="pop"><span className="chip h-[44px] px-5 text-[15px] tracking-[0.14em] uppercase">Step 1 of 5</span></Item>
           <Item><h2 className="mt-5 font-display font-extrabold text-[46px] leading-[1.08] text-ink">Who is beginning<br />their adventure? <span className="text-gold">✦</span></h2></Item>
           <Item className="mt-4 text-[21px] font-semibold text-ink-3 leading-snug">Tell us your explorer's name so we can personalise their learning journey.</Item>
           <Item className="mt-8">
@@ -54,7 +54,7 @@ export default function CreateChild() {
             </div>
             <p className="mt-3 flex items-center gap-2 text-[16px] font-semibold text-ink-3"><ShieldCheck size={18} className="text-primary-ink" /> Only a first name or nickname is needed.</p>
           </Item>
-          <Item v="pop" className="mt-9"><Button size="lg" arrow className="w-full uppercase" disabled={!ok} sound="whoosh" onClick={async () => { await g.addChild(name); nav('/onboarding/grade-board') }}>Continue</Button></Item>
+          <Item v="pop" className="mt-9"><Button size="lg" arrow className="w-full uppercase" disabled={!ok} sound="whoosh" onClick={async () => { await g.addChild(name); nav('/onboarding/parent-details') }}>Continue</Button></Item>
           <Item className="mt-5 text-center"><button className="text-[22px] font-extrabold text-primary-ink hover:underline" onClick={() => nav(-1)}>Back</button></Item>
         </Stack>
       </Panel>

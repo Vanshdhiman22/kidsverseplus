@@ -145,10 +145,11 @@ export function GameProvider({ children }) {
       const response = await remote.login({ email: email.trim().toLowerCase(), password })
       setToken(response.token)
       void warmCatalogs()
-      const [{ students }, { characters }] = await Promise.all([apiRequest('/parent/students'), remote.avatarCharacters()])
+      const [{ students }, { characters }, parentResponse] = await Promise.all([apiRequest('/parent/students'), remote.avatarCharacters(), remote.parentMe().catch(() => null)])
+      const parent = parentResponse?.parent ?? parentResponse
       dispatch({ type: 'remoteFamily', email, students, characters })
       if (!students.length) return '/onboarding/child'
-      if (students.length === 1 && !students[0].onboarding_completed) return '/onboarding/grade-board'
+      if (students.length === 1 && !students[0].onboarding_completed) return parent?.phone_verified_at ? '/onboarding/grade-board' : '/onboarding/parent-details'
       return loginRoute({ children: students }, state.authIntent === 'parent')
     },
     addChild: async name => {

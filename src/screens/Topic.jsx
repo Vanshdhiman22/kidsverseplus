@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useBack } from '../lib/nav.js'
 import { motion } from 'motion/react'
-import { ArrowLeft, BookOpen, Box, Trophy, Check, Lock, Loader, Pencil, ClipboardCheck, Rocket, Star } from 'lucide-react'
+import { ArrowLeft, BookOpen, Check, Lock, Pencil, ClipboardCheck, Rocket } from 'lucide-react'
 import Scene, { Cutout, Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip, StatPill } from '../components/TopBar.jsx'
@@ -35,16 +35,15 @@ export default function Topic() {
     ...localTopic,
     title: liveDetail.name,
     subject: liveDetail.subject,
-    desc: liveDetail.description || localTopic.desc,
-    tracks: (liveDetail.tiers ?? []).length ? liveDetail.tiers.slice(0, 3).map(tier => {
-      const key = tier.status === 'completed' ? 'done' : tier.status === 'locked' ? 'locked' : 'progress'
-      const status = key === 'done' ? 'Completed' : key === 'locked' ? 'Locked' : 'In progress'
-      return [tier.label, tier.missions, status, key]
-    }) : localTopic.tracks,
+    desc: liveDetail.description && liveDetail.description !== 'Local mock content' ? liveDetail.description : localTopic.desc,
   } : localTopic
-  /* The headline column is 500px and the tracks below start at a fixed y, so a long
-     title must shrink rather than wrap -- two lines pushed the description down behind
-     the syllabus cards. Sized off the title that shipped ("Fractions", 9 characters). */
+  // Only the mission API can claim completion. With no student/progress data, a mission is ready to start.
+  const missions = liveDetail?.nodes?.length ? liveDetail.nodes : [{ mission_id: world, name: T.title, status: 'unlocked' }]
+  const missionStatus = status => status === 'completed' ? ['Completed', 'done']
+    : status === 'in_progress' ? ['In progress', 'progress']
+      : status === 'locked' ? ['Locked', 'locked'] : ['Ready to start', 'ready']
+  /* The headline column is 500px and the mission list starts at a fixed y, so a long
+     title must shrink rather than wrap into the content below. */
   const titlePx = T.title.length <= 10 ? 86 : T.title.length <= 15 ? 62 : 50
   /* The designer's backdrop carried a fraction pizza here, which was right when Fractions
      was the only page this route served. Every subject opens it now, so the pizza was
@@ -60,14 +59,17 @@ export default function Topic() {
         <Item className="text-[26px] font-extrabold text-primary-ink">{gradeLabel(grade)} <span className="text-ink-3">•</span> {T.subject}</Item>
         <Item className="mt-2 text-[18px] font-semibold text-ink-2 leading-snug">{T.desc}</Item>
       </Stack>
-      <Stack className="absolute left-[45px] top-[345px] flex flex-col gap-3" start={0.6} delay={0.1}>
-        {T.tracks.map(([t, items, st, k], ti) => { const [I, c] = [[BookOpen, '#3b82f6'], [Box, '#8b5cf6'], [Trophy, '#f59e0b']][ti]; return (
-          <Item key={t} v="left"><Card hover className="w-[495px] px-5 py-3 flex items-center gap-4">
-            <span className="icon-orb w-[60px] h-[60px] shrink-0" style={{ color: c, background: `${c}1a` }}><I size={30} strokeWidth={2} /></span>
-            <div className="flex-1"><div className="font-display font-extrabold text-[18px] text-ink uppercase tracking-wide">{t}</div>{items.map(x => <div key={x} className="flex items-center gap-2 text-[14px] font-bold text-ink-2 leading-tight"><span className={cn('w-[15px] h-[15px] rounded-full grid place-items-center text-white', k === 'locked' ? 'bg-gold' : 'bg-green-500')}>{k === 'locked' ? <Star size={8} fill="currentColor" /> : <Check size={9} strokeWidth={4} />}</span>{x}</div>)}</div>
-            <span className={cn('chip h-[36px] px-3 text-[13px] uppercase tracking-wider', k === 'done' && 'text-green-700', k === 'locked' && 'text-orange-600')} style={k === 'done' ? { background: '#dcfce7', color: '#15803d' } : k === 'locked' ? { background: '#fff7ed', color: '#c2410c' } : undefined}>{st}{k === 'done' ? <Check size={16} strokeWidth={3} /> : k === 'locked' ? <Lock size={14} /> : <Loader size={16} className="animate-spin" />}</span>
-          </Card></Item>
-        ) })}
+      <Stack className="absolute left-[45px] top-[345px] w-[495px]" start={0.6} delay={0.1}>
+        <Item v="left" className="mb-3"><div className="font-display text-[17px] font-extrabold uppercase tracking-wider text-primary-ink">Your learning path</div></Item>
+        <div className="flex max-h-[350px] flex-col gap-3 overflow-y-auto pr-1">
+          {missions.map((mission, index) => { const [status, key] = missionStatus(mission.status); return (
+            <Item key={mission.mission_id ?? `${mission.name}-${index}`} v="left"><Card className="w-full min-h-[96px] px-5 py-4 flex items-center gap-4">
+              <span className="icon-orb w-[58px] h-[58px] shrink-0" style={{ color: '#3b82f6', background: '#3b82f61a' }}><BookOpen size={28} strokeWidth={2} /></span>
+              <div className="min-w-0 flex-1"><div className="text-[12px] font-extrabold uppercase tracking-wider text-primary-ink">Mission {index + 1}</div><div className="font-display font-extrabold text-[18px] leading-tight text-ink">{mission.name}</div></div>
+              <span className={cn('chip h-[36px] shrink-0 px-3 text-[12px] uppercase tracking-wider', key === 'done' && 'text-green-700', key === 'locked' && 'text-orange-600')} style={key === 'done' ? { background: '#dcfce7', color: '#15803d' } : key === 'locked' ? { background: '#fff7ed', color: '#c2410c' } : undefined}>{status}{key === 'done' ? <Check size={16} strokeWidth={3} /> : key === 'locked' ? <Lock size={14} /> : null}</span>
+            </Card></Item>
+          ) })}
+        </div>
       </Stack>
 
       <Child screen="topic" delay={0.4} />

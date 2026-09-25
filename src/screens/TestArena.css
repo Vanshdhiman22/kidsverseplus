@@ -1,0 +1,35 @@
+.test-arena__wash { position: absolute; inset: 0; background: rgba(237, 243, 255, .43); pointer-events: none; }
+.test-arena__stage { position: absolute; left: 74px; top: 132px; width: 1524px; height: 716px; display: grid; grid-template-columns: 682px 1fr; overflow: hidden; border: 2px solid rgba(255,255,255,.9); border-radius: 38px; background: #fffdf9; box-shadow: 0 25px 70px rgba(24,56,118,.17); }
+.test-arena__art { position: relative; overflow: hidden; color: #fff; background: radial-gradient(circle at 72% 72%, #6c9eff 0, #285dc2 48%, #15386f 100%); }
+.test-arena__art::after { content: ''; position: absolute; inset: auto -80px -230px; height: 380px; border-radius: 50%; background: rgba(255,255,255,.12); }
+.test-arena__art-orbit { position: absolute; border: 1px solid rgba(255,255,255,.15); border-radius: 50%; pointer-events: none; }
+.test-arena__art-orbit--one { width: 690px; height: 690px; left: 177px; top: 76px; }
+.test-arena__art-orbit--two { width: 510px; height: 510px; left: 285px; top: 165px; }
+.test-arena__art-copy { position: absolute; z-index: 2; left: 54px; top: 46px; }
+.test-arena__art-kicker { font-size: 17px; font-weight: 800; letter-spacing: .03em; color: #d7e9ff; }
+.test-arena__art-copy h1 { margin: 18px 0 11px; font: 900 60px/.99 var(--font-display, inherit); letter-spacing: -.045em; }
+.test-arena__art-copy h1 span { color: #a9f3dc; }
+.test-arena__art-copy p { max-width: 330px; margin: 0; color: #eff7ff; font-size: 19px; line-height: 1.35; font-weight: 650; }
+.test-arena__art .char-shadow { display: none; }
+.test-arena__nova-note { position: absolute; z-index: 3; left: 50px; bottom: 33px; display: flex; align-items: center; gap: 10px; padding: 13px 18px; border-radius: 16px; color: #15376d; background: #e7fff6; font-size: 17px; font-weight: 800; box-shadow: 0 8px 20px rgba(10,32,80,.17); }
+.test-arena__content { position: relative; min-width: 0; padding: 52px 62px 45px; color: #192952; }
+.test-arena__eyebrow { color: #3d6ccb; font-size: 17px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+.test-arena__topline { display: flex; align-items: center; justify-content: space-between; margin-top: 41px; }
+.test-arena__subject { padding: 10px 16px; border-radius: 11px; background: #e9f1ff; color: #2355a8; font-size: 16px; font-weight: 850; }
+.test-arena__step { color: #7889ad; font-size: 16px; font-weight: 850; font-variant-numeric: tabular-nums; }
+.test-arena__content h2 { max-width: 650px; margin: 20px 0 13px; font: 900 50px/1.04 var(--font-display, inherit); letter-spacing: -.035em; text-wrap: balance; }
+.test-arena__intro { max-width: 590px; margin: 0; color: #526585; font-size: 22px; line-height: 1.42; font-weight: 650; }
+.test-arena__facts { display: flex; gap: 12px; margin-top: 35px; }
+.test-arena__facts > div { width: 190px; height: 112px; display: grid; grid-template-columns: 50px 1fr; grid-template-rows: 55px 25px; align-items: center; padding: 12px 15px; border: 1px solid #d6e3fb; border-radius: 19px; background: #f6f9ff; }
+.test-arena__fact-icon { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; color: #2b68cb; background: #e4efff; }
+.test-arena__facts strong { font-size: 36px; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; }
+.test-arena__facts div > span:last-child { color: #627699; font-size: 17px; font-weight: 750; }
+.test-arena__path { display: flex; align-items: center; gap: 11px; margin-top: 31px; padding-top: 22px; border-top: 1px solid #e5ebf6; color: #36547f; font-size: 15px; font-weight: 800; white-space: nowrap; }
+.test-arena__path span:nth-child(even) { color: #83a0cf; font-size: 21px; line-height: 1; }
+.test-arena__footer { position: absolute; left: 62px; right: 62px; bottom: 42px; }
+.test-arena__footer p { margin: 0 0 18px; color: #526585; font-size: 17px; font-weight: 650; }
+.test-arena__start { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 72px; padding: 0 25px 0 29px; border: 0; border-radius: 18px; color: #fff; background: #255dc5; font: 900 23px var(--font-display, inherit); box-shadow: 0 11px 23px rgba(31,82,176,.25); cursor: pointer; transition: background .2s ease, box-shadow .2s ease; }
+.test-arena__start:hover { background: #174caa; box-shadow: 0 15px 27px rgba(31,82,176,.32); }
+.test-arena__start:focus-visible { outline: 4px solid #f5b942; outline-offset: 4px; }
+.test-arena__loading { position: absolute; right: 62px; bottom: 14px; color: #607393; font-size: 13px; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .test-arena__start { transition: none; } }

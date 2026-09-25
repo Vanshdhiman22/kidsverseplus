@@ -12,7 +12,7 @@ import { bleedR, safeB } from './Stage.jsx'
 
 /* Talk to Nova, from anywhere. Tap the mic and ask, or type; Nova answers out loud and in a bubble.
    Not offered before sign-in (nobody to help) or during a test (a hint is cheating). */
-const NO_AGENT = ['/', '/parent/login', '/onboarding/child', '/tests/mixed/question']
+const NO_AGENT = ['/', '/parent/login', '/onboarding/child', '/onboarding/parent-details', '/tests/mixed/question']
 
 export default function NovaAgent() {
   const g = useGame(); const { pathname } = useLocation()

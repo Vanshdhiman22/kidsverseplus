@@ -1,65 +1,84 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Clock, ChevronRight, HelpCircle, Check } from 'lucide-react'
-import Scene, { Cutout, Child } from '../components/Scene.jsx'
-import Page, { Stack, Item } from '../components/Page.jsx'
-import { TopBar, UserChip, StatPill } from '../components/TopBar.jsx'
-import { Card } from '../components/Panel.jsx'
-import Button from '../components/Button.jsx'
-import SpeechBubble from '../components/SpeechBubble.jsx'
-import { ArtIcon, Tilt } from '../components/Widgets.jsx'
-import { QUESTIONS, TESTS } from '../data/catalog.js'
+import { ArrowRight, Clock3, HelpCircle, Sparkles } from 'lucide-react'
+import Scene, { Child } from '../components/Scene.jsx'
+import Page from '../components/Page.jsx'
+import { TopBar, UserChip } from '../components/TopBar.jsx'
+import { QUESTIONS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
-import { cn } from '../lib/utils.js'
 import { listTopicTests } from '../lib/gameApi.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 import { ACTIVE_CONTENT_ID, useContent } from '../content/index.js'
 import { cmsQuestions } from '../content/assessment.js'
+import './TestArena.css'
 
 export default function TestArena() {
   const nav = useNavigate()
-  const g = useGame(); const { name, face } = g.state.profile; const { streak, coins, xp } = g.state.stats
+  const g = useGame()
+  const { name, face } = g.state.profile
   const studentId = g.state.activeChildId
   const subject = g.state.progress.world || 'maths'
   const pkg = useContent(subject === 'maths' ? ACTIVE_CONTENT_ID : `demo-${subject}`)
-  const { data: testCatalog } = useLiveResource(
+  const { data: testCatalog, loading } = useLiveResource(
     () => listTopicTests(studentId, subject),
     [studentId, subject],
     { enabled: Boolean(studentId) },
   )
   const liveTest = testCatalog?.tests?.[0]
   const authoredQuestions = cmsQuestions(pkg, 'test')
-  const test = {
-    ...TESTS.find(item => item.id === 'mixed'),
-    name: authoredQuestions ? `${pkg.mission.title} Test` : liveTest?.name || 'Mixed Test',
-    desc: authoredQuestions ? `Questions about ${pkg.mission.title}.` : liveTest?.intro_text || 'Practise and review what you know.',
-    q: `${authoredQuestions?.length || liveTest?.question_count || QUESTIONS.length} Questions`,
-    time: `${liveTest?.estimated_minutes || 8} min`,
-  }
-  const TestCard = ({ t, wide, i }) => (
-    <Item v="pop"><Tilt max={5}>
-      <Card hover className="relative w-[600px] h-[255px] p-6 flex flex-col" onClick={() => nav(`/tests/mixed/intro?subject=${subject}`)}>
-        <div className="flex items-start gap-4"><ArtIcon name={t.icon} size={wide ? 70 : 76} float /><div className="flex-1 leading-tight"><div className="font-display font-extrabold text-[22px] text-ink">{t.name}</div><div className="mt-1 text-[15px] font-semibold text-ink-2 leading-snug">{t.desc}</div></div></div>
-        <div className="mt-auto flex items-center gap-4 text-[15px] font-bold text-ink-3">{(t.q ?? (t.id === 'mixed' ? `${QUESTIONS.length} Questions` : null)) && <span className="flex items-center gap-1"><HelpCircle size={17} /> {t.q ?? `${QUESTIONS.length} Questions`}</span>}<span className="flex items-center gap-1"><Clock size={17} /> {t.time}</span>{!t.recommended && <ChevronRight size={22} className="ml-auto text-primary-ink" />}</div>
-        <Button size="sm" arrow className="mt-3 w-full h-[50px] text-[18px] uppercase" sound="whoosh">Open test</Button>
-      </Card>
-    </Tilt></Item>
-  )
-  return (
-    <Page>
-      <Scene name="arena" />
-      <Cutout id="arena-1" delay={0.17} amp={10} />
-      <Child screen="arena" delay={0.4} amp={6} />
-      <TopBar back="/home" backLabel="Home" right={<><StatPill kind="xp" value={`${streak} days`} label="Streak" /><StatPill kind="bolt" value={xp.toLocaleString()} label="XP" /><StatPill kind="coins" value={coins} label="Nova Coins" /><UserChip name={name} face={face} /></>} showControls={false} />
-      <Stack className="absolute left-[90px] top-[98px]" start={0.2}>
-        <Item className="eyebrow text-[19px]">Test Arena</Item>
-        <Item className="flex items-center gap-4"><h1 className="font-display font-extrabold text-[62px] leading-none text-ink">Test with Nova</h1><img src="/art/planet-sm.webp" alt="" className="w-[56px] floaty" /></Item>
-        <Item className="mt-1 text-[21px] font-semibold text-ink-2 w-[340px] leading-snug">Choose a test and grow your skills.</Item>
-      </Stack>
-      <div className="absolute left-[680px] top-[140px]"><SpeechBubble tail="bottom" text="Ready to test your knowledge? Pick a test below! 🚀" delay={0.3} className="w-[220px] text-[18px]" /></div>
+  const title = authoredQuestions ? `${pkg.mission.title} Test` : liveTest?.name || `${pkg.mission.title} Test`
+  const questionCount = authoredQuestions?.length || liveTest?.question_count || QUESTIONS.length
+  const minutes = liveTest?.estimated_minutes || 8
+  const intro = authoredQuestions
+    ? `Questions about ${pkg.mission.title}.`
+    : liveTest?.intro_text || `Questions about ${pkg.mission.title}.`
+  const openTest = () => nav(`/tests/mixed/intro?subject=${encodeURIComponent(subject)}`)
 
-      <Stack className="absolute left-[470px] top-[450px]" start={0.7}><TestCard t={test} /></Stack>
+  return (
+    <Page className="test-arena">
+      <Scene name="arena" />
+      <div className="test-arena__wash" aria-hidden="true" />
+      <TopBar back="/home" backLabel="Home" right={<UserChip name={name} face={face} />} showControls={false} />
+      <main className="test-arena__stage">
+        <section className="test-arena__art" aria-label="Your test companion">
+          <div className="test-arena__art-orbit test-arena__art-orbit--one" aria-hidden="true" />
+          <div className="test-arena__art-orbit test-arena__art-orbit--two" aria-hidden="true" />
+          <div className="test-arena__art-copy">
+            <span className="test-arena__art-kicker">A little challenge with Nova</span>
+            <h1>Show what<br />you know<span>.</span></h1>
+            <p>Take your time. Every answer helps you learn.</p>
+          </div>
+          <Child screen="arena" box={[122, 292, 620, 570]} float={false} delay={0.18} />
+          <div className="test-arena__nova-note"><Sparkles size={21} aria-hidden="true" /> Nova is here to help</div>
+        </section>
+        <section className="test-arena__content" aria-labelledby="test-arena-title">
+          <span className="test-arena__eyebrow">Test with Nova</span>
+          <div className="test-arena__topline">
+            <span className="test-arena__subject">{pkg.subject || subject}</span>
+            <span className="test-arena__step">Your next step</span>
+          </div>
+          <h2 id="test-arena-title">{title}</h2>
+          <p className="test-arena__intro">{intro}</p>
+          <div className="test-arena__facts" aria-label="Test details">
+            <div><span className="test-arena__fact-icon"><HelpCircle size={26} aria-hidden="true" /></span><strong>{questionCount}</strong><span>Questions</span></div>
+            <div><span className="test-arena__fact-icon"><Clock3 size={26} aria-hidden="true" /></span><strong>{minutes}</strong><span>Minutes</span></div>
+          </div>
+          <div className="test-arena__path" aria-label="How the test works">
+            <span>Answer each question</span><span aria-hidden="true">→</span>
+            <span>See your score</span><span aria-hidden="true">→</span>
+            <span>Review with Nova</span>
+          </div>
+          <div className="test-arena__footer">
+            <p>Ready, {name}? You can review your answers at the end.</p>
+            <motion.button type="button" onClick={openTest} className="test-arena__start"
+              whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }} aria-label={`Open ${title}`}>
+              <span>Open test</span><ArrowRight size={26} aria-hidden="true" />
+            </motion.button>
+          </div>
+          {loading && !authoredQuestions && <span className="test-arena__loading" role="status">Loading test details…</span>}
+        </section>
+      </main>
     </Page>
   )
 }

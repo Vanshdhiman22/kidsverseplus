@@ -128,60 +128,32 @@ export const JOURNEY = [
   { id: 'geometry', name: 'Geometry', sub: 'Geometry', state: 'locked', x: 790, y: 700 },
 ]
 
-/* The syllabus a subject opens on: its current topic, what that topic covers across
-   the three tracks, and the five lessons inside it. Keyed by world id so tapping any
-   subject on the Learn Hub opens that subject's own page rather than everyone landing
-   on Fractions. Five steps each, because the Topic screen's path art has five stops. */
+/* Fallback topic copy for each subject. Mission names and progress come from the learning API. */
 export const TOPICS = {
   maths: {
     title: 'Fractions', subject: 'Maths',
     desc: 'Understand parts of a whole, equivalent fractions, compare and order, and solve real-world problems.',
     nova: 'Equivalent fractions show the same value even though the numerator and denominator change! ✨',
-    tracks: [
-      ['School Syllabus', ['Equivalent fractions', 'Compare and order'], 'Completed', 'done'],
-      ['Kidsverse Plus', ['Visual models', 'Applications', 'Word problems'], 'In progress', 'progress'],
-      ['Competition Edge', ['Higher-order reasoning'], 'Locked', 'locked'],
-    ],
   },
   literacy: {
     title: 'Comprehension', subject: 'Literacy',
     desc: 'Read closely, find the main idea, work out new words from context, and say what you think about a story.',
     nova: 'The main idea is what the whole passage is about — not just the bit you liked best! ✨',
-    tracks: [
-      ['School Syllabus', ['Main idea and detail', 'New words in context'], 'Completed', 'done'],
-      ['Kidsverse Plus', ['Story mapping', 'Inference', 'Retelling'], 'In progress', 'progress'],
-      ['Competition Edge', ['Author’s purpose'], 'Locked', 'locked'],
-    ],
   },
   evs: {
     title: 'Living Things', subject: 'EVS / Science',
     desc: 'Sort living from non-living, see what plants and animals need, and follow how they depend on each other.',
     nova: 'Every living thing needs food, water and air — that is how we tell it is alive! ✨',
-    tracks: [
-      ['School Syllabus', ['Living and non-living', 'Plant parts'], 'Completed', 'done'],
-      ['Kidsverse Plus', ['Habitats', 'Food chains', 'Life cycles'], 'In progress', 'progress'],
-      ['Competition Edge', ['Adaptation and survival'], 'Locked', 'locked'],
-    ],
   },
   computer: {
     title: 'Sequences', subject: 'Computer',
     desc: 'Put steps in the right order, spot a pattern that repeats, and tell a machine exactly what to do.',
     nova: 'A computer does exactly what you say — so the order of your steps is everything! ✨',
-    tracks: [
-      ['School Syllabus', ['Parts of a computer', 'Using a keyboard'], 'Completed', 'done'],
-      ['Kidsverse Plus', ['Step by step', 'Patterns', 'Repeating a step'], 'In progress', 'progress'],
-      ['Competition Edge', ['Debugging a sequence'], 'Locked', 'locked'],
-    ],
   },
   general: {
     title: 'Our Community', subject: 'General Awareness',
     desc: 'Meet the people who keep a place running, learn how to stay safe, and see what it means to help.',
     nova: 'A community works because everybody does their bit — including you! ✨',
-    tracks: [
-      ['School Syllabus', ['People who help us', 'Our country'], 'Completed', 'done'],
-      ['Kidsverse Plus', ['Staying safe', 'Money sense', 'Being a good neighbour'], 'In progress', 'progress'],
-      ['Competition Edge', ['Current affairs'], 'Locked', 'locked'],
-    ],
   },
 }
 

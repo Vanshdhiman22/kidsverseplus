@@ -1,4 +1,4 @@
-import { randomUUID, scryptSync, timingSafeEqual } from 'node:crypto'
+import { randomInt, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto'
 import { INTERESTS, GOALS, FACES, OUTFITS } from '../src/data/catalog.js'
 import { createGameplay } from './gameplay.mjs'
 
@@ -16,12 +16,21 @@ const steps = ['child', 'grade_board', 'avatar', 'interests', 'goals', 'lobby', 
 const fail = (status, detail) => { throw Object.assign(new Error(detail), { status }) }
 
 export function createMockApi() {
-  const parents = new Map(), tokens = new Map(), students = new Map()
+  const parents = new Map(), tokens = new Map(), students = new Map(), verifications = new Map()
   const gameplay = createGameplay(students)
   return async function handle(method, pathname, body = {}, token) {
     const path = pathname.split('?')[0].replace(/^\/api\/v1/, '')
     const result = (data, status = 200) => ({ status, data })
     try {
+      if (method === 'POST' && path === '/__bootstrap') {
+        const parent = { id: randomUUID(), email: 'dummy@kidsverse.local', full_name: 'Local tester', phone: '+919999999999', phone_verified_at: now(), created_at: now() }
+        const access = `dummy-${randomUUID()}`
+        const student = { id: body.student_id || randomUUID(), parent_id: parent.id, name: String(body.name || 'Demo Explorer'), grade: String(body.grade || '1'), board: String(body.board || 'CBSE'), face: Number(body.face) || 1,
+          avatar: null, onboarding_completed_at: now(), onboarding_completed: true, created_at: now(), completed_steps: [...steps], interest_ids: [], goal_ids: [] }
+        tokens.set(access, parent)
+        students.set(student.id, student)
+        return result({ token: access, parent, students: [student], source: 'local-dummy' }, 201)
+      }
       if (method === 'GET') {
         if (path === '/health') return result({ status: 'ok', source: 'mock', persistence: 'memory; resets on server restart' })
         if (path === '/health/database') return result({ status: 'not_tested', database: 'not-used', source: 'mock' })
@@ -52,6 +61,30 @@ export function createMockApi() {
       if (gameResponse) return gameResponse
       if (path === '/auth/parent/logout' && method === 'POST') { tokens.delete(token); return result(null, 204) }
       if (path === '/parent/me' && method === 'GET') return result(parent)
+      if (path === '/parent/verification/start' && method === 'POST') {
+        const name = String(body.full_name || '').trim()
+        const phone = String(body.phone || '')
+        const relationship = String(body.relationship || '')
+        const student = students.get(body.student_id)
+        if (!student || student.parent_id !== parent.id) fail(404, 'Child not found in this parent account.')
+        if (name.length < 2 || !/^\+91[6-9]\d{9}$/.test(phone) || !['parent', 'guardian'].includes(relationship)) fail(400, 'Valid parent name, relationship and Indian mobile number are required.')
+        const existing = [...verifications.values()].find(entry => entry.parentId === parent.id && entry.phone === phone && !entry.used && Date.now() - entry.createdAt < 30000)
+        if (existing) fail(429, 'Please wait 30 seconds before requesting another code.')
+        const challengeId = randomUUID(), code = String(randomInt(0, 1000000)).padStart(6, '0')
+        verifications.set(challengeId, { parentId: parent.id, studentId: student.id, name, relationship, phone, code, createdAt: Date.now(), attempts: 0, used: false })
+        return result({ challenge_id: challengeId, expires_in_seconds: 300, dev_code: code, delivery: 'local_mock_only' }, 201)
+      }
+      if (path === '/parent/verification/verify' && method === 'POST') {
+        const challenge = verifications.get(body.challenge_id)
+        if (!challenge || challenge.parentId !== parent.id || challenge.used) fail(400, 'Verification request is invalid. Request a new code.')
+        if (Date.now() - challenge.createdAt > 300000) fail(410, 'Code expired. Request a new one.')
+        if (challenge.attempts >= 5) fail(429, 'Too many attempts. Request a new code.')
+        challenge.attempts += 1
+        if (String(body.code || '') !== challenge.code) fail(400, 'Incorrect code. Please try again.')
+        challenge.used = true
+        Object.assign(parent, { full_name: challenge.name, relationship: challenge.relationship, phone: challenge.phone, phone_verified_at: now() })
+        return result({ phone_verified: true, phone: challenge.phone, parent_id: parent.id, verified_at: parent.phone_verified_at })
+      }
       if (path === '/parent/students' && method === 'GET') return result({ students: [...students.values()].filter(s => s.parent_id === parent.id).map(s => ({ ...s, onboarding_completed: !!s.onboarding_completed_at })) })
       if (path === '/students' && method === 'POST') {
         if (typeof body.name !== 'string' || body.name.trim().length < 2) fail(400, 'Child name must contain at least two characters.')
@@ -70,6 +103,7 @@ export function createMockApi() {
         student[field] = [...ids]
       }
       if (method === 'PATCH' && action === 'grade-board') {
+        if (!parent.phone_verified_at) fail(403, 'Verify the parent phone before continuing child onboarding.')
         if (!body.grade || !body.board) fail(400, 'grade and board are required')
         Object.assign(student, { grade: String(body.grade), board: body.board }); complete('grade_board'); return result(student)
       }
@@ -97,10 +131,10 @@ export function createMockApi() {
   }
 }
 
-export function mockApiPlugin() {
+export function mockApiPlugin(base = '/api/v1') {
   const handle = createMockApi()
   return { name: 'kidsverse-local-mock', configureServer(server) {
-    server.middlewares.use('/api/v1', async (req, res) => {
+    server.middlewares.use(base, async (req, res) => {
       res.setHeader('Content-Type', 'application/json')
       res.setHeader('X-Kidsverse-Source', 'local-mock')
       try {

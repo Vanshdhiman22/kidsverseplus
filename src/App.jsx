@@ -13,12 +13,14 @@ import NovaAgent from './components/NovaAgent.jsx'
 import MusicPlayer from './components/MusicPlayer.jsx'
 import Landing from './screens/Landing.jsx'
 import MockInspector from './components/MockInspector.jsx'
+import DevDummyNavigator from './components/DevDummyNavigator.jsx'
 
 const lazyScreen = p => lazy(p)
 const ParentLogin = lazyScreen(() => import('./screens/ParentLogin.jsx'))
 const ForgotPassword = lazyScreen(() => import('./screens/ForgotPassword.jsx'))
 const CreateAccount = lazyScreen(() => import('./screens/CreateAccount.jsx'))
 const CreateChild = lazyScreen(() => import('./screens/CreateChild.jsx'))
+const ParentVerification = lazyScreen(() => import('./screens/ParentVerification.jsx'))
 const LearningSetup = lazyScreen(() => import('./screens/LearningSetup.jsx'))
 const Avatar = lazyScreen(() => import('./screens/Avatar.jsx'))
 const Interests = lazyScreen(() => import('./screens/Interests.jsx'))
@@ -58,7 +60,7 @@ const ContentPreview = lazyScreen(() => import('./screens/ContentPreview.jsx'))
 
 /* Route list, kept as the single place the screen order is written down. */
 export const SCREENS = [
-  ['/', '01 Landing'], ['/parent/login', '02 Parent Login'], ['/parent/forgot-password', '02a Forgot Password'], ['/parent/create-account', '02b Create Account'], ['/onboarding/child', '03 Create Child'], ['/onboarding/grade-board', '04 Learning Setup'],
+  ['/', '01 Landing'], ['/parent/login', '02 Parent Login'], ['/parent/forgot-password', '02a Forgot Password'], ['/parent/create-account', '02b Create Account'], ['/onboarding/child', '03 Create Child'], ['/onboarding/parent-details', '03a Parent Verification'], ['/onboarding/grade-board', '04 Learning Setup'],
   ['/onboarding/avatar', '05 Avatar'], ['/onboarding/interests', '06 Interests'], ['/onboarding/goals', '07 Goals'], ['/onboarding/nova', '08 Meet Nova'],
   ['/welcome', '09 First Welcome'], ['/home', '10 Home'], ['/learn', '11 Learn Hub'], ['/journey', '12 Journey Map'], ['/learn/topics/maths', '13 Topic'],
   ['/missions/fractions', '14 Lesson · Discover'], ['/missions/fractions/learn', '15 Learn Before Quiz'], ['/missions/fractions/spot-mistake', '16 Spot the Mistake'], ['/missions/fractions/complete', '17 Mission Complete'],
@@ -76,7 +78,7 @@ const Loading = () => <div className="screen grid place-items-center"><motion.di
 
 /* Screens with nobody signed in yet hide the progress pill; screens whose top centre is busy
    (lesson rail, question counter) hide the idle pill but still get the pop-ups. */
-const NO_ISLAND = new Set(['/', '/parent/login', '/onboarding/child', '/onboarding/grade-board', '/onboarding/avatar', '/onboarding/interests', '/onboarding/goals', '/onboarding/nova'])
+const NO_ISLAND = new Set(['/', '/parent/login', '/onboarding/child', '/onboarding/parent-details', '/onboarding/grade-board', '/onboarding/avatar', '/onboarding/interests', '/onboarding/goals', '/onboarding/nova'])
 /* Screens whose top bar already carries the numbers, or whose top centre is busy:
    the resting pill stays away, but XP and level-up still pop through. */
 const QUIET_ISLAND = ['/missions', '/tests', '/extra/', '/challenge/battle', '/challenge/preview', '/challenge/result', '/parent', '/switch']
@@ -114,7 +116,7 @@ function usePrefetch() {
       () => import('./screens/ParentOverview.jsx'), () => import('./screens/ParentEvidence.jsx'), () => import('./screens/ParentPlan.jsx'),
       () => import('./screens/Welcome.jsx'), () => import('./screens/Interests.jsx'), () => import('./screens/Goals.jsx'),
       () => import('./screens/Avatar.jsx'), () => import('./screens/MeetNova.jsx'), () => import('./screens/CreateChild.jsx'),
-      () => import('./screens/LearningSetup.jsx'), () => import('./screens/ParentLogin.jsx'), () => import('./screens/ForgotPassword.jsx'),
+      () => import('./screens/LearningSetup.jsx'), () => import('./screens/ParentVerification.jsx'), () => import('./screens/ParentLogin.jsx'), () => import('./screens/ForgotPassword.jsx'),
     ]
     /* 'nhome', not 'home' -- Home.jsx renders <Scene name="nhome">. The list was warming the
        one background the app never draws and leaving the real one to load cold. 'explain' went
@@ -150,6 +152,7 @@ function Routed() {
           <Route path="/parent/forgot-password" element={<ForgotPassword />} />
           <Route path="/parent/create-account" element={<CreateAccount />} />
           <Route path="/onboarding/child" element={<CreateChild />} />
+          <Route path="/onboarding/parent-details" element={<ParentVerification />} />
           <Route path="/onboarding/grade-board" element={<LearningSetup />} />
           <Route path="/onboarding/avatar" element={<Avatar />} />
           <Route path="/onboarding/interests" element={<Interests />} />
@@ -202,6 +205,7 @@ export default function App() {
           <Cosmos lite />
           <MusicPlayer />
           <MockInspector />
+          <DevDummyNavigator screens={SCREENS} />
           <Stage><Routed /><NavDrawer /><BackButton /><Overlays /></Stage>
         </MotionConfig>
       </GameProvider>
