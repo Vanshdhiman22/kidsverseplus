@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Rocket, BookOpen, Flag, Mic, ChevronRight, Check, Lock, Plus, MapPin, Flame, Star } from 'lucide-react'
 import Scene from '../components/Scene.jsx'
@@ -13,8 +13,12 @@ import { bleedL, bleedR } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 import { spriteFor } from '../data/catalog.js'
+import { checkedJourney } from '../lib/live-data.js'
 import { api } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
+import { isReviewMode } from '../lib/reviewMode.js'
+import { reviewLearning } from '../lib/review-learning.js'
+import { ACTIVE_CONTENT_ID } from '../content/index.js'
 
 /* Car sprite, in design pixels (public/art/chars/journey-0.webp ships at 2x). */
 const CAR = { w: 211, h: 203 }   // 0.62 of the source art: a map token, not a hero
@@ -179,28 +183,34 @@ function Node({ n, i }) {
 export default function Journey() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
-  const subject = g.state.progress.world ?? 'maths'
-  const setSubject = id => g.setProgress({ world: id })
+  const [query, setQuery] = useSearchParams()
+  const subject = query.get('subject') || g.state.progress.world || 'maths'
+  const setSubject = id => { g.setProgress({ world: id }); setQuery({ subject: id }) }
   const done = g.state.progress.worldDone?.[subject] ?? 0
   const localStations = deriveStations(subject, done)
   const studentId = g.state.activeChildId
-  const { data: journey } = useLiveResource(
-    () => api.studentJourney(studentId, subject),
+  const review = isReviewMode()
+  const { data: liveJourney, loading, error } = useLiveResource(
+    () => api.studentJourney(studentId, subject).then(data => checkedJourney(data, subject)),
     [studentId, subject],
-    { enabled: Boolean(studentId) },
+    { enabled: !review && Boolean(studentId) },
   )
+  const journey = review ? reviewLearning(subject,{contentId:ACTIVE_CONTENT_ID}).journey : liveJourney
   const apiWorlds = journey?.worlds ?? []
-  const stations = apiWorlds.length ? localStations.map((station, index) => {
-    const live = apiWorlds[index]
-    if (!live) return station
-    const state = live.status === 'completed' ? 'done' : live.status === 'current' || live.status === 'in_progress' ? 'here' : live.status === 'unlocked' ? 'next' : 'locked'
-    return { ...station, id: live.topic_id, name: live.world_name, sub: live.tagline || live.world_name, state }
+  const stations = review || studentId ? apiWorlds.map((live, index) => {
+    const state = live.status === 'completed' ? 'done' : ['current', 'in_progress'].includes(live.status) ? 'here' : live.status === 'unlocked' ? 'next' : 'locked'
+    return { ...STATION_SPOTS[index % STATION_SPOTS.length], id: live.topic_id, name: live.world_name, sub: live.tagline || live.world_name, state }
   }) : localStations
   const worldName = journey?.subject ?? WORLDS.find(w => w.id === subject)?.name ?? 'Maths'
   const activities = journey?.companion_activities ?? []
   const completeActivity = async index => {
     const activity = activities[index]
     if (!activity) return g.notice('This activity is not available from the live API yet.')
+    if (review) {
+      if (activity.type === 'reading') return nav('/extra/reading')
+      if (activity.type === 'speaking') return nav('/extra/confidence')
+      return g.notice('Sample activity completed locally. No live progress saved.')
+    }
     try {
       await api.completeCompanionActivity(studentId, activity.id)
       g.notice(`${activity.name} completed and saved.`)
@@ -210,9 +220,10 @@ export default function Journey() {
   return (
     <Page>
       <Scene name="journey" />
-      <Car key={`car-${subject}`} face={face} stations={stations} road={road} seen={g.state.progress.journeySeen?.[subject]} onArrive={i => g.markJourneySeen(subject, i)} />
+      {stations.length > 0 && <Car key={`car-${subject}`} face={face} stations={stations} road={road} seen={g.state.progress.journeySeen?.[subject]} onArrive={i => g.markJourneySeen(subject, i)} />}
+      {(loading || error || !stations.length) && <Panel className="absolute left-[590px] top-[280px] w-[650px] p-8 text-[22px] text-center" role="status">{loading ? 'Loading journey...' : error || 'No worlds are available for this subject yet.'}</Panel>}
       {stations.map((n, i) => <Node key={subject + n.id} n={n} i={i} />)}
-      <motion.div key={subject} className="absolute z-10 left-[1268px] top-[535px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="sm" arrow className="h-[52px] px-6 text-[18px] uppercase" sound="whoosh" onClick={() => nav(`/learn/topics/${subject}`)}>Continue {stations.find(s => s.state === 'here')?.sub ?? 'learning'}</Button></motion.div>
+      <motion.div key={subject} className="absolute z-10 left-[1268px] top-[535px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button disabled={!stations.some(s => s.state !== 'locked')} size="sm" arrow className="h-[52px] px-6 text-[18px] uppercase" sound="whoosh" onClick={() => nav(`/learn/topics/${subject}`)}>Continue {stations.find(s => s.state === 'here')?.sub ?? 'learning'}</Button></motion.div>
 
       <TopBar right={<><div className="pill h-[60px] px-5 gap-4 text-[20px] font-extrabold text-ink"><span className="flex items-center gap-2 text-orange-500"><Flame size={22} fill="currentColor" /> <span className="text-ink">{xp.toLocaleString()}</span></span><span className="w-px h-6 bg-[var(--line)]" /><span className="flex items-center gap-2 text-gold"><Star size={22} fill="currentColor" /> <span className="text-ink">{g.state.stats.badges}</span></span></div><UserChip name={name} face={face} /></>} showControls={false} />
       <Stack className="absolute top-[125px] w-[330px]" style={bleedL(55)} start={0.25}>

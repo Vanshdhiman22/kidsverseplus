@@ -8,7 +8,9 @@ import Logo from '../components/Logo.jsx'
 import { UserChip, StatPill } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/ApiButton.jsx'
-import { completeBattle } from '../lib/gameApi.js'
+import ContentStatus from '../components/ContentStatus.jsx'
+import { normalizeApiQuestion } from '../lib/live-data.js'
+import { completeBattle, getBattleAttempt, getBattleQuestion, submitBattleAnswer } from '../lib/gameApi.js'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Bar } from '../components/Widgets.jsx'
 import { Vs } from './BattlePreview.jsx'
@@ -62,6 +64,8 @@ export default function Battle() {
   const [score, setScore] = useState([0, 0])
   const [pick, setPick] = useState(null)
   const [done, setDone] = useState(false)
+  const [answerCorrect,setAnswerCorrect]=useState(false)
+  const [answerPending,setAnswerPending]=useState(false)
   const [secs, setSecs] = useState(22)
   const [elapsed, setElapsed] = useState(0)   // the result screen printed a fixed 00:22
   const pkg = useRouteContent()
@@ -72,37 +76,60 @@ export default function Battle() {
     answer: `option_${item.answer + 1}`,
     models: [],
   }))
+  const cmsBattle = Boolean(pkg.contentSource !== 'api' && pkg.studio && pkg.assessments?.battle_questions?.length)
+  const remoteBattle = !cmsBattle
+  let activeBattle=null
+  try { activeBattle=getBattleAttempt(g.state.activeChildId) } catch {}
+  const [questionResource, setQuestionResource] = useState(null)
+  const [questionError, setQuestionError] = useState('')
   const battleQuestions = pkg.assessments?.battle_questions?.length ? pkg.assessments.battle_questions : legacyBattle
-  const cmsBattle = Boolean(pkg.studio && pkg.assessments?.battle_questions?.length)
-  const q = battleQuestions[round % battleQuestions.length]
+  const total = remoteBattle ? activeBattle?.total_questions || 0 : battleQuestions.length
+  const questionKey = `${g.state.activeChildId}:${activeBattle?.battle_id}:${round}`
+  const apiQuestion = questionResource?.key === questionKey ? questionResource.data : null
+  const unavailable = remoteBattle && (!apiQuestion || questionError)
+  const q = remoteBattle ? apiQuestion || battleQuestions[0] : battleQuestions[round % total]
+  useEffect(() => {
+    if (!remoteBattle) return
+    let active = true
+    setQuestionResource(null); setQuestionError('')
+    getBattleQuestion(g.state.activeChildId,round+1).then(item=>{
+      if(active) setQuestionResource({key:questionKey,data:normalizeApiQuestion(item)})
+    }).catch(error=>{if(active)setQuestionError(error.message)})
+    return ()=>{active=false}
+  }, [remoteBattle, questionKey])
   /* Energy was 85 and 70, fixed, for the whole battle. A bar that never moves while a
      fight is happening is a picture of a bar. Each point the other side takes costs a
      share of it, so it reads as what is left. */
-  const energy = side => Math.max(0, Math.round(100 - (score[side] / battleQuestions.length) * 100))
+  const energy = side => Math.max(0, Math.round(100 - (score[side] / Math.max(1,total)) * 100))
   /* The clock used to roll straight back to 22 and keep going, so the round timer was
      decoration: a child could sit on one question forever. Time out now costs the round,
      which is what the countdown has been implying all along. */
   useEffect(() => {
-    if (done) return
-    if (secs <= 0) { sfx.wrong(); setDone(true); setScore(([a, b]) => [a, b + 1]); return }
+    if (done || unavailable || answerPending) return
+    if (secs <= 0) { setAnswerCorrect(false); sfx.wrong(); setDone(true); setScore(([a, b]) => [a, b + 1]); return }
     const id = setTimeout(() => { setSecs(x => x - 1); setElapsed(e => e + 1) }, 1000)
     return () => clearTimeout(id)
-  }, [secs, done])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [secs, done, unavailable, answerPending])  // eslint-disable-line react-hooks/exhaustive-deps
   const submit = async () => {
     if (pick == null && !done) return
     if (done) {
-      if (round + 1 >= battleQuestions.length) {
+      if (round + 1 >= total) {
         const result = cmsBattle
           ? { battleId: `cms-${Date.now()}`, result: score[0] > score[1] ? 'win' : score[0] === score[1] ? 'draw' : 'loss', xp_awarded: 0, local: true }
-          : await completeBattle(g.state.activeChildId, score[0] / battleQuestions.length * 100)
+          : await completeBattle(g.state.activeChildId, score[0] / total * 100)
         sessionStorage.setItem('kv:last-battle-result', JSON.stringify(result))
         sfx.whoosh(); nav(withSubject(`/challenge/result?bot=${bot.id}&me=${score[0]}&bot_s=${score[1]}&t=${elapsed}`)); return
       }
-      setRound(round + 1); setPick(null); setDone(false); setSecs(22); return
+      setRound(round + 1); setPick(null); setDone(false); setAnswerCorrect(false); setSecs(22); return
     }
-    const right = pick === q.answer; setDone(true)
-    if (right) { sfx.success(); setScore(([a, b]) => [a + 1, b]) } else { sfx.wrong(); setScore(([a, b]) => [a, b + 1]) }
+    setAnswerPending(true)
+    try {
+      const checked = remoteBattle ? await submitBattleAnswer(g.state.activeChildId,round+1,pick,q.instruction) : null
+      const right = remoteBattle ? checked.is_correct : pick === q.answer; setAnswerCorrect(right); setDone(true)
+      if (right) { sfx.success(); setScore(([a, b]) => [a + 1, b]) } else { sfx.wrong(); setScore(([a, b]) => [a, b + 1]) }
+    } finally {setAnswerPending(false)}
   }
+  if (unavailable) return <ContentStatus activity="battle" pkg={{ contentLoading: !questionError, contentError: questionError }} />
   return (
     <Page>
       <Scene name="battle" />
@@ -110,7 +137,7 @@ export default function Battle() {
       <motion.button className="absolute left-[30px] top-[100px] pill h-[44px] px-4 text-[15px] font-bold text-ink" style={bleedL(30)} onClick={() => { sfx.tap(); nav(withSubject('/challenge')) }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.14 }}><ChevronLeft size={18} /> Leave battle</motion.button>
       <Stack className="absolute left-[560px] top-[30px] w-[560px] text-center" start={0.2}>
         <Item className="font-display font-extrabold text-[40px] leading-none grad-text uppercase flex items-center justify-center gap-4"><Star size={26} className="text-gold" fill="currentColor" /> Practice Battle Arena <Star size={26} className="text-gold" fill="currentColor" /></Item>
-        <Item className="mt-2 font-display font-extrabold text-[22px] text-ink-2 uppercase tracking-wide">Round {round + 1} / {battleQuestions.length}</Item>
+        <Item className="mt-2 font-display font-extrabold text-[22px] text-ink-2 uppercase tracking-wide">Round {round + 1} / {total}</Item>
       </Stack>
       <motion.div className="absolute flex items-center gap-3" style={{ ...bleedR(24), ...safeT(22) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><StatPill kind="streak" value={g.state.stats.streak} label="Day streak" /><StatPill kind="xp" value={xp.toLocaleString()} /><UserChip name={name} face={face} /></motion.div>
 
@@ -125,7 +152,7 @@ export default function Battle() {
       <Panel className="absolute left-[105px] top-[420px] w-[285px] p-5" initial="hidden" animate="show">
         <div className="text-center font-display font-extrabold text-[16px] text-ink uppercase tracking-wide">This battle</div>
         <div className="mt-3 flex flex-col gap-3">
-          {[['Correct', score[0], '#22c55e'], ['Missed', score[1], '#ef4444'], ['Round', `${round + 1} / ${battleQuestions.length}`, '#7c5cff']].map(([k, v, c]) => (
+          {[['Correct', score[0], '#22c55e'], ['Missed', score[1], '#ef4444'], ['Round', `${round + 1} / ${total}`, '#7c5cff']].map(([k, v, c]) => (
             <div key={k} className="flex items-center gap-3">
               <span className="w-[10px] h-[10px] rounded-full shrink-0" style={{ background: c }} />
               <span className="flex-1 text-[15px] font-bold text-ink-2">{k}</span>
@@ -137,7 +164,7 @@ export default function Battle() {
       <Strengths title="Character traits · for fun" rows={bot.strengths} className="left-[1285px] top-[420px]" />
       <Panel className="absolute left-[105px] top-[620px] w-[285px] h-[180px] p-4 flex items-center gap-3" initial="hidden" animate="show"><img src="/art/hd/nova-v2.webp" alt="" className="w-[68px] floaty" /><div><div className="text-[14px] font-extrabold text-ink uppercase tracking-wide">Nova's Coach Tip</div><div className="mt-1 card px-3 py-2 text-[14px] font-bold text-ink-2 leading-snug">{cmsBattle ? q.nova?.speech || 'Read the whole question carefully.' : 'Focus on accuracy over speed! 🎯'}</div></div></Panel>
       <Panel className="absolute left-[1285px] top-[620px] w-[285px] h-[180px] p-4 flex items-center gap-3" initial="hidden" animate="show"><img src="/art/hd/nova-v2.webp" alt="" className="w-[68px] floaty" /><p className="text-[14px] font-bold text-ink-2 leading-snug">{done
-          ? (cmsBattle ? q.explanation || (pick === q.answer ? 'Great answer!' : 'Review this idea and try again.') : pick === q.answer ? `Correct! ${score[0]} right and ${score[1]} missed.` : 'That round was missed. Read the explanation and try the next one.')
+          ? (cmsBattle ? q.explanation || (pick === q.answer ? 'Great answer!' : 'Review this idea and try again.') : answerCorrect ? `Correct! ${score[0]} right and ${score[1]} missed.` : 'That round was missed. Read the explanation and try the next one.')
           : `Read carefully. ${bot.name} gets a point only when you miss.`}</p></Panel>
 
       <Panel className="absolute left-[415px] top-[405px] w-[840px] h-[440px] p-5" initial="hidden" animate="show">
@@ -145,13 +172,13 @@ export default function Battle() {
         {cmsBattle && <div className="mt-1 text-center text-[13px] font-extrabold text-primary-ink">{q.difficulty} · {q.xp_on_correct} practice XP · {pkg.mission.title}</div>}
         <div className="mx-auto mt-2 h-[108px] w-[460px] max-w-full"><QuestionVisual question={q.instruction} model={q.models?.[0]} compact /></div>
         <Stack key={`o${round}`} className="mt-3 grid grid-cols-4 gap-4" start={0.3} delay={0.08}>
-          {q.options.map((option, i) => { const on = pick === option.key, right = done && option.key === q.answer, wrong = done && on && !right; return (
+          {q.options.map((option, i) => { const on = pick === option.key, right = done && (remoteBattle ? on && answerCorrect : option.key === q.answer), wrong = done && on && !right; return (
             <Item key={option.key} v="pop"><Card hover={!done} selected={on && !done} className={cn('relative h-[90px] grid place-items-center px-3 text-center text-ink', wrong && 'shake')} style={right ? { boxShadow: '0 0 0 3px #22c55e', borderColor: '#22c55e' } : wrong ? { boxShadow: '0 0 0 3px #ef4444', borderColor: '#ef4444' } : undefined} onClick={() => { if (!done) { sfx.select(); setPick(option.key) } }}>
               {(on || right) && <span className="absolute -top-3 -right-1 w-[30px] h-[30px] rounded-full grid place-items-center text-white" style={{ background: right ? '#22c55e' : 'var(--grad-primary)' }}><Check size={16} strokeWidth={3.5} /></span>}
               <span className="font-display font-extrabold text-[19px] leading-tight">{option.label}</span>
             </Card></Item>) })}
         </Stack>
-        <div className="mt-3 flex justify-center"><Button size="md" arrow className="w-[525px] h-[56px] uppercase text-[22px]" disabled={pick == null && !done} sound="whoosh" onClick={submit}>{done ? (round + 1 >= battleQuestions.length ? 'See result' : 'Next round') : 'Submit answer'}</Button></div>
+        <div className="mt-3 flex justify-center"><Button size="md" arrow className="w-[525px] h-[56px] uppercase text-[22px]" disabled={pick == null && !done} sound="whoosh" onClick={submit}>{done ? (round + 1 >= total ? 'See result' : 'Next round') : 'Submit answer'}</Button></div>
       </Panel>
     </Page>
   )

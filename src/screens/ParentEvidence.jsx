@@ -1,4 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState,useEffect } from 'react'
+import {apiRequest,getToken} from '../lib/api.js'
+import {useLiveResource} from '../lib/useLiveResource.js'
+import AttemptReview from '../components/AttemptReview.jsx'
+import {reviewItems} from '../lib/review-items.js'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ArrowLeft, Search, Bell, GraduationCap, ShieldCheck, Info, ChevronRight, LayoutTemplate, Briefcase, LayoutGrid, Trophy, ClipboardCheck, Play, HelpCircle, ArrowLeftRight, Home, BookOpen, User, MessageCircle } from 'lucide-react'
@@ -19,6 +23,9 @@ import { formatBrowserDateTime } from '../lib/time.js'
 
 
 export default function ParentEvidence() {
+  const resource=useLiveResource(()=>apiRequest('/parent/evidence'),[getToken()],{enabled:Boolean(getToken())})
+  const report=resource.data
+  const [selectedReview,setSelectedReview]=useState(null)
   const nav = useNavigate()
   const g = useGame(); const { name, grade, board, face } = g.state.profile
 
@@ -26,21 +33,12 @@ export default function ParentEvidence() {
      the app to justify a recommendation got silence. */
   const [why, setWhy] = useState(false)
 
-  const lastTest = g.state.progress.lastTest
-  const practised = (g.state.progress.quizzesDone ?? 0) + (g.state.stats.battles ?? 0)
-  /* Was three literal rows -- a 7/10 mixed test, a completed lesson, a 2/3 quiz, each with
-     a "Today" timestamp -- printed under a panel that correctly reported no test taken. Only
-     what the app records appears here now. */
-  const journeyStops = lessonProgress(g.state.progress.worldDone).done
-  const activity = [
-    lastTest && [ClipboardCheck, '#7c3aed', 'Mixed Concept Test', 'Practice & track progress',
-                 `Score: ${lastTest.correct}/${lastTest.total}`, formatBrowserDateTime(lastTest.completedAt)],
-    journeyStops > 0 && [Play, '#8b5cf6', 'Journey stops', 'Progress through the subject maps',
-                        `${journeyStops} reached`, 'Across all worlds'],
-    (g.state.stats.battles ?? 0) > 0 && [HelpCircle, '#3b82f6', 'Bot battles', 'Quick-fire practice',
-                                         `${g.state.stats.battles} played`, 'Challenge arena'],
-  ].filter(Boolean)
-
+  const serverEvidence=(report?.students.find(s=>s.student_id===g.state.activeChildId)?.evidence || []).slice().sort((a,b)=>(b.result?.completed_at||'').localeCompare(a.result?.completed_at||''))
+  const sample=serverEvidence.find(e=>e.assessment_type==='test')
+  const lastTest=sample ? {correct:sample.result.correct_count,total:sample.result.total_questions,score:sample.result.score,completedAt:sample.result.completed_at} : null
+  const practised=serverEvidence.length
+  const journeyStops=serverEvidence.filter(e=>e.assessment_type==='cfu').length
+  const activity=serverEvidence.map(e=>[ClipboardCheck,'#7c3aed',e.assessment_type.toUpperCase(),e.subject || 'Assessment',`${e.result.score}%`,formatBrowserDateTime(e.result.completed_at),e])
   const evidence = [
     lastTest
       ? ['Latest test', lastTest.correct / lastTest.total, `${lastTest.correct}/${lastTest.total}`,
@@ -49,7 +47,7 @@ export default function ParentEvidence() {
          `Answered ${lastTest.correct} of ${lastTest.total} correctly.`]
       : ['Latest test', 0, '\u2014', '#94a3b8', 'Not taken yet', 'No test finished yet.'],
     ['Practice sessions', Math.min(1, practised / 10), String(practised), '#f59e0b',
-     practised > 0 ? 'Building up' : 'Not started', 'Quizzes and bot battles completed.'],
+     practised > 0 ? 'Building up' : 'Not started', 'CFU, Tests, Challenges and Battles completed.'],
   ]
   const ac = useAccent()
   return (
@@ -71,10 +69,10 @@ export default function ParentEvidence() {
             Grade and board are the profile choices; they are not a curriculum-verification result.
           </div>
         )}
-        <div className="mt-6 grid grid-cols-[335px_1fr] gap-5">
+        <p role="status">{resource.loading ? "Loading saved evidence…" : resource.error}</p><div className="mt-6 grid grid-cols-[335px_1fr] gap-5">
           <Stack className="flex flex-col gap-4" start={0.6}>
             <Item v="soft"><Card className="p-5 flex items-start gap-4"><span className="icon-orb w-[54px] h-[54px] text-white" style={{ background: 'var(--grad-primary)' }}><GraduationCap size={28} /></span><span className="leading-tight"><span className="block font-display font-extrabold text-[20px] text-primary-ink">Learning profile</span><span className="block mt-1 text-[17px] font-bold text-ink">{board} {gradeLabel(grade)}</span><span className="block mt-1 text-[13px] font-semibold text-ink-3">Chosen during setup</span></span></Card></Item>
-            <Item v="soft"><Card className="p-5"><div className="font-display font-extrabold text-[20px] text-primary-ink">What is recorded</div><div className="mt-3 flex flex-col gap-3">{[[BookOpen, 'Journey stops', `${journeyStops} reached`], [ClipboardCheck, 'Latest test', lastTest?.total ? `${lastTest.correct}/${lastTest.total} correct` : 'Not taken yet'], [HelpCircle, 'Practice', `${practised} quizzes and battles`]].map(([I, t, s]) => <div key={t} className="flex items-center gap-3"><span className="icon-orb w-[48px] h-[48px] text-white shrink-0" style={{ background: 'var(--grad-primary)' }}><I size={24} /></span><span className="leading-tight"><span className="block text-[17px] font-extrabold text-ink">{t}</span><span className="block text-[13px] font-semibold text-ink-3">{s}</span></span></div>)}</div></Card></Item>
+            <Item v="soft"><Card className="p-5"><div className="font-display font-extrabold text-[20px] text-primary-ink">What is recorded</div><div className="mt-3 flex flex-col gap-3">{[[BookOpen, 'Journey stops', `${journeyStops} reached`], [ClipboardCheck, 'Latest test', lastTest?.total ? `${lastTest.correct}/${lastTest.total} correct` : 'Not taken yet'], [HelpCircle, 'Practice', `${practised} assessments`]].map(([I, t, s]) => <div key={t} className="flex items-center gap-3"><span className="icon-orb w-[48px] h-[48px] text-white shrink-0" style={{ background: 'var(--grad-primary)' }}><I size={24} /></span><span className="leading-tight"><span className="block text-[17px] font-extrabold text-ink">{t}</span><span className="block text-[13px] font-semibold text-ink-3">{s}</span></span></div>)}</div></Card></Item>
             <Item v="soft"><Card className="p-5"><div className="font-display font-extrabold text-[20px] text-primary-ink">When results appear</div><p className="mt-2 text-[15px] font-semibold text-ink-2">Test scores appear here after {name} completes an assessment.</p></Card></Item>
           </Stack>
           <div className="flex flex-col gap-5">
@@ -87,7 +85,7 @@ export default function ParentEvidence() {
               <div className="w-[330px] flex flex-col justify-center rounded-2xl bg-[var(--lavender)]/60 p-6"><BookOpen size={40} className="text-primary-ink" /><h3 className="mt-3 font-display font-extrabold text-[21px] text-ink">Progress has a source</h3><p className="mt-2 text-[15px] font-semibold text-ink-2">Counts and results here update when {name} completes activities.</p></div>
             </Card>
             <div className="grid grid-cols-[1fr_420px] gap-5">
-              <Card className="p-5"><div className="font-display font-extrabold text-[20px] text-ink">Recent activity</div><div className="mt-3 flex flex-col gap-3">{activity.map(([I, c, t, s, r, when]) => <div key={t} className="flex items-center gap-3"><span className="icon-orb w-[46px] h-[46px] text-white shrink-0" style={{ background: c }}><I size={22} /></span><span className="flex-1 leading-tight"><span className="block text-[16px] font-extrabold text-ink">{t}</span><span className="block text-[13px] font-semibold text-ink-3">{s}</span></span><span className="text-right leading-tight"><span className={cn('block text-[14px] font-extrabold', r === 'Completed' ? 'text-green-600' : 'text-ink-2')}>{r}</span><span className="block text-[12px] font-semibold text-ink-3">{when}</span></span></div>)}{activity.length === 0 && <div className="text-[15px] font-semibold text-ink-3 leading-snug">Nothing yet. Lessons, tests and battles appear here as {name} completes them.</div>}</div></Card>
+              <Card className="p-5"><div className="font-display font-extrabold text-[20px] text-ink">Recent activity</div><div className="mt-3 flex max-h-[230px] overflow-y-auto flex-col gap-3">{activity.map(([I, c, t, s, r, when, record]) => <div key={record.attempt_id} className="flex items-center gap-3"><span className="icon-orb w-[46px] h-[46px] text-white shrink-0" style={{ background: c }}><I size={22} /></span><span className="flex-1 leading-tight"><span className="block text-[16px] font-extrabold text-ink">{t}</span><span className="block text-[13px] font-semibold text-ink-3">{s}</span></span><button className="text-primary-ink underline" onClick={()=>setSelectedReview(record.review)}>Answers</button><span className="text-right leading-tight"><span className={cn('block text-[14px] font-extrabold', r === 'Completed' ? 'text-green-600' : 'text-ink-2')}>{r}</span><span className="block text-[12px] font-semibold text-ink-3">{when}</span></span></div>)}{activity.length === 0 && <div className="text-[15px] font-semibold text-ink-3 leading-snug">Nothing yet. Lessons, tests and battles appear here as {name} completes them.</div>}</div></Card>
               <Card className="p-5"><div className="font-display font-extrabold text-[20px] text-ink">What to do next <span className="text-primary-ink">✦</span></div><p className="mt-1 text-[15px] font-bold text-ink-2 leading-snug">{lastTest?.total ? `Latest test: ${lastTest.correct}/${lastTest.total} correct.` : 'No test result yet.'}</p><p className="mt-2 text-[14px] font-semibold text-ink-3 leading-snug">Choose a lesson or test; this is not an automatic diagnosis.</p><Button size="md" arrow className="mt-3 w-full h-[50px] uppercase text-[16px]" sound="whoosh" onClick={() => nav('/parent/plan')}>See suggested steps</Button></Card>
             </div>
           </div>
@@ -95,6 +93,7 @@ export default function ParentEvidence() {
       </Panel>
       <Cutout id="evidence-0" delay={0.27} amp={8} dx={-40} dy={10} scale={0.92} />
       <motion.div className="absolute left-[560px] top-[898px] w-[560px] text-center text-[15px] font-extrabold tracking-[0.3em] text-ink-3 uppercase" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>✦ Every child. Every dream. Every day. ✦</motion.div>
+      <AttemptReview open={Boolean(selectedReview)} items={selectedReview ? reviewItems(selectedReview) : []} onClose={()=>setSelectedReview(null)} />
     </Page>
   )
 }

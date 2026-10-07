@@ -55,6 +55,10 @@ function studioQuestion(question, index, learning) {
   }
 }
 
+// A server bank preserves authored membership. It must not silently discard a
+// question because an author reused its text in a different assessment bank.
+export const normalizeAuthoredQuestionBank=(questions,learning)=>questions.map((q,i)=>studioQuestion(q,i,learning))
+
 /** Convert the Content Studio download/push payload into the lesson screen contract. */
 export function normalizeContentPackage(raw, id, fallback) {
   const payload = raw?.data ?? raw
@@ -103,9 +107,10 @@ export function normalizeContentPackage(raw, id, fallback) {
         ...fallback.discover.contents[0],
         model: {
           ...fallback.discover.contents[0].model,
+          key: `${id}-concept`,
           title: conceptName,
           caption: objective,
-          image: learning.image_url ?? questions[0].models[0].image,
+          image: learning.image_url ?? questions[0].models[0].image ?? null,
           alt: learning.image_alt ?? `Visual explanation of ${payload.concept?.name ?? fallback.topic}`,
         },
         prompt: {
@@ -115,8 +120,8 @@ export function normalizeContentPackage(raw, id, fallback) {
         think_about: { text: objective, emphasis: conceptName.split(/\s+/)[0] ?? '' },
         hints: list(learning.hints),
         nova: {
-          speech: learning.nova_script ?? fallback.discover.contents[0].nova.speech,
-          voice: learning.nova_script ?? fallback.discover.contents[0].nova.voice,
+          speech: learning.nova_script ?? objective,
+          voice: learning.nova_script ?? objective,
         },
       }],
     },
@@ -125,6 +130,7 @@ export function normalizeContentPackage(raw, id, fallback) {
     crew: null,
     easier: { enabled: false },
     check: { selected: 0, questions },
+    learn_before_test: payload.learn_before_test,
     assessments: {
       check_for_understanding: normalizeGroup(payload.check_for_understanding),
       test_questions: normalizeGroup(payload.test_questions?.questions),
@@ -136,9 +142,11 @@ export function normalizeContentPackage(raw, id, fallback) {
       ...fallback.complete,
       topic_label: conceptName,
       encouragement: learning.nova_feedback ?? fallback.complete.encouragement,
-      outcomes: fallback.complete.outcomes.map((outcome, index) => index === 0
-        ? { ...outcome, skill: conceptName, description: objective }
-        : outcome),
+      outcomes: fallback.complete.outcomes.map((outcome, index) => ({
+        ...outcome,
+        skill: index === 0 ? conceptName : index === 1 ? 'Keep practising' : 'Next mission',
+        description: index === 0 ? objective : index === 1 ? 'Use what you learned in the next activity.' : 'Continue your learning journey.',
+      })),
     },
   }
 }

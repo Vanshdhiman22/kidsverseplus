@@ -1,0 +1,20 @@
+.git
+node_modules
+.mock-data
+.env.local
+.env.*.local
+dist
+dist-review
+dist-connected
+tmp
+output
+docs/api-audit/screens
+docs/api-audit/retest-screens
+docs/api-audit/archive-*
+docs/verification/frontend-mock-*
+docs/verification/screen-api-popup/*.png
+docs/api-audit/*.private.json
+*.log
+
+# Main frontend uses the external live backend. Mock deployment has its own repo.
+api/mock.js

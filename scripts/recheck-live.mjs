@@ -1,0 +1,12 @@
+import fs from 'node:fs/promises';import os from 'node:os';import path from 'node:path';
+const base='https://kidsverse-apinew.vercel.app/api/v1';
+const credentials=JSON.parse(await fs.readFile(path.join(os.tmpdir(),'kidsverse-api-audit-credentials.private.json'),'utf8'));
+const res=await fetch(base+'/auth/parent/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:credentials.email,password:credentials.password}),signal:AbortSignal.timeout(20000)});
+const login=await res.json();if(!res.ok||!login.token)throw Error('Audit login failed: '+res.status);
+const previous=JSON.parse(await fs.readFile('docs/api-audit/report.json','utf8'));
+const seen=new Set();const todo=previous.requests.filter(q=>q.method==='GET'&&!q.expected).filter(q=>!seen.has(q.path)&&seen.add(q.path));
+const redact=v=>Array.isArray(v)?v.map(redact):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,v])=>[k,/password|token|authorization/i.test(k)?'[redacted]':redact(v)])):v;
+const result={base,at:new Date().toISOString(),studentId:credentials.studentId,requests:[]};let next=0;
+await Promise.all(Array.from({length:4},async()=>{while(next<todo.length){const q=todo[next++];let e={method:'GET',path:q.path,screens:q.screens};try{const r=await fetch(base+q.path,{headers:{Authorization:`Bearer ${login.token}`},signal:AbortSignal.timeout(20000)});let raw=await r.text();try{raw=JSON.parse(raw)}catch{}e={...e,status:r.status,response:redact(raw)};}catch(error){e={...e,status:'network error',error:error.message};}result.requests.push(e);console.log(e.status,e.path);}}));
+await fs.mkdir('docs/integration-recheck',{recursive:true});await fs.writeFile('docs/integration-recheck/live-responses.json',JSON.stringify(result,null,2));
+console.log('Saved',result.requests.length,'GET responses');

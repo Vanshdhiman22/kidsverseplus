@@ -10,8 +10,15 @@ Every screen is composed on a fixed 1672×941 stage that scales to fit the windo
 pnpm install
 pnpm dev        # http://localhost:5180
 pnpm build
+```
 
 ## API configuration
+
+The local mock now has 109 documented API operations for the 62-screen reference.
+Open `/mock-api-review` for captured request/response JSON, or `/mock-demo` for the
+screen walkthrough. `npm run mock:verify:all` regenerates the full HTTP evidence
+and OpenAPI contract. Content and runtime state persist in local SQLite.
+See [mock engineering review](docs/mock-demo/SENIOR-REVIEW.md) for scope and commands.
 
 Copy `.env.example` to `.env.local` and set `VITE_API_BASE_URL` to the public
 `/api/v1` origin. The browser receives only this public API DNS; database URLs,
@@ -21,12 +28,24 @@ with `VITE_`.
 `src/lib/api.js` is the shared request layer. It sends JSON, attaches a Bearer token
 only when supplied by authenticated state, and returns structured `ApiError` values
 for non-2xx responses. Screens can continue using their bundled demo data until a
-healthy API is available.
+healthy API is available. For an authenticated live lesson, unavailable or invalid
+mission content shows a retry screen rather than submitting bundled demo answers.
 
 Timestamps from the API must be ISO-8601 UTC values (for example
 `2026-09-18T10:30:00Z`). Use `formatBrowserDateTime` from `src/lib/time.js` to
 render them: it automatically uses the visitor's browser timezone and observes DST.
-```
+
+Mission teaching content loads from `GET /missions/{missionId}` using the same
+`VITE_API_BASE_URL` and request layer as the rest of the app. The adapter supports
+the documented flattened `content` fields, three `learn_before_test` steps, and
+`check_for_understanding`. Local uploaded previews remain separate practice runs.
+
+Formal tests use API attempts, the API's `questions_count`, question retrieval,
+answer submission, completion, and result endpoints. The legacy `question_count`
+field is still supported for older releases.
+
+Run `pnpm test:integration` for the document contract and frontend client checks.
+See [API integration status](docs/API-INTEGRATION-STATUS.md) for remaining checks.
 
 Press the backtick key (`` ` ``) or click **☰ Screens** (bottom-left) to jump between all 21 screens.
 

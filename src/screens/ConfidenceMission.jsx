@@ -13,15 +13,21 @@ import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeT, safeB } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { speak } from '../lib/voice.js'
-import { completeCompanionActivity } from '../lib/gameApi.js'
+import { apiRequest } from '../lib/api.js'
+import { useCompanionActivity } from '../lib/useCompanionActivity.js'
+import ContentStatus from '../components/ContentStatus.jsx'
 
 const SKILLS = [[MessageCircle, '#a855f7', 'Complete sentences'], [Star, '#facc15', 'Notice details'], [BookA, '#3b82f6', 'Try new words'], [ShieldCheck, '#38bdf8', 'Speak with confidence']]
 
 export default function ConfidenceMission() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
+  const activity=useCompanionActivity(g.state.activeChildId,'speaking')
+  const content=activity.data
   const [turn, setTurn] = useState(0)
-  const chat = [[null, 'nova', <>Tell me three things <span className="text-primary-ink">you notice.</span></>], [null, 'nova', <>Now add one <span className="text-primary-ink">describing word.</span></>]]
+  const [saving,setSaving]=useState(false)
+  const chat=(content?.prompts || []).map(prompt=>[null,'nova',prompt])
+  if(!content || activity.error)return <ContentStatus activity="speaking activity" pkg={{contentLoading:activity.loading,contentError:activity.error || 'Sign in first.'}} />
   return (
     <Page>
       <Scene name="confidence" />
@@ -30,9 +36,9 @@ export default function ConfidenceMission() {
         <button className="mt-4 flex items-center gap-2 text-[17px] font-bold text-ink" onClick={() => { sfx.tap(); nav('/extra') }}><ArrowLeft size={20} /> Back</button>
         <div className="hairline my-3" />
         <div className="eyebrow text-[14px]">Confidence Mission</div>
-        <div className="font-display font-extrabold text-[30px] leading-[1.05] text-ink">Describe<br />the picture</div>
+        <div className="font-display font-extrabold text-[30px] leading-[1.05] text-ink">{content.title}</div>
         <div className="mt-2 text-[16px] font-semibold text-ink-2">A self-guided speaking activity. No voice scoring.</div>
-        <Card className="mt-3 p-4"><div className="flex items-center gap-2 font-extrabold text-[16px] text-primary-ink">Nova <Volume2 size={16} /></div><p className="mt-1 text-[15px] font-semibold text-ink-2 leading-snug">Take a good look at the picture. When you're ready, tell me what you see!</p></Card>
+        <Card className="mt-3 p-4"><div className="flex items-center gap-2 font-extrabold text-[16px] text-primary-ink">Nova <Volume2 size={16} /></div><p className="mt-1 text-[15px] font-semibold text-ink-2 leading-snug">{content.prompts[turn]}</p></Card>
       </Panel>
       <Child screen="confidence" delay={0.5} amp={6} />
       <Cutout id="confidence-1" delay={0.24} amp={11} />
@@ -48,7 +54,7 @@ export default function ConfidenceMission() {
 
       <Panel className="absolute left-[310px] top-[130px] w-[705px] h-[680px] p-4" initial="hidden" animate="show">
         <motion.div className="rounded-[22px] overflow-hidden h-[430px]" style={{ boxShadow: '0 20px 40px -20px rgba(40,20,120,.5)' }} initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.17 }}>
-          <motion.img src="/art/crops/starfruits.webp" alt="" className="w-full h-full object-cover" animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }} />
+          <motion.img src={content.image_url} alt={content.image_alt || content.title} className="w-full h-full object-cover" animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }} />
         </motion.div>
         <Stack className="mt-4 grid grid-cols-4 gap-4" start={0.8} delay={0.08}>
           {SKILLS.map(([I, c, t]) => <Item key={t} v="pop"><Card className="h-[190px] p-4 flex flex-col items-center justify-center text-center"><span className="icon-orb w-[64px] h-[64px]" style={{ color: c, background: `${c}22` }}><I size={32} /></span><span className="mt-3 font-display font-extrabold text-[18px] text-ink leading-tight">{t}</span></Card></Item>)}
@@ -57,7 +63,7 @@ export default function ConfidenceMission() {
 
       <Panel className="absolute left-[1020px] top-[170px] w-[305px] h-[530px] p-6 flex flex-col items-center justify-center" initial="hidden" animate="show">
         <div className="relative grid place-items-center">
-          <motion.button className="w-[140px] h-[140px] rounded-full grid place-items-center text-white" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }} onClick={() => { sfx.select(); setTurn(1) }} whileTap={{ scale: 0.94 }}><MessageCircle size={60} /></motion.button>
+          <motion.button className="w-[140px] h-[140px] rounded-full grid place-items-center text-white" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }} onClick={() => { sfx.select(); setTurn(v=>Math.min(v+1,chat.length-1)) }} whileTap={{ scale: 0.94 }}><MessageCircle size={60} /></motion.button>
         </div>
         <div className="mt-8 font-display font-extrabold text-[26px] text-ink uppercase">Next prompt</div>
         <div className="text-[17px] font-semibold text-ink-3">Say your answer aloud at your own pace.</div>
@@ -68,23 +74,25 @@ export default function ConfidenceMission() {
           <Item key={i} v="right"><Panel className="p-4 flex items-center gap-3 min-h-[150px]" style={{ opacity: i > turn ? 0.55 : 1 }}>
             {who === 'kid' ? <img src={`/art/kid${f}-face-sm.webp`} alt="" className="w-[70px] h-[70px] rounded-full object-cover border-2 border-white shadow" /> : <img src="/art/hd/nova-v2.webp" alt="" className="w-[70px] floaty" />}
             <span className="flex-1 text-[18px] font-bold text-ink leading-snug">{msg}</span>
-            <button className="pill w-[36px] h-[36px] justify-center text-primary-ink" onClick={() => speak(i === 0 ? 'Tell me three things you notice.' : 'Now add one describing word.')}><Volume2 size={16} /></button>
+            <button className="pill w-[36px] h-[36px] justify-center text-primary-ink" onClick={() => speak(msg)}><Volume2 size={16} /></button>
           </Panel></Item>
         ))}
-        <Item v="right"><Panel className="p-5 h-[145px]"><div className="flex items-center gap-2 text-[15px] font-extrabold text-primary-ink uppercase tracking-wide"><Lightbulb size={18} className="text-gold" /> Tips from Nova</div><p className="mt-2 text-[16px] font-semibold text-ink-2 leading-snug">Look closely, use details, and speak clearly. You've got this!</p></Panel></Item>
+        <Item v="right"><Panel className="p-5 h-[145px]"><div className="flex items-center gap-2 text-[15px] font-extrabold text-primary-ink uppercase tracking-wide"><Lightbulb size={18} className="text-gold" /> Tips from Nova</div><p className="mt-2 text-[16px] font-semibold text-ink-2 leading-snug">{content.tips.join(' ')}</p></Panel></Item>
       </Stack>
 
       <motion.div className="absolute pill h-[80px] px-3 gap-3" style={{ ...bleedL(24), ...safeB(24) }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <button className="pill h-[56px] px-4 gap-3" onClick={() => speak('Look at the picture. Tell me three things you notice.')}><Volume2 size={20} className="text-primary-ink" /><span className="font-extrabold text-[15px] text-ink">Hear the prompt</span></button>
-        <button className="pill h-[56px] px-5 text-[16px] font-bold text-ink" onClick={() => { sfx.tap(); speak('Look at the star fruits market. What do you notice?') }}><Lightbulb size={18} className="text-gold" /> Hint</button>
+        <button className="pill h-[56px] px-4 gap-3" onClick={() => speak(content.prompts[turn])}><Volume2 size={20} className="text-primary-ink" /><span className="font-extrabold text-[15px] text-ink">Hear the prompt</span></button>
+        <button className="pill h-[56px] px-5 text-[16px] font-bold text-ink" onClick={() => { sfx.tap(); speak(content.tips.join(' ')) }}><Lightbulb size={18} className="text-gold" /> Hint</button>
       </motion.div>
       <motion.div className="absolute left-[835px] flex items-center gap-4" style={safeB(24)} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <Button variant="ghost" size="md" icon={<RefreshCw size={22} />} className="h-[64px] px-8 text-[19px]" onClick={() => setTurn(0)}>Try Again</Button>
-        <Button size="md" arrow className="w-[300px] h-[64px] text-[22px]" sound="whoosh" onClick={async () => {
+        <Button size="md" arrow className="w-[300px] h-[64px] text-[22px]" sound="whoosh" disabled={saving} onClick={async () => {
           try {
-            await completeCompanionActivity(g.state.activeChildId, ['confidence', 'speak', 'talk'])
-            await g.refreshStats().catch(error => g.notice(error.message)); nav('/extra')
-          } catch (error) { g.notice(error.message) }
+            if(saving)return
+            setSaving(true)
+            if(!activity.local){await apiRequest(`/students/${g.state.activeChildId}/companion-activities/${content.id}/complete`,{method:'POST',body:{}}); await g.refreshStats().catch(error => g.notice(error.message))}
+            nav('/extra')
+          } catch (error) { g.notice(error.message) } finally {setSaving(false)}
         }}>Continue</Button>
       </motion.div>
     </Page>

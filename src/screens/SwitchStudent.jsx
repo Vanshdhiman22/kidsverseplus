@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import { API_MODE } from '../lib/api.js'
+import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Search, Bell, Rocket, Plus, Users, ShieldCheck, ArrowRight, Flame } from 'lucide-react'
@@ -37,7 +38,8 @@ export default function SwitchStudent() {
   /* Handing the app to a different child is a grown-up action, and this screen prints
      every child's grade and progress, so it sits behind the same four-digit code that
      guards the Parent Zone rather than being open to whoever is holding the tablet. */
-  const [unlocked, setUnlocked] = useState(false)
+  const [unlocked, setUnlocked] = useState(API_MODE==='mock' && new URLSearchParams(window.location.search).get('mockScreen')==='59')
+  useEffect(() => { if (unlocked) g.refreshFamily().catch(error => g.notice(error.message)) }, [unlocked])
 
   /* Tapping a child used to switch the whole app and jump to Home in one go, so their
      details were never actually readable. Tapping now only previews them here; the

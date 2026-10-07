@@ -93,7 +93,7 @@ export default function ApiTestLab() {
         </div>
         <div className="mt-5 text-center text-[13px] font-semibold text-indigo-200">
           {API_MODE === 'mock'
-            ? 'These checks only read data. Mock mode uses server memory, not a database.'
+            ? 'These checks only read data. Mock mode uses the local SQLite database.'
             : 'These checks call the configured live API. Browser responses alone do not prove direct database connectivity.'}
         </div>
       </div>

@@ -1,5 +1,8 @@
 node_modules
 dist
+dist-review
+dist-connected
+.vercel
 .vite
 .env.local
 .env.*.local
@@ -15,3 +18,8 @@ dist
 *.zip
 __pycache__/
 *.pyc
+docs/api-audit/*.private.json
+.mock-data/
+
+.vercel
+.env*

@@ -11,8 +11,13 @@ export function useLiveResource(load, deps, { enabled = true } = {}) {
     }
     const controller = new AbortController()
     let active = true
-    setState(current => ({ ...current, error: '', loading: true }))
-    Promise.resolve(load(controller.signal)).then(data => {
+    setState({ data: null, error: '', loading: true })
+    Promise.resolve().then(() => {
+      // StrictMode can cancel an effect before its microtask starts. Do not send
+      // a request for that abandoned render.
+      if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError')
+      return load(controller.signal)
+    }).then(data => {
       if (active) setState({ data, error: '', loading: false })
     }).catch(error => {
       if (active && error?.name !== 'AbortError') setState({ data: null, error: error.message, loading: false })

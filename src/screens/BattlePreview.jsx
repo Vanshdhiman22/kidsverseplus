@@ -12,7 +12,7 @@ import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Bar, Sparkles } from '../components/Widgets.jsx'
 import { BOTS, BATTLE_XP } from '../data/battle.jsx'
 import { useGame } from '../state/GameProvider.jsx'
-import { useRouteContent, withSubject } from '../content/index.js'
+import { useRouteContent, withSubject, routeSubject } from '../content/index.js'
 
 const ICONS = { Maths: Calculator, Literacy: BookOpen, Speed: Zap }
 const COLORS = { Maths: '#3b82f6', Literacy: '#a855f7', Speed: '#22c55e' }
@@ -33,14 +33,14 @@ export default function BattlePreview() {
   const [preview, setPreview] = useState(null)
   const [error, setError] = useState('')
   const pkg = useRouteContent()
-  const cmsBattle = Boolean(pkg.studio && pkg.assessments?.battle_questions?.length)
+  const cmsBattle = Boolean(pkg.contentSource !== 'api' && pkg.studio && pkg.assessments?.battle_questions?.length)
   const bot = { ...selectedBot, name: preview?.opponent?.name || selectedBot.name }
   useEffect(() => {
     if (cmsBattle) return
     let active = true
-    battlePreview(BOTS.indexOf(selectedBot)).then(data => { if (active) setPreview(data) }).catch(e => { if (active) setError(e.message) })
+    battlePreview(BOTS.indexOf(selectedBot), routeSubject(), sp.get('mission') || undefined).then(data => { if (active) setPreview(data) }).catch(e => { if (active) setError(e.message) })
     return () => { active = false }
-  }, [selectedBot.id, cmsBattle])
+  }, [selectedBot.id, cmsBattle, routeSubject(), sp.get('mission')])
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
   return (
     <Page>
@@ -76,7 +76,7 @@ export default function BattlePreview() {
       <div className="absolute left-[670px] top-[568px]"><SpeechBubble tail="left" delay={0.3} className="w-[440px] text-[20px]"><span className="flex items-center gap-2 font-display font-extrabold text-[18px] text-primary-ink uppercase tracking-wide">✦ Nova's strategy</span><span className="block mt-1 font-bold">{bot.tip}</span></SpeechBubble></div>
 
       <motion.div className="absolute left-[420px] top-[728px] flex items-center gap-5" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow icon={<Swords size={30} />} className="w-[440px] h-[84px] uppercase text-[30px]" sound="whoosh" onClick={async () => { if (!cmsBattle) await startBattle(g.state.activeChildId, BOTS.indexOf(selectedBot)); nav(withSubject(`/challenge/battle?bot=${bot.id}`)) }}>Battle now</Button>
+        <Button size="lg" arrow icon={<Swords size={30} />} className="w-[440px] h-[84px] uppercase text-[30px]" sound="whoosh" onClick={async () => { if (!cmsBattle) { const started = await startBattle(g.state.activeChildId, BOTS.indexOf(selectedBot), routeSubject(), sp.get('mission') || undefined); if (!started.total_questions) throw new Error('Battle questions are not available from the service yet. Please try a test instead.') } nav(withSubject(`/challenge/battle?bot=${bot.id}`)) }}>Battle now</Button>
         <Button variant="outline" size="lg" icon={<BookOpen size={28} />} className="h-[84px] px-10 uppercase text-[24px] text-sky-600 border-sky-400" onClick={() => nav(withSubject('/missions/fractions'))}>Practise first</Button>
       </motion.div>
       <Panel className="absolute left-[270px] top-[830px] w-[1100px] h-[92px] px-8 grid grid-cols-3 items-center divide-x divide-[var(--line)]" initial="hidden" animate="show">

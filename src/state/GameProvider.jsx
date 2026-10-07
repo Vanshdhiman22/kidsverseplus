@@ -2,9 +2,12 @@ import React, { createContext, useContext, useEffect, useMemo, useReducer } from
 import { setSoundEnabled } from '../lib/sound.js'
 import { setVoiceEnabled } from '../lib/voice.js'
 
-import { emptyProfile, emptyStats, emptyProgress, beginChild, finishChild, selectChild, migrateFamily, loginRoute, openAccount, hydrateRemoteFamily, beginRemoteChild } from './family.js'
-import { api as remote, apiRequest, API_MODE, setToken, warmCatalogs } from '../lib/api.js'
+import { emptyProfile, emptyStats, emptyProgress, beginChild, finishChild, selectChild, migrateFamily, loginRoute, openAccount, hydrateRemoteFamily, beginRemoteChild, remoteStudent } from './family.js'
+import { api as remote, apiRequest, API_MODE, setToken, warmCatalogs, clearSession, mockSnapshot } from '../lib/api.js'
 import { isReviewMode, takeReviewSeed } from '../lib/reviewMode.js'
+import { clearBrowserData } from '../lib/browserData.js'
+import { selectApiAvatar } from '../lib/avatar-selection.js'
+import { saveOnboardingStep } from '../lib/onboarding-save.js'
 
 const KEY = `kidsverse-plus-v3-${API_MODE}${isReviewMode() ? '-review' : ''}`
 /* A finished mission pays about 45 XP; 400 per level keeps a level within a few sittings. */
@@ -30,24 +33,26 @@ const initial = {
 }
 
 function load() {
+  const review = isReviewMode()
   try {
-    const s = (isReviewMode() ? takeReviewSeed() : null) || migrateFamily(JSON.parse(localStorage.getItem(KEY)))
+    const s = (review ? takeReviewSeed() : null) || migrateFamily(JSON.parse(localStorage.getItem(KEY)))
     if (s) return {
       ...initial, ...s,
-      profile: { ...initial.profile, ...s.profile }, stats: { ...initial.stats, ...s.stats },
+      profile: { ...initial.profile, ...s.profile, name: s.profile?.name || (review ? 'Reviewer' : initial.profile.name) }, stats: { ...initial.stats, ...s.stats },
       settings: { ...initial.settings, ...s.settings }, progress: { ...initial.progress, ...s.progress },
       parentLock: { ...initial.parentLock, ...s.parentLock },
       children: s.children ?? initial.children, activeChildId: s.activeChildId ?? initial.activeChildId,
       toasts: [], flash: null, notices: [],
     }
   } catch {}
-  return initial
+  return review ? { ...initial, profile: { ...initial.profile, name: 'Reviewer' } } : initial
 }
 
 let seq = 0
 function reducer(state, a) {
   switch (a.type) {
-    case 'remoteStats': return { ...state, stats: { ...state.stats, xp: a.stats.total_xp, streak: a.stats.day_streak } }
+    case 'mockFamily': { const next=hydrateRemoteFamily(state,a.data.parent.email,a.data.students,a.data.resources['/avatar/characters'].characters);const stats=a.data.resources[`/students/${next.activeChildId}/home`]?.stats;return {...next,stats:{...next.stats,xp:stats?.total_xp ?? next.stats.xp,streak:stats?.day_streak ?? 0,battles:0},progress:{...next.progress,...a.data.demo.progress},parentLock:{pin:a.data.demo.pin}} }
+    case 'remoteStats': return { ...state, stats: { ...state.stats, ...a.stats, xp: a.stats.total_xp ?? state.stats.xp, streak: a.stats.day_streak ?? state.stats.streak } }
     case 'profile': return { ...state, profile: { ...state.profile, ...a.patch } }
     case 'settings': return { ...state, settings: { ...state.settings, ...a.patch } }
     case 'progress': return { ...state, progress: { ...state.progress, ...a.patch } }
@@ -85,6 +90,11 @@ function reducer(state, a) {
     case 'notice': return { ...state, notices: [...state.notices, { id: ++seq, message: a.message }] }
     case 'clearNotice': return { ...state, notices: state.notices.filter(n => n.id !== a.id) }
     case 'pin': return { ...state, parentLock: { pin: a.pin } }
+    case 'refreshChildren': return { ...state, children: a.students.map(student => {
+      const previous = state.children.find(child => child.id === student.id)
+      const child = remoteStudent(student, a.characters)
+      return { ...previous, ...child, stats: previous?.stats || child.stats, progress: previous?.progress || child.progress }
+    }) }
     case 'switchChild': return selectChild(state, a.id)
     case 'addChild': return beginChild(state, a.name)
     case 'completeChild': return finishChild(state, a.id)
@@ -107,9 +117,20 @@ export function GameProvider({ children }) {
   useEffect(() => { setVoiceEnabled(state.settings.voice) }, [state.settings.voice])
   const api = useMemo(() => ({
     state, dispatch,
+    refreshFamily: async () => {
+      const [{ students }, { characters }] = await Promise.all([remote.parentStudents(), remote.avatarCharacters()])
+      dispatch({ type: 'refreshChildren', students, characters })
+    },
     level: levelOf(state.stats.xp), levelPct: levelPct(state.stats.xp), toNext: XP_PER_LEVEL - (state.stats.xp % XP_PER_LEVEL),
     setProfile: patch => dispatch({ type: 'profile', patch }),
-    setSettings: patch => dispatch({ type: 'settings', patch }),
+    setSettings: patch => {
+      if(API_MODE==='mock'&&mockSnapshot.value&&state.activeChildId) {
+        return apiRequest(`/students/${state.activeChildId}/settings`,{method:'PATCH',body:patch})
+          .then(saved=>dispatch({type:'settings',patch:saved}))
+          .catch(e=>dispatch({type:'notice',message:e.message}))
+      }
+      dispatch({type:'settings',patch})
+    },
     setProgress: patch => dispatch({ type: 'progress', patch }),
     refreshStats: async () => {
       if (!state.activeChildId) return
@@ -123,7 +144,11 @@ export function GameProvider({ children }) {
     advanceStation: ({ world, base, per, total } = {}) => dispatch({ type: 'advanceStation', world, base, per, total }),
     addXp: (amount, label) => dispatch({ type: 'xp', amount, label }),
     bumpStreak: () => dispatch({ type: 'streak' }),
-    useBreakPass: date => dispatch({ type: 'useBreakPass', date }),
+    useBreakPass: async date => {
+      const result=await apiRequest(`/students/${state.activeChildId}/break-passes`,{method:'POST',body:{date}})
+      dispatch({type:'remoteStats',stats:{breakPasses:result.available,breakPassUsedDates:result.used_dates}})
+      return result
+    },
     /* One finished test. Home's progress panel counts these. */
     finishQuiz: () => dispatch({ type: 'quiz' }),
     recordTest: run => dispatch({ type: 'test', run }),
@@ -135,6 +160,17 @@ export function GameProvider({ children }) {
     clearNotice: id => dispatch({ type: 'clearNotice', id }),
     setParentPin: pin => dispatch({ type: 'pin', pin }),
     setAuthIntent: intent => dispatch({ type: 'authIntent', intent }),
+    startMockDemo: async () => {
+      if(API_MODE!=='mock') throw new Error('Open the local mock build first.')
+      const response=await apiRequest('/demo/login',{method:'POST',body:{}})
+      setToken(response.token)
+      dispatch({type:'mockFamily',data:response.bootstrap})
+      return '/mock-demo'
+    },
+    signOut: async () => {
+      try { await remote.logout() } catch (error) { console.warn('Remote logout failed:', error.message) }
+      finally { clearSession(); clearBrowserData(localStorage, sessionStorage); window.location.replace('/parent/login') }
+    },
     signUp: async (email, password) => {
       const response = await remote.signUp({ email: email.trim().toLowerCase(), password })
       setToken(response.token)
@@ -145,12 +181,16 @@ export function GameProvider({ children }) {
     signIn: async (email, password) => {
       const response = await remote.login({ email: email.trim().toLowerCase(), password })
       setToken(response.token)
+      if (API_MODE === 'mock' && response.bootstrap) {
+        dispatch({type:'mockFamily',data:response.bootstrap})
+        return '/home'
+      }
       void warmCatalogs()
       const [{ students }, { characters }, parentResponse] = await Promise.all([apiRequest('/parent/students'), remote.avatarCharacters(), remote.parentMe().catch(() => null)])
       const parent = parentResponse?.parent ?? parentResponse
       dispatch({ type: 'remoteFamily', email, students, characters })
       if (!students.length) return '/onboarding/child'
-      if (students.length === 1 && !students[0].onboarding_completed) return parent?.phone_verified_at ? '/onboarding/grade-board' : '/onboarding/parent-details'
+      if (students.length === 1 && !students[0].onboarding_completed) return API_MODE === 'live' || parent?.phone_verified_at ? '/onboarding/grade-board' : '/onboarding/parent-details'
       return loginRoute({ children: students }, state.authIntent === 'parent')
     },
     addChild: async name => {
@@ -159,36 +199,43 @@ export function GameProvider({ children }) {
       return student
     },
     completeChild: () => dispatch({ type: 'completeChild', id: crypto.randomUUID() }),
-    saveGradeBoard: () => apiRequest(`/students/${state.activeChildId}/grade-board`, { method: 'PATCH', body: { grade: state.profile.grade, board: state.profile.board } }),
+    saveGradeBoard: () => saveOnboardingStep({review:isReviewMode(),step:'grade-board',profile:state.profile,liveSave:() => apiRequest(`/students/${state.activeChildId}/grade-board`, { method: 'PATCH', body: { grade: state.profile.grade, board: state.profile.board } })}),
     saveAvatar: async () => {
-      const [{ characters }, { items }] = await Promise.all([remote.avatarCharacters(), remote.avatarItems()])
-      const character = characters[state.profile.face - 1]
-      const apiOutfitSlug = state.profile.outfit === 'explorer' ? 'explorers-jacket' : state.profile.outfit
-      const outfit = items.find(v => v.category === 'outfit' && v.slug === apiOutfitSlug)
-      if (!character || !outfit) throw new Error('This avatar is not available in the API catalog. Choose a supported avatar.')
-      return apiRequest(`/students/${state.activeChildId}/avatar`, { method: 'PUT', body: { character_id: character.id, outfit_item_id: outfit.id } })
+      const result=await saveOnboardingStep({review:isReviewMode(),step:'avatar',profile:state.profile,liveSave:async () => {
+        const [{ characters }, { items }] = await Promise.all([remote.avatarCharacters(), remote.avatarItems()])
+        const selection=selectApiAvatar(state.profile,characters,items)
+        return apiRequest(`/students/${state.activeChildId}/avatar`, {method:'PUT',body:selection})
+      }})
+      dispatch({type:'profile',patch:{face:Number(state.profile.face)||1,outfit:state.profile.outfit||'explorer'}})
+      return result
     },
-    saveInterests: async () => {
+    saveInterests: () => saveOnboardingStep({review:isReviewMode(),step:'interests',profile:state.profile,liveSave:async () => {
       const { interests } = await remote.interests()
       const ids = state.profile.interests.map(key => interests.find(i => i.key === key)?.id)
       if (ids.length < 3 || ids.some(id => !id)) throw new Error('Select at least three available API interests.')
       return apiRequest(`/students/${state.activeChildId}/interests`, { method: 'PUT', body: { interest_ids: ids } })
-    },
-    saveGoals: async () => {
+    }}),
+    saveGoals: () => saveOnboardingStep({review:isReviewMode(),step:'goals',profile:state.profile,liveSave:async () => {
       const { goals } = await remote.goals()
       const mapping = { school: 'master_school_topics', confidence: 'build_confidence', competition: 'prepare_competitions', reading: 'read_fluently', explore: 'explore_beyond_class', nova: 'not_sure_yet' }
       const ids = state.profile.goals.map(key => goals.find(v => v.key === (mapping[key] || key))?.id)
       if (ids.some(id => !id)) throw new Error('Selected goal is not in the API catalog.')
       return apiRequest(`/students/${state.activeChildId}/goals`, { method: 'PUT', body: { goal_ids: ids } })
-    },
+    }}),
     greetNova: async () => {
-      await apiRequest(`/students/${state.activeChildId}/onboarding/steps/lobby/complete`, { method: 'POST', body: {} })
-      const response = await apiRequest(`/students/${state.activeChildId}/nova/greet`, { method: 'POST', body: {} })
-      dispatch({ type: 'completeChild', id: state.activeChildId })
+      const response=await saveOnboardingStep({review:isReviewMode(),step:'nova',profile:state.profile,liveSave:async () => {
+        await apiRequest(`/students/${state.activeChildId}/onboarding/steps/lobby/complete`, { method: 'POST', body: {} })
+        return apiRequest(`/students/${state.activeChildId}/nova/greet`, { method: 'POST', body: {} })
+      }})
+      dispatch({ type: 'completeChild', id: state.activeChildId || (isReviewMode() ? `review-child-${crypto.randomUUID()}` : null) })
       return response
     },
     switchChild: id => dispatch({ type: 'switchChild', id }),
-    reset: () => dispatch({ type: 'reset' }),
+    reset: () => {
+      clearBrowserData(localStorage, sessionStorage)
+      // Reload also discards in-memory dummy tokens and cached account resources.
+      window.location.replace('/')
+    },
     toggleTheme: () => dispatch({ type: 'settings', patch: { theme: state.settings.theme === 'dark' ? 'light' : 'dark' } }),
     toggleSound: () => dispatch({ type: 'settings', patch: { sound: !state.settings.sound } }),
   }), [state])

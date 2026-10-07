@@ -14,9 +14,11 @@ import { useTint } from '../lib/accent.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
+import ContentStatus from '../components/ContentStatus.jsx'
 import { api } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 import { withSubject } from '../content/index.js'
+import { isReviewMode } from '../lib/reviewMode.js'
 
 const ICONS = { robo: Puzzle, lexi: BookOpen, cosmo: FlaskConical, pixel: Grid3x3 }
 
@@ -25,16 +27,17 @@ export default function BattleOpponents() {
   const g = useGame(); const { name, face } = g.state.profile
   const [sel, setSel] = useState('robo')
   const tint = useTint()
-  const { data: catalog } = useLiveResource(() => api.challenges(), [], { enabled: true })
+  const review = isReviewMode()
+  const { data: catalog, loading: catalogLoading, error: catalogError } = useLiveResource(() => api.challenges(), [review], { enabled: !review })
   const challengeId = catalog?.challenges?.[0]?.id
-  const { data: opponentResponse } = useLiveResource(
+  const { data: opponentResponse, loading: opponentsLoading, error: opponentsError } = useLiveResource(
     () => api.challengeOpponents(challengeId),
     [challengeId],
-    { enabled: Boolean(challengeId) },
+    { enabled: !review && Boolean(challengeId) },
   )
   const opponents = opponentResponse?.opponents ?? []
-  const bots = BOTS.map((bot, index) => {
-    const live = opponents[index]
+  const bots = review ? BOTS : opponents.map((live, index) => {
+    const bot = BOTS[index] || BOTS[0]
     return live ? {
       ...bot,
       apiId: live.id,
@@ -47,6 +50,7 @@ export default function BattleOpponents() {
     } : bot
   })
   const bot = bots.find(b => b.id === sel) ?? bots[0]
+  if (catalogLoading || opponentsLoading || catalogError || opponentsError || !bot) return <ContentStatus activity="opponents" pkg={{ contentLoading: catalogLoading || opponentsLoading, contentError: catalogError || opponentsError || "No opponents available" }} />
   return (
     <Page>
       <Scene name="opponents" />

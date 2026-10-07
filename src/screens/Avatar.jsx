@@ -43,7 +43,7 @@ export default function Avatar() {
   const skew = useTransform(srot, r => Math.sin((r * Math.PI) / 180) * 6)
   const width = useTransform(srot, r => `${Math.max(0.2, Math.abs(Math.cos((r * Math.PI) / 180))) * 100}%`)
   const turn = d => { sfx.whoosh(); animate(rot, rot.get() + d, { type: 'spring', stiffness: 90, damping: 16 }) }
-  const current = OUTFITS.find(o => o.id === outfit)
+  const current = OUTFITS.find(o => o.id === outfit) || OUTFITS[0]
   const sprite = spriteFor(outfit, selectedFace)
 
   return (

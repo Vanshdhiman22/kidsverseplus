@@ -10,6 +10,7 @@ import Button from '../components/Button.jsx'
 import { TrustRow } from './Landing.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { API_MODE } from '../lib/api.js'
+import { MOCK_DEMO_CREDENTIALS } from '../data/mock-demo.js'
 import { sfx } from '../lib/sound.js'
 
 const Field = ({ label, icon: Icon, type = 'text', placeholder, value, onChange, right }) => (
@@ -30,8 +31,8 @@ const Social = ({ label, children }) => (
 export default function ParentLogin() {
   const nav = useNavigate()
   const g = useGame()
-  const [email, setEmail] = useState('')
-  const [pw, setPw] = useState('')
+  const [email, setEmail] = useState(API_MODE === 'mock' ? MOCK_DEMO_CREDENTIALS.email : '')
+  const [pw, setPw] = useState(API_MODE === 'mock' ? MOCK_DEMO_CREDENTIALS.password : '')
   const [show, setShow] = useState(false)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -48,17 +49,15 @@ export default function ParentLogin() {
       setErr('Enter a valid email address.'); sfx.wrong?.(); return
     }
     if (pw.length < 6) { setErr('Password must contain at least 6 characters.'); sfx.wrong?.(); return }
-    setErr(''); setBusy(true)
+    setErr(''); setBusy('login')
     try { nav(await g.signIn(email, pw)) }
-    catch (error) { setErr(error.message || 'Sign in failed. Please retry.') }
+    catch (error) { setErr(API_MODE === 'mock' && error.status === 401 ? 'Use test credentials, or Start demo for direct access.' : error.message || 'Sign in failed. Please retry.') }
     finally { setBusy(false) }
   }
   const startDemo = async () => {
-    setErr(''); setBusy(true)
+    setErr(''); setBusy('demo')
     try {
-      const random = crypto.randomUUID()
-      const next = await g.signUp(`demo-${random}@example.invalid`, crypto.randomUUID())
-      nav(next)
+      await g.startMockDemo(); nav('/home')
     } catch (error) { setErr(error.message || 'Could not start the local demo. Please retry.') }
     finally { setBusy(false) }
   }
@@ -80,17 +79,20 @@ export default function ParentLogin() {
           <p className="mt-1 text-[19px] font-semibold text-ink-3">Sign in to view your child's learning journey.</p>
         </div>
         <Stack className="mt-5 flex flex-col gap-4 [&_.input]:h-[62px] [&_.input]:text-[20px]" start={0.55}>
+          {API_MODE === 'mock' && <Item v="soft" className="text-center">
+            <Button type="button" variant="outline" arrow className="w-full h-[56px] text-[20px]" disabled={Boolean(busy)} aria-busy={busy === 'demo'} onClick={startDemo}>{busy === 'demo' ? 'Opening demo…' : 'Start demo — no login needed'}</Button>
+            <div className="mt-2 text-[15px] font-semibold text-ink-3">
+              <p>Test login: <strong>{MOCK_DEMO_CREDENTIALS.email}</strong> · <strong>{MOCK_DEMO_CREDENTIALS.password}</strong></p>
+              <button type="button" className="font-extrabold text-primary-ink hover:underline" disabled={Boolean(busy)} onClick={() => {setEmail(MOCK_DEMO_CREDENTIALS.email);setPw(MOCK_DEMO_CREDENTIALS.password);setErr('')}}>Use test credentials</button>
+            </div>
+          </Item>}
           <Item v="soft"><Field label="Email or phone number" icon={Mail} placeholder="Enter email or phone number" value={email} onChange={e => setEmail(e.target.value)} /></Item>
           <Item v="soft">
             <Field label="Password" icon={Lock} type={show ? 'text' : 'password'} placeholder="Enter your password" value={pw} onChange={e => setPw(e.target.value)} right={<button onClick={() => setShow(s => !s)} className="text-ink-3 hover:text-primary-ink">{show ? <EyeOff size={24} /> : <Eye size={24} />}</button>} />
             <div className="text-right mt-1"><button className="text-[16px] font-bold text-primary-ink hover:underline" onClick={() => nav('/parent/forgot-password')}>Forgot password?</button></div>
           </Item>
-          {err && <Item v="soft"><div className="text-[17px] font-bold text-red-500">{err}</div></Item>}
-          <Item v="pop"><Button size="md" arrow icon={<Lock size={24} strokeWidth={2.4} />} className="w-full h-[62px] uppercase text-[21px]" sound="whoosh" disabled={busy} onClick={signIn}>{busy ? 'Signing in…' : 'Login to Kidsverse'}</Button></Item>
-          {API_MODE === 'mock' && <Item v="soft" className="text-center text-[16px] font-semibold text-ink-3">
-            Local mock accounts reset when the server restarts.{' '}
-            <button type="button" className="font-extrabold text-primary-ink hover:underline" disabled={busy} onClick={startDemo}>Continue with demo account</button>
-          </Item>}
+          {err && <Item v="soft"><div role="alert" className="text-[17px] font-bold text-red-500">{err}</div></Item>}
+          <Item v="pop"><Button size="md" arrow icon={<Lock size={24} strokeWidth={2.4} />} className="w-full h-[62px] uppercase text-[21px]" sound="whoosh" disabled={Boolean(busy)} onClick={signIn}>{busy === 'login' ? 'Signing in…' : 'Login to Kidsverse'}</Button></Item>
           <Item v="soft" className="text-center text-[17px] font-semibold text-ink-3">
             Don&apos;t have an account?{' '}
             <button type="button" className="font-extrabold text-primary-ink hover:underline" onClick={() => nav('/parent/create-account')}>Create account</button>

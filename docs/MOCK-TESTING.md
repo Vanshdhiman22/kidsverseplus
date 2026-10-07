@@ -1,3 +1,11 @@
+# Current mock instructions
+
+Content, accounts, sessions, progress, attempts, reviews and idempotency now persist in local SQLite. Learn, CFU, Test, Challenge practice and Battle use linked package records. See [engineering review](mock-demo/SENIOR-REVIEW.md) and the 109-operation `docs/mock-demo/openapi.json` contract. Open `/mock-api-review` for all 62 screens' captured requests and JSON responses.
+
+See [engineering review](mock-demo/SENIOR-REVIEW.md) and [demo instructions](mock-demo/README.md). The notes below describe the earlier mock and are retained as history; do not use its old smoke-test login credentials.
+
+<details><summary>Earlier mock notes (superseded)</summary>
+
 # Local mock API integration
 
 This is a local frontend integration test, not a production API/database certification.
@@ -82,3 +90,5 @@ npm run build
 ```
 
 Import `postman/Kidsverse-local-mock.postman_collection.json` into Postman and run requests in order with the local Vite server running. The collection uses its own dummy parent account and saves IDs/token in collection variables. It does not use the production deployment.
+
+</details>

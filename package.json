@@ -3,12 +3,22 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
+  "engines": {"node": "24.x"},
   "scripts": {
     "dev": "vite",
+    "dev:mock": "vite --mode mock",
+    "dev:live": "vite --mode live",
+    "mock:server": "node mock/server.mjs",
+    "mock:export:openapi": "node scripts/export-assessment-openapi.mjs",
+    "mock:verify:content": "node scripts/verify-db-content.mjs",
+    "mock:verify:all": "node scripts/verify-all-mock.mjs",
     "test:mock": "node --test mock/*.test.mjs src/state/family.test.js",
+    "test:integration": "node --test src/lib/live-data.test.js src/components/question-visual-model.test.js src/lib/game-client.test.js src/lib/browserData.test.js src/lib/screen-api-log.test.js src/lib/api-comparison.test.js src/content/mission.test.js src/content/normalize.test.js src/content/assessment.test.js src/content/source-policy.test.js src/lib/frontend-contract.test.js",
     "test:mock:http": "node mock/smoke-http.mjs",
     "test:postman": "node mock/check-collection.mjs",
-    "build": "vite build",
+    "build": "vite build --configLoader runner",
+    "build:review": "vite build --configLoader runner --mode review --outDir dist-review",
+    "build:vercel": "node scripts/build-vercel.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -16,6 +26,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.40.0",
     "motion": "^13.2.0",
+    "pg": "^8.23.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.18.3",
@@ -24,6 +35,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",
+    "ajv": "^8.20.0",
     "vite": "^6.4.3"
   }
 }

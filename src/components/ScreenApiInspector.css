@@ -1,0 +1,54 @@
+.screen-api-dev { font: 13px/1.5 system-ui, sans-serif; color: #17233b; }
+.screen-api-link { position: fixed; right: 8px; top: 45%; z-index: 100010; max-width: 170px; border: 1px solid #a5b4fc; border-radius: 8px; padding: 9px 12px; background: #eef2ff; color: #3730a3; text-decoration: underline; cursor: pointer; box-shadow: 0 3px 12px #17233b25; }
+.screen-api-link span { display: inline-block; margin-left: 5px; font-weight: 700; }
+.screen-api-dev dialog { position: fixed; inset: 0; margin: auto; width: min(1180px, calc(100vw - 24px)); max-width: none; height: min(820px, calc(100dvh - 24px)); max-height: none; padding: 0; border: 1px solid #cbd5e1; border-radius: 14px; background: #fff; color: #17233b; overflow: auto; box-shadow: 0 20px 70px #0005; }
+.screen-api-dev dialog::backdrop { background: #0f172aa6; }
+.screen-api-dev header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 22px 8px; }
+.screen-api-dev h2 { font-size: 21px; font-weight: 750; margin: 0; }
+.screen-api-dev h3 { font-size: 16px; font-weight: 700; margin: 0 0 12px; }
+.screen-api-dev h4 { font-size: 13px; font-weight: 700; margin: 16px 0 6px; }
+.screen-api-dev code { overflow-wrap: anywhere; font-family: Consolas, monospace; }
+.screen-api-close { border: 1px solid #cbd5e1; background: #f1f5f9; border-radius: 7px; width: 36px; height: 36px; font-size: 24px; cursor: pointer; flex-shrink: 0; }
+.screen-api-note { padding: 0 22px; color: #52627b; margin: 0 0 12px; }
+.screen-api-dev nav { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 22px 14px; border-bottom: 1px solid #e2e8f0; }
+.screen-api-dev nav button { padding: 7px 12px; border-radius: 7px; border: 1px solid #cbd5e1; cursor: pointer; background: #f8fafc; }
+.screen-api-dev button[aria-pressed=true] { background: #eef2ff; border-color: #818cf8; color: #312e81; }
+.screen-api-content { display: grid; grid-template-columns: 210px minmax(0, 1fr); }
+.screen-api-content aside { border-right: 1px solid #e2e8f0; padding: 10px; }
+.screen-api-content aside button { display: block; width: 100%; text-align: left; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; background: #fff; }
+.screen-api-content aside code, .screen-api-content aside small { display: block; }
+.screen-api-content aside small { color: #52627b; margin-top: 5px; }
+.screen-api-content article { padding: 18px; min-width: 0; }
+.screen-api-dev dl { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 5px 12px; }
+.screen-api-dev dt { font-weight: 700; }
+.screen-api-dev dd { overflow-wrap: anywhere; margin: 0; }
+.screen-api-json-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.screen-api-dev pre { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin: 0; font: 12px/1.55 Consolas, monospace; color: #0f172a; }
+.screen-api-empty, .screen-api-bootstrap { padding: 22px; }
+.screen-api-error { color: #b91c1c; font-weight: 600; }
+.screen-api-dev button:focus-visible { outline: 3px solid #6366f1; outline-offset: 2px; }
+@media (max-width: 760px) { .screen-api-content { grid-template-columns: 1fr; } .screen-api-content aside { border-right: 0; border-bottom: 1px solid #e2e8f0; max-height: 180px; overflow: auto; } .screen-api-json-columns { grid-template-columns: 1fr; } .screen-api-link { font-size: 11px; max-width: 135px; padding: 6px 8px; } }
+.screen-api-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: #64748b; }
+.screen-api-comparison { display: grid; grid-template-columns: minmax(0,1fr); }
+.screen-api-panel { min-width: 0; padding: 16px; }
+.screen-api-panel.live { border-right: 1px solid #e2e8f0; }
+.screen-api-panel-title { display: flex; justify-content: space-between; gap: 8px; background: #eff6ff; border-left: 3px solid #2563eb; padding: 12px; border-radius: 8px; }
+.screen-api-panel.required .screen-api-panel-title { background: #f0fdf4; border-color: #16a34a; }
+.screen-api-panel-title small { font-size: 9px; letter-spacing: .08em; color: #52627b; }
+.screen-api-panel-title h3 { margin: 2px 0 0; }
+.screen-api-status { font-weight: 750; white-space: nowrap; }
+.screen-api-provenance { font-size: 11px; color: #52627b; min-height: 33px; }
+.screen-api-endpoint { padding: 8px 0; overflow-wrap: anywhere; }
+.screen-api-url { font-size: 11px; color: #64748b; overflow-wrap: anywhere; }
+.screen-api-refresh { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.screen-api-refresh button { padding: 7px 12px; align-self: flex-start; border: 1px solid #93c5fd; background: #eff6ff; color: #1e40af; border-radius: 7px; cursor: pointer; }
+.screen-api-refresh button:disabled { opacity: .6; cursor: default; }
+.screen-api-refresh small { color: #64748b; font-size: 10px; }
+.screen-api-action { min-height: 70px; color: #64748b; font-size: 11px; }
+.screen-api-headers { margin: 12px 0; }
+.screen-api-headers summary { cursor: pointer; font-size: 12px; color: #52627b; }
+.screen-api-panel pre { max-height: 430px; overflow: auto; }
+.screen-api-screen-select { font-size: 11px; display: flex; gap: 8px; align-items: center; }
+.screen-api-screen-select select { max-width: 220px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; }
+@media (max-width: 900px) { .screen-api-content { grid-template-columns: 1fr; } .screen-api-content aside { max-height: 130px; overflow: auto; border-bottom: 1px solid #e2e8f0; } }
+@media (max-width: 600px) { .screen-api-comparison { grid-template-columns: 1fr; } .screen-api-panel.live { border-right: 0; border-bottom: 1px solid #e2e8f0; } }

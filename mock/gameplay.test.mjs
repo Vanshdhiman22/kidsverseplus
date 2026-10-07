@@ -14,7 +14,7 @@ for (const world of worlds) test(`${world.slug}: mission, server-scored test, ba
   assert.equal((await call('GET', `/subjects/${world.id}/topics`)).data.topics[0].id, world.topicId)
   const detail = (await call('GET', `${root}/topics/${world.topicId}`)).data
   assert.equal(detail.nodes[0].mission_id, world.missionId)
-  assert.equal((await call('GET', `/missions/${world.missionId}`)).data.content.subject, world.pkg.subject)
+  assert.equal((await call('GET', `/missions/${world.missionId}`)).data.content.check_for_understanding.length, world.pkg.studio.check_for_understanding.length)
   assert.equal((await call('POST', `${root}/missions/${world.missionId}/complete`, { score: 100 })).status, 400)
   await call('POST', `${root}/missions/${world.missionId}/start`, {})
   const mission = await call('POST', `${root}/missions/${world.missionId}/complete`, { score: 80 })
@@ -22,8 +22,9 @@ for (const world of worlds) test(`${world.slug}: mission, server-scored test, ba
   await call('POST', `${root}/missions/${world.missionId}/complete`, { score: 80 })
   const { data: attempt } = await call('POST', `${root}/tests/${world.testId}/attempts`, {})
   assert.equal((await call('POST', `/tests/attempts/${attempt.attempt_id}/answers`, { question_id: worlds.find(w => w !== world).questions[0].id, selected_answer: 'option_1' })).status, 400)
-  for (const q of world.questions) {
-    const response = await call('GET', `/tests/attempts/${attempt.attempt_id}/questions/${q.order_index}`)
+  for (let order=1;order<=attempt.total_questions;order++) {
+    const response = await call('GET', `/tests/attempts/${attempt.attempt_id}/questions/${order}`)
+    const q=world.questions.find(q=>q.id===response.data.id)
     assert.equal(response.data.question_text, q.instruction)
     assert.equal('answer' in response.data, false)
     assert.equal((await call('POST', `/tests/attempts/${attempt.attempt_id}/answers`, { question_id: q.id, selected_answer: q.answer })).data.is_correct, true)
@@ -34,6 +35,11 @@ for (const world of worlds) test(`${world.slug}: mission, server-scored test, ba
   assert.equal((await call('GET', `/tests/attempts/${attempt.attempt_id}/result`)).data.xp_awarded, 50)
   const { data: battle } = await call('POST', `${root}/challenge-battles`, { challenge_id: world.challengeId, opponent_id: opponents[0].id })
   assert.equal((await call('POST', `/challenge-battles/${battle.battle_id}/complete`, { score: 101 })).status, 400)
+  for(let order=1;order<=battle.total_questions;order++) {
+    const publicQuestion=(await call('GET',`/challenge-battles/${battle.battle_id}/questions/${order}`)).data
+    const q=world.battleQuestions.find(q=>q.id===publicQuestion.id)
+    assert.equal((await call('POST',`/challenge-battles/${battle.battle_id}/answers`,{question_id:q.id,selected_answer:q.answer})).status,200)
+  }
   assert.equal((await call('POST', `/challenge-battles/${battle.battle_id}/complete`, { score: 80 })).data.result, 'win')
   await call('POST', `/challenge-battles/${battle.battle_id}/complete`, { score: 80 })
   const home = (await call('GET', `${root}/home`)).data

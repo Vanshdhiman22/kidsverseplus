@@ -11,6 +11,12 @@ import Button from '../components/Button.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedR } from '../components/Stage.jsx'
+import { api } from '../lib/api.js'
+import { isReviewMode } from '../lib/reviewMode.js'
+import { reviewHome } from '../lib/review-learning.js'
+import { ACTIVE_CONTENT_ID } from '../content/index.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
+import { subjectKey } from '../lib/live-data.js'
 import { cn } from '../lib/utils.js'
 import { useTint, useDark, useAccent } from '../lib/accent.js'
 
@@ -27,6 +33,8 @@ const WORLDS = [
 export default function Welcome() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile
+  const home = useLiveResource(() => api.studentHome(g.state.activeChildId), [g.state.activeChildId], { enabled: Boolean(g.state.activeChildId) && !isReviewMode() })
+  const recommended = isReviewMode() ? reviewHome(g.state.profile,g.state.stats,ACTIVE_CONTENT_ID).recommended_mission : home.data?.recommended_mission
   const tint = useTint(); const dark = useDark(); const ac = useAccent()
   return (
     <Page>
@@ -48,18 +56,18 @@ export default function Welcome() {
       <Panel className="absolute left-[855px] top-[105px] w-[785px] px-9 py-7" initial="hidden" animate="show">
         <motion.img src="/art/planet-sm.webp" alt="" className="absolute right-6 top-6 w-[180px] floaty" style={{ animationDuration: '8s' }} />
         <div className="w-[560px]">
-          <h2 className="font-display font-extrabold text-[30px] leading-tight text-ink uppercase">Your first discovery mission</h2>
+          <h2 className="font-display font-extrabold text-[30px] leading-tight text-ink uppercase">{recommended?.title || 'Your first discovery mission'}</h2>
           {/* Promised three activities across Maths, Literacy and Visual Thinking. The
               button goes to /missions/fractions, which is two Maths steps -- Discover, then
               Spot the Mistake -- and nothing else. The copy now says what the child gets. */}
-          <p className="mt-1 text-[17px] font-semibold text-ink-3 leading-snug">Two playful activities help Nova understand how you learn. No scores. No pressure.</p>
+          <p className="mt-1 text-[17px] font-semibold text-ink-3 leading-snug">{recommended?.reason || 'Choose an available lesson and learn with Nova.'}</p>
           <div className="mt-3 flex gap-3">
             {[[Calculator, 'Understand the idea', '#0ea5e9'], [Puzzle, 'Try a question', '#22c55e']].map(([I, t, c0]) => { const c = ac(c0); return <span key={t} className="chip h-[40px] px-4 text-[16px]" style={{ color: c, background: `${c}18`, border: `1.5px solid ${c}55` }}><I size={18} /> {t}</span> })}
           </div>
-          <div className="mt-3 flex items-center gap-6 text-[17px] font-bold text-ink-2"><span className="flex items-center gap-2"><Clock size={20} className="text-primary-ink" /> 6–8 min</span><span className="w-px h-6 bg-[var(--line)]" /><span className="flex items-center gap-2"><Award size={20} className="text-gold" /> Cosmic Explorer badge</span></div>
+          <div className="mt-3 flex items-center gap-6 text-[17px] font-bold text-ink-2"><span className="flex items-center gap-2"><Clock size={20} className="text-primary-ink" /> {recommended?.duration_minutes ? `${recommended.duration_minutes} min` : 'At your pace'}</span><span className="w-px h-6 bg-[var(--line)]" /><span className="flex items-center gap-2"><Award size={20} className="text-gold" /> {recommended?.xp_reward ? `${recommended.xp_reward} XP` : 'Learn with Nova'}</span></div>
         </div>
         <motion.div className="mt-4 ml-[110px]" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.27 }}>
-          <Button size="lg" icon={<Play size={28} fill="currentColor" />} className="w-[480px] h-[58px] text-[24px] uppercase rounded-full" sound="whoosh" onClick={() => { g.setProfile({ firstVisit: false }); nav('/missions/fractions') }}>Begin my adventure</Button>
+          <Button size="lg" icon={<Play size={28} fill="currentColor" />} className="w-[480px] h-[58px] text-[24px] uppercase rounded-full" sound="whoosh" onClick={() => { g.setProfile({ firstVisit: false }); nav(recommended ? `/missions/fractions?subject=${subjectKey(recommended.subject)}&mission=${recommended.mission_id}` : '/learn') }}>Begin my adventure</Button>
         </motion.div>
       </Panel>
 

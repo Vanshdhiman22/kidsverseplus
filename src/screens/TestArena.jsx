@@ -11,6 +11,7 @@ import { listTopicTests } from '../lib/gameApi.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 import { ACTIVE_CONTENT_ID, useContent } from '../content/index.js'
 import { cmsQuestions } from '../content/assessment.js'
+import { isReviewMode } from '../lib/reviewMode.js'
 import './TestArena.css'
 
 export default function TestArena() {
@@ -20,19 +21,19 @@ export default function TestArena() {
   const studentId = g.state.activeChildId
   const subject = g.state.progress.world || 'maths'
   const pkg = useContent(subject === 'maths' ? ACTIVE_CONTENT_ID : `demo-${subject}`)
-  const { data: testCatalog, loading } = useLiveResource(
+  const { data: testCatalog, loading, error } = useLiveResource(
     () => listTopicTests(studentId, subject),
     [studentId, subject],
-    { enabled: Boolean(studentId) },
+    { enabled: !isReviewMode() && Boolean(studentId) },
   )
   const liveTest = testCatalog?.tests?.[0]
   const authoredQuestions = cmsQuestions(pkg, 'test')
-  const title = authoredQuestions ? `${pkg.mission.title} Test` : liveTest?.name || `${pkg.mission.title} Test`
-  const questionCount = authoredQuestions?.length || liveTest?.question_count || QUESTIONS.length
-  const minutes = liveTest?.estimated_minutes || 8
+  const title = authoredQuestions ? `${pkg.mission.title} Test` : liveTest?.name || (loading ? 'Loading test...' : 'No test available')
+  const questionCount = authoredQuestions?.length || liveTest?.questions_count || liveTest?.question_count || 0
+  const minutes = liveTest?.estimated_minutes || (authoredQuestions ? 8 : '-')
   const intro = authoredQuestions
     ? `Questions about ${pkg.mission.title}.`
-    : liveTest?.intro_text || `Questions about ${pkg.mission.title}.`
+    : liveTest?.intro_text || error || 'Choose another topic or try again later.'
   const openTest = () => nav(`/tests/mixed/intro?subject=${encodeURIComponent(subject)}`)
 
   return (
@@ -71,7 +72,7 @@ export default function TestArena() {
           </div>
           <div className="test-arena__footer">
             <p>Ready, {name}? You can review your answers at the end.</p>
-            <motion.button type="button" onClick={openTest} className="test-arena__start"
+            <motion.button disabled={!authoredQuestions && !liveTest} type="button" onClick={openTest} className="test-arena__start"
               whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }} aria-label={`Open ${title}`}>
               <span>Open test</span><ArrowRight size={26} aria-hidden="true" />
             </motion.button>

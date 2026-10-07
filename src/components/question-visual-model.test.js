@@ -16,3 +16,8 @@ test('an answer after equals is not drawn as a new group', () => {
   assert.deepEqual(countableGroups('What is 3 + 2 = 5?'), [3, 2])
   assert.equal(countableGroups('Which sentence describes addition?'), null)
 })
+
+test('fractions and unrelated numbers never become an addition picture', () => {
+  assert.equal(countableGroups('3/4 is the same as?'), null)
+  assert.equal(countableGroups('Which is greater: 3 or 4?'), null)
+})

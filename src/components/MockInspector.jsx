@@ -13,14 +13,14 @@ export default function MockInspector() {
     window.addEventListener('kidsverse-dummy-api', updateDummy)
     return () => { window.removeEventListener('kidsverse-api-request', update); window.removeEventListener('kidsverse-dummy-api', updateDummy) }
   }, [])
-  if (!import.meta.env.DEV || (API_MODE !== 'mock' && !dummy)) return null
+  if ((new URLSearchParams(window.location.search).has('mockScreen') || window.parent!==window) || !import.meta.env.DEV || (API_MODE !== 'mock' && !dummy)) return null
   const style = { position: 'fixed', zIndex: 100000, font: '13px/1.5 system-ui', color: '#fff', background: '#15152d', border: '1px solid #8b80bf', borderRadius: 10, padding: 10 }
   return <>
-    <button style={{ ...style, bottom: 8, left: 8 }} onClick={() => setOpen(!open)}>{dummy ? 'DUMMY API' : 'MOCK API'} · {entries.length} requests {open ? '— Close' : '— Inspect'}</button>
+    <button style={{ ...style, bottom: 8, left: 8 }} onClick={() => setOpen(!open)}>{dummy ? 'DUMMY API' : 'MOCK API'} · {entries.filter(e=>e.transport==='network').length} HTTP / {entries.filter(e=>e.transport==='session-cache').length} cached {open ? '— Close' : '— Inspect'}</button>
     {open && <aside aria-label="Mock API inspector" style={{ ...style, right: 8, bottom: 8, width: 'min(490px, 90vw)', maxHeight: '80vh', overflow: 'auto' }}>
       <strong>Local mock request / response</strong>
-      <p>{dummy ? '/__dummy/api/v1' : API_BASE_URL} · No production DB. Data resets on server restart.</p>
-      <p>Connected: account, onboarding, mission content/completion, test answers/results, battle start/completion and home stats. Fixtures are sample data, not production content. Journey maps, leaderboard and parent reports still include demo UI.</p>
+      <p>{dummy ? '/__dummy/api/v1 · temporary memory state' : `${API_BASE_URL} · persistent mock SQLite`} · Synthetic data only.</p>
+      <p>Account, curriculum, lessons, assessment answers/results, journeys and parent resources come from the mock backend. Network responses and session-cache reads are identified below.</p>
       {!dummy && <label>Next requests: <select aria-label="Mock scenario" value={scenario} style={{ color: '#111', padding: 5 }} onChange={e => { setScenario(e.target.value); sessionStorage.setItem('kidsverse-mock-scenario', e.target.value) }}>
         <option value="success">Success</option><option value="slow">Slow (1.6s)</option><option value="401">Unauthorized (401)</option><option value="500">Server error (500)</option>
       </select></label>}

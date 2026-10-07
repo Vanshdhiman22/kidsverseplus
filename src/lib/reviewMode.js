@@ -9,6 +9,12 @@ export function isReviewMode() {
   return sessionStorage.getItem(REVIEW_KEY) === '1'
 }
 
+export function assertReviewRequestAllowed(review, method = 'GET') {
+  if (review && method.toUpperCase() !== 'GET') {
+    throw new Error('UI review uses sample data. Exit review before saving anything to the live API.')
+  }
+}
+
 export function exitReviewMode() {
   sessionStorage.removeItem(REVIEW_KEY)
   window.location.replace('/')

@@ -8,7 +8,12 @@ import SideRail from '../components/SideRail.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
 import { Tilt, Sparkles } from '../components/Widgets.jsx'
+import { useGame } from '../state/GameProvider.jsx'
+import { withSubject } from '../content/index.js'
 import { sfx } from '../lib/sound.js'
+import { apiRequest,getToken } from '../lib/api.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
+import { isReviewMode } from '../lib/reviewMode.js'
 
 const CARDS = [
   { id: 'reading', img: '/art/crops/card-reading.webp', icon: BookOpen, c: '#7c3aed', t: 'Reading Practice', s: 'A self-paced passage', to: '/extra/reading' },
@@ -18,6 +23,11 @@ const CARDS = [
 
 export default function ExtraLearning() {
   const nav = useNavigate()
+  const g = useGame()
+  let saved = null
+  try { saved = JSON.parse(sessionStorage.getItem('kv:last-test-run') || 'null') } catch {}
+  const resource=useLiveResource(()=>apiRequest(`/students/${g.state.activeChildId}/extra-learning`),[g.state.activeChildId,getToken()],{enabled:!isReviewMode() && Boolean(g.state.activeChildId && getToken())})
+  const recommendations=resource.data?.recommendations || []
   return (
     <Page>
       <Scene name="extra" />
@@ -29,10 +39,11 @@ export default function ExtraLearning() {
       </Stack>
 
       <Panel className="absolute left-[1005px] top-[130px] w-[615px] h-[190px] pl-[270px] pr-8 flex flex-col justify-center" initial="hidden" animate="show">
-        <Sparkles n={4} seed={22} />
+        {recommendations[0]?.mission_id && <button className="mt-2 text-left font-bold underline text-primary-ink" onClick={() => nav(withSubject(`/missions/fractions?mission=${recommendations[0].mission_id}`, recommendations[0].subject || saved?.subject))}>Open recommended lesson</button>}
+        <Sparkles n={4} seed={22} />{resource.loading && <p role="status">Loading recommendations…</p>}{resource.error && <p role="alert">{resource.error}</p>}
         <div className="flex items-center gap-2 text-[17px] font-extrabold text-primary-ink"><Star size={18} className="text-gold" fill="currentColor" /> Choose an activity</div>
-        <div className="mt-1 font-display font-extrabold text-[32px] leading-none text-ink">Your pace, your pick 📖</div>
-        <div className="mt-2 text-[17px] font-semibold text-ink-2 leading-snug">Reading and speaking here are self-guided.</div>
+        <div className="mt-1 font-display font-extrabold text-[32px] leading-none text-ink">{recommendations[0]?.name || 'Your pace, your pick'}</div>
+        <div className="mt-2 text-[17px] font-semibold text-ink-2 leading-snug">{recommendations[0]?.reason || 'Reading and speaking here are self-guided.'}</div>
       </Panel>
       <motion.img src="/art/hd/nova-v2.webp" alt="" className="absolute left-[1030px] top-[118px] w-[170px]" style={{ filter: 'drop-shadow(0 18px 24px rgba(40,20,120,.28))' }} initial={{ opacity: 0, y: 40, scale: 0.9 }} animate={{ opacity: 1, y: [0, -9, 0], scale: 1 }} transition={{ opacity: { delay: 0.17 }, scale: { delay: 0.17, type: 'spring' }, y: { duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 } }} />
 

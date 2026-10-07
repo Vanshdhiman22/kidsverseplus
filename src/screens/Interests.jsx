@@ -40,7 +40,7 @@ export default function Interests() {
         <Item><h1 className="font-display font-extrabold text-[66px] leading-tight text-ink">What makes you curious?</h1></Item>
         <Item className="mt-1 text-[22px] font-semibold text-ink-3">Choose <span className="text-primary-ink font-extrabold">three or more</span>. Nova will weave them into your missions.</Item>
       </Stack>
-      <div className="absolute right-[70px] top-[120px] rounded-full px-4 py-2 text-[13px] font-extrabold" style={{ background: source === 'api' ? (API_MODE === 'mock' ? 'rgba(59,130,246,.16)' : 'rgba(34,197,94,.16)') : 'rgba(245,158,11,.16)', color: source === 'api' ? (API_MODE === 'mock' ? '#1d4ed8' : '#15803d') : '#b45309' }}>{loading ? 'Loading catalog…' : source === 'api' ? `${API_MODE === 'mock' ? 'Mock' : 'Live'} API catalog · ${interests.length} items` : 'Demo catalog fallback'}</div>
+      <div className="absolute right-[70px] top-[120px] rounded-full px-4 py-2 text-[13px] font-extrabold" style={{ background: source === 'api' ? (API_MODE === 'mock' ? 'rgba(59,130,246,.16)' : 'rgba(34,197,94,.16)') : 'rgba(245,158,11,.16)', color: source === 'api' ? (API_MODE === 'mock' ? '#1d4ed8' : '#15803d') : '#b45309' }}>{loading ? 'Loading catalog…' : source === 'api' ? `${API_MODE === 'mock' ? 'Mock' : 'Live'} API catalog · ${interests.length} items` : source === 'review' ? 'UI review · sample catalog' : 'Demo catalog fallback'}</div>
 
       <div className="absolute left-[255px] top-[135px]"><SpeechBubble tail="bottom" delay={0.3} className="w-[240px] text-[18px]"><span className="font-extrabold">Great choices!</span><br /><span className="font-semibold text-[16px]">I already have ideas. ✨</span></SpeechBubble></div>
 

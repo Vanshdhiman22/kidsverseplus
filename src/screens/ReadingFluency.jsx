@@ -9,14 +9,18 @@ import Button from '../components/Button.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { bleedL, bleedR, safeT, safeB } from '../components/Stage.jsx'
 import { speak } from '../lib/voice.js'
-import { completeCompanionActivity } from '../lib/gameApi.js'
+import { apiRequest } from '../lib/api.js'
+import { useCompanionActivity } from '../lib/useCompanionActivity.js'
+import ContentStatus from '../components/ContentStatus.jsx'
 
-const PASSAGE = 'Under the pale moonlight, Aarav spotted a glowing path across the quiet dunes. He followed the lights and discovered a hidden cave filled with sparkling crystals.'
 
 export default function ReadingFluency() {
   const nav = useNavigate()
   const g = useGame()
   const { name } = g.state.profile
+  const activity = useCompanionActivity(g.state.activeChildId,'reading')
+  const content = activity.data
+  const PASSAGE = content?.passage || ''
   const [finished, setFinished] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -24,9 +28,8 @@ export default function ReadingFluency() {
     if (saving || finished) return
     setSaving(true)
     try {
-      await completeCompanionActivity(g.state.activeChildId, ['read', 'reading'])
-      g.finishReading()
-      await g.refreshStats().catch(error => g.notice(error.message))
+      if(!activity.local)await apiRequest(`/students/${g.state.activeChildId}/companion-activities/${content.id}/complete`,{method:'POST',body:{}})
+      if(!activity.local){g.finishReading(); await g.refreshStats().catch(error => g.notice(error.message))}
       setFinished(true)
     } catch (error) {
       g.notice(error.message)
@@ -35,6 +38,7 @@ export default function ReadingFluency() {
     }
   }
 
+  if(!content || activity.error)return <ContentStatus activity="reading activity" pkg={{contentLoading:activity.loading,contentError:activity.error || 'Sign in first.'}} />
   return (
     <Page>
       <Scene name="reading" />
@@ -42,7 +46,7 @@ export default function ReadingFluency() {
         <div className="text-center"><Logo variant="planet" tagline="LEARN • EXPLORE • ACHIEVE" stacked /></div>
         <div className="hairline my-4" />
         <div className="flex items-center gap-2 text-[16px] font-extrabold text-primary-ink uppercase tracking-wide"><BookOpen size={20} /> Reading practice</div>
-        <div className="mt-2 font-display font-extrabold text-[28px] leading-tight text-ink">Moonlight Reading 🌙</div>
+        <div className="mt-2 font-display font-extrabold text-[28px] leading-tight text-ink">{content.title}</div>
         <Card className="mt-4 p-4 text-[15px] font-semibold text-ink-2">Read at your own pace. You can listen to the passage first, then read it aloud or quietly.</Card>
         <Button variant="outline" size="sm" className="mt-4 w-full" onClick={() => nav('/extra')}>Back to activities</Button>
       </Panel>
@@ -56,23 +60,23 @@ export default function ReadingFluency() {
             <p className="font-display font-bold text-[27px] leading-[1.65] text-ink">{PASSAGE}</p>
             <Button variant="outline" size="sm" icon={<Volume2 size={19} />} className="mt-auto self-start" onClick={() => speak(PASSAGE)}>Listen to passage</Button>
           </Card>
-          <img src="/art/crops/moonlight.webp" alt="Moonlit dunes and a sparkling cave" className="w-full h-[390px] rounded-[22px] object-cover" />
+          <img src={content.image_url} alt={content.image_alt || content.title} className="w-full h-[390px] rounded-[22px] object-cover" />
         </div>
-        <div className="mt-5 rounded-2xl bg-[var(--lavender)]/60 p-4 text-[16px] font-semibold text-ink-2">Try telling someone what Aarav discovered. This is a self-paced activity; the app does not judge your voice.</div>
+        <div className="mt-5 rounded-2xl bg-[var(--lavender)]/60 p-4 text-[16px] font-semibold text-ink-2">{content.prompts.join(' ')} This is a self-paced activity; the app does not judge your voice.</div>
       </Panel>
       <Panel className="absolute top-[145px] w-[395px] p-5" style={bleedR(30)} initial="hidden" animate="show">
         <div className="flex items-center gap-2 text-[18px] font-display font-extrabold text-ink"><Ear size={24} className="text-primary-ink" /> Reading tips</div>
         <div className="mt-5 flex flex-col gap-3">
-          {['Listen once if you want to hear the words.', 'Read each sentence without rushing.', 'Tell someone what happened in the story.'].map((tip, index) => <Card key={tip} className="p-4 flex items-start gap-3"><span className="w-[28px] h-[28px] shrink-0 rounded-full bg-[var(--lavender)] grid place-items-center text-primary-ink font-extrabold">{index + 1}</span><span className="text-[15px] font-semibold text-ink-2">{tip}</span></Card>)}
+          {content.tips.map((tip, index) => <Card key={tip} className="p-4 flex items-start gap-3"><span className="w-[28px] h-[28px] shrink-0 rounded-full bg-[var(--lavender)] grid place-items-center text-primary-ink font-extrabold">{index + 1}</span><span className="text-[15px] font-semibold text-ink-2">{tip}</span></Card>)}
         </div>
       </Panel>
       <Panel className="absolute top-[570px] w-[395px] p-5" style={bleedR(30)} initial="hidden" animate="show">
         <div className="text-[15px] font-extrabold text-primary-ink uppercase">Activity status</div>
-        <p className="mt-2 text-[16px] font-semibold text-ink-2">{finished ? 'Reading activity recorded.' : 'When you finish reading, confirm it yourself below.'}</p>
+        <p className="mt-2 text-[16px] font-semibold text-ink-2">{finished || content.completion ? 'Reading activity recorded.' : 'When you finish reading, confirm it yourself below.'}</p>
         {finished && <CheckCircle2 size={28} className="mt-3 text-green-600" />}
       </Panel>
       <div className="absolute left-[345px] flex items-center gap-4" style={safeB(24)}>
-        <Button size="md" icon={<CheckCircle2 size={22} />} className="h-[62px] px-7" disabled={saving || finished} onClick={finish}>{saving ? 'Saving…' : finished ? 'Completed' : 'I finished reading'}</Button>
+        <Button size="md" icon={<CheckCircle2 size={22} />} className="h-[62px] px-7" disabled={saving || finished || Boolean(content.completion)} onClick={finish}>{saving ? 'Saving…' : finished || content.completion ? 'Completed' : 'I finished reading'}</Button>
         <Button variant="outline" size="md" icon={<RotateCcw size={20} />} className="h-[62px] px-6" onClick={() => speak(PASSAGE)}>Hear it again</Button>
       </div>
       <Button size="md" arrow className="absolute w-[290px] h-[62px]" style={{ ...bleedR(50), ...safeB(24) }} onClick={() => nav('/extra')}>More activities</Button>

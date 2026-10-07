@@ -59,8 +59,9 @@ export default function StudentCard({ me, w = 300, className, style, onClick }) 
 }
 
 /* Full-size view with the tier ladder and a downloadable copy. */
-export function MyCardModal({ open, onClose }) {
-  const me = useMe()
+export function MyCardModal({ open, onClose, meOverride, cards }) {
+  const localMe = useMe()
+  const me = meOverride || localMe
   const g = useGame()
   const [busy, setBusy] = useState(false)
   const tier = tierFor(me.xp), next = nextTier(me.xp)
@@ -122,6 +123,7 @@ export function MyCardModal({ open, onClose }) {
                 Your card grows as you learn. Keep going and it changes shape at every tier.
               </p>
               <div className="mt-5 flex flex-col gap-2">
+                {cards && <section className="max-h-[120px] overflow-y-auto"><h3 className="font-bold">Earned mission cards ({cards.length})</h3>{cards.map(card=><p key={card.id}>{card.title} · {card.subject} · {card.stars} stars</p>)}{!cards.length && <p>No mission cards earned yet.</p>}</section>}
                 {TIERS.map(t => {
                   const reached = me.xp >= t.min
                   return (
@@ -148,8 +150,9 @@ export function MyCardModal({ open, onClose }) {
 }
 
 /* The Profile entry point: a small live card you can tap to open the big one. */
-export function MyCardSection({ className, style }) {
-  const me = useMe()
+export function MyCardSection({ className, style, meOverride, cards }) {
+  const localMe = useMe()
+  const me = meOverride || localMe
   const [open, setOpen] = useState(false)
   const tier = tierFor(me.xp), next = nextTier(me.xp)
   return (
@@ -167,7 +170,7 @@ export function MyCardSection({ className, style }) {
         </div>
         <Button size="md" arrow className="h-[62px] px-8 uppercase text-[19px] shrink-0" sound="whoosh" onClick={() => setOpen(true)}>View my card</Button>
       </motion.section>
-      <MyCardModal open={open} onClose={() => setOpen(false)} />
+      <MyCardModal open={open} meOverride={meOverride} cards={cards} onClose={() => setOpen(false)} />
     </>
   )
 }

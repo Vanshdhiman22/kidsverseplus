@@ -12,6 +12,7 @@ import { TrustRow } from './Landing.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { getToken } from '../lib/api.js'
+import { isReviewMode } from '../lib/reviewMode.js'
 
 /* The portal: three counter-rotating conic rings with a soft core glow. */
 function Portal({ x, y, size }) {
@@ -31,7 +32,7 @@ export default function MeetNova() {
   const name = g.state.profile.name?.trim() || 'Explorer'
   const face = Number(g.state.profile.face) || 1
   useEffect(() => {
-    if (!getToken()) nav('/parent/login', { replace: true })
+    if (!isReviewMode() && !getToken()) nav('/parent/login', { replace: true })
   }, [nav])
   return (
     <Page>

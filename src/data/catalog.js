@@ -7,7 +7,7 @@ export const GRADES = [
   { id: 'ukg', short: 'UKG', label: 'Upper KG', abbr: true },
   ...Array.from({ length: 8 }, (_, i) => ({ id: String(i + 1), short: String(i + 1), label: `Grade ${i + 1}` })),
 ]
-export const gradeLabel = id => GRADES.find(g => g.id === String(id))?.label ?? `Grade ${id}`
+export const gradeLabel = id => GRADES.find(g => g.id === String(id))?.label ?? (/^grade\s/i.test(String(id)) ? String(id) : `Grade ${id}`)
 
 export const BOARDS = [
   { id: 'CBSE', label: 'CBSE', icon: 'book' },

@@ -120,7 +120,7 @@ export default function Goals() {
       </Stack>
 
       <Constellation chosen={chosen} onPick={id => visibleGoals.find(goal => goal.id === id)?.available && pick(id)} available={visibleGoals} />
-      <div className="absolute right-[70px] top-[120px] rounded-full px-4 py-2 text-[13px] font-extrabold" style={{ background: source === 'api' ? (API_MODE === 'mock' ? 'rgba(59,130,246,.16)' : 'rgba(34,197,94,.16)') : 'rgba(245,158,11,.16)', color: source === 'api' ? (API_MODE === 'mock' ? '#1d4ed8' : '#15803d') : '#b45309' }}>{loading ? 'Loading catalog…' : source === 'api' ? `${API_MODE === 'mock' ? 'Mock' : 'Live'} API catalog · ${goals.length} items` : 'Demo catalog fallback'}</div>
+      <div className="absolute right-[70px] top-[120px] rounded-full px-4 py-2 text-[13px] font-extrabold" style={{ background: source === 'api' ? (API_MODE === 'mock' ? 'rgba(59,130,246,.16)' : 'rgba(34,197,94,.16)') : 'rgba(245,158,11,.16)', color: source === 'api' ? (API_MODE === 'mock' ? '#1d4ed8' : '#15803d') : '#b45309' }}>{loading ? 'Loading catalog…' : source === 'api' ? `${API_MODE === 'mock' ? 'Mock' : 'Live'} API catalog · ${goals.length} items` : source === 'review' ? 'UI review · sample catalog' : 'Demo catalog fallback'}</div>
       <Child screen="goals" delay={0.5} />
       <div className="absolute left-[1462px] top-[560px]"><SpeechBubble tail="left" text="We can change this anytime. ✨" delay={0.3} className="w-[170px] text-[17px]" /></div>
       <motion.div className="absolute left-[945px] top-[798px]" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>

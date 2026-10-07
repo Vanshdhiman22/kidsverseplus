@@ -1,3 +1,4 @@
+import { API_MODE, apiRequest } from '../lib/api.js'
 import React, { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useLocation } from 'react-router-dom'
@@ -15,23 +16,24 @@ import { bleedR, safeB } from './Stage.jsx'
 const NO_AGENT = ['/', '/parent/login', '/onboarding/child', '/onboarding/parent-details', '/tests/mixed/question']
 
 export default function NovaAgent() {
-  const g = useGame(); const { pathname } = useLocation()
+  const g = useGame(); const { pathname, search } = useLocation()
   const voice = useNovaVoice()
   const [open, setOpen] = useState(false)
   const [reply, setReply] = useState(null)
   const [heard, setHeard] = useState('')
   const [typed, setTyped] = useState('')
   const [hints, setHints] = useState(0)
-  const ask = useCallback(text => {
+  const ask = useCallback(async text => {
     const q = (text || '').trim(); if (!q) return
     setHeard(q)
+    if(API_MODE==='mock'){try{const response=await apiRequest(`/students/${g.state.activeChildId}/nova/messages`,{method:'POST',body:{message:q}});setReply({text:response.text,state:'HAPPY'});return}catch(error){setReply({text:error.message});return}}
     const r = think(q, { screen: pathname, name: g.state.profile.name, hints })
     if (r.action?.type === 'hint') setHints(h => h + 1)
     setReply(r); voice.say(r)
     if (r.action) window.dispatchEvent(new CustomEvent('kv:nova', { detail: r.action }))
   }, [pathname, g.state.profile.name, hints, voice])
   const sp = useSpeech({ onResult: res => { if (res.transcript) ask(res.transcript) } })
-  useEffect(() => { setOpen(false); setReply(null); setHeard(''); setHints(0) }, [pathname])
+  useEffect(() => { setOpen(API_MODE==='mock' && new URLSearchParams(search).get('mockScreen')==='16'); setReply(null); setHeard(''); setHints(0) }, [pathname, search])
   useEffect(() => { const on = () => setOpen(true); window.addEventListener('kv:agent', on); return () => window.removeEventListener('kv:agent', on) }, [])
   if (NO_AGENT.includes(pathname)) return null
   const listening = sp.listening

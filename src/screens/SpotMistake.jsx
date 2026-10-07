@@ -1,3 +1,4 @@
+import { API_MODE } from '../lib/api.js'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
@@ -7,7 +8,8 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import Logo from '../components/Logo.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/ApiButton.jsx'
-import { completeMission } from '../lib/gameApi.js'
+import { startLearningAttempt, getLearningQuestion, submitLearningAnswer, completeLearningAttempt, completeMission } from '../lib/gameApi.js'
+import { normalizeApiQuestion } from '../lib/live-data.js'
 import QuestionVisual from '../components/QuestionVisual.jsx'
 import { useRouteContent, checkQuestion, routeSubject, withSubject } from '../content/index.js'
 import { useGame } from '../state/GameProvider.jsx'
@@ -15,6 +17,7 @@ import { bleedL, bleedR, safeB, safeT } from '../components/Stage.jsx'
 import { sfx } from '../lib/sound.js'
 import { speak } from '../lib/voice.js'
 import { cn } from '../lib/utils.js'
+import ContentStatus from '../components/ContentStatus.jsx'
 
 /* The mis-cut the child has to catch. Every model is drawn from this one array,
    so telling it another way changes the picture and never the answer: these four
@@ -35,21 +38,30 @@ export default function SpotMistake() {
      it in the pizza often sees it at once in a bar or on a number line. */
   const [model, setModel] = useState(0)
   const pkg = useRouteContent()
+  const liveMission = API_MODE === 'live' && pkg.contentSource === 'api'
+  const remote = pkg.contentSource === 'api' && !liveMission
+  const [attempt, setAttempt] = useState(null)
+  const [remoteQuestion, setRemoteQuestion] = useState(null)
+  const [apiError, setApiError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [serverCorrect, setServerCorrect] = useState(false)
   const subject = routeSubject()
+  const progressKey = `kv:mission-progress:${g.state.activeChildId}:${pkg.apiMissionId || pkg.content_id}:${pkg.content_version}`
   const questions = pkg.check.questions.slice(0, 6)
   const [questionIndex, setQuestionIndex] = useState(() => Math.min(pkg.check.selected ?? 0, questions.length - 1))
   /* The question, its options, the right answer, the hints for each picture and the
      feedback all come from the learning package. This file is the template. */
-  const Q = questions[questionIndex] ?? checkQuestion(pkg)
-  const QM = Q.models[model % Q.models.length]
-  const HINTS = QM.hints
+  const total = remote ? attempt?.total_questions || 0 : questions.length
+  const Q = remote ? remoteQuestion || questions[0] : questions[questionIndex] ?? checkQuestion(pkg)
+  const QM = Q.models[model % Q.models.length] || {key:'text', label:'Question', hints:Q.hints || [], feedback_wrong:'Review this idea and try the next question.'}
+  const HINTS = QM.hints || Q.hints || []
   const answers = Array.isArray(Q.answer) ? Q.answer : [Q.answer]
   const multi = Q.type === 'multi_select' || Q.type === 'pick_n' || Array.isArray(Q.answer)
   const requiredCount = Q.required_count ?? answers.length
   const answered = multi ? picks.length === requiredCount : picks.length === 1
-  const correct = answered && picks.length === answers.length && picks.every(v => answers.includes(v))
+  const correct = remote ? locked && serverCorrect : answered && picks.length === answers.length && picks.every(v => answers.includes(v))
   const choose = v => {
-    if (locked) return
+    if (locked || saving) return
     if (!multi) {
       setPicks([v])
       return
@@ -61,28 +73,39 @@ export default function SpotMistake() {
     setPicks(next)
     sfx.tap()
   }
-  const check = () => {
-    if (!answered || locked) return
+  const check = async () => {
+    if (!answered || locked || saving) return
+    let right = correct
+    if (remote) {
+      setSaving(true)
+      try {
+        const saved = await submitLearningAnswer(attempt.attempt_id,questionIndex+1,picks[0],Q.instruction)
+        right = saved.is_correct; setServerCorrect(right)
+      } finally { setSaving(false) }
+    }
     setLocked(true)
     const selectedLabel = picks.map(key => Q.options.find(option => option.key === key)?.label).filter(Boolean).join(', ')
     const answerLabel = answers.map(key => Q.options.find(option => option.key === key)?.label).filter(Boolean).join(', ')
-    setReview(items => [...items, { question: Q.instruction, selectedLabel, answerLabel, correct, hintsUsed: hints, explanation: Q.explanation || (correct ? Q.feedback_correct : QM.feedback_wrong), model: QM }])
-    if (correct) { sfx.success(); setScore(value => value + 1) }
+    setReview(items => [...items, { question: Q.instruction, selectedLabel, answerLabel, correct:right, hintsUsed: hints, explanation: Q.explanation || (right ? Q.feedback_correct : QM.feedback_wrong), model: QM }])
+    if (right) { sfx.success(); setScore(value => value + 1) }
     else { sfx.wrong(); setWrong(w => w + 1); setHints(value => Math.max(1, value)) }
   }
   const advance = async () => {
-    if (questionIndex === questions.length - 1) {
-      const saved = await completeMission(g.state.activeChildId, subject, score / questions.length * 100)
-      const result = { score, total: questions.length, review, subject, attemptId: crypto.randomUUID(), completedAt: saved.completed_at, xpAwarded: saved.xp_awarded, apiSaved: true }
+    if (questionIndex === total - 1) {
+      const saved = remote
+        ? await completeLearningAttempt(attempt.attempt_id)
+        : liveMission ? await completeMission(g.state.activeChildId, subject, Math.round(score / total * 100), pkg.apiMissionId) : { completed_at: new Date().toISOString(), xp_awarded: 0 }
+      const result = { score:remote?saved.correct_count:score, gradeScore:remote?saved.score:undefined, total, review, subject, studentId:g.state.activeChildId, attemptId:remote?attempt.attempt_id:crypto.randomUUID(), completedAt: saved.completed_at, xpAwarded: saved.xp_awarded, apiSaved:remote || liveMission, documentedMission:liveMission, local:!remote && !liveMission }
       sessionStorage.setItem('kv:last-mission-score', JSON.stringify(result))
-      sessionStorage.removeItem('kv:mission-progress')
+      sessionStorage.removeItem(progressKey)
       nav(withSubject('/missions/fractions/complete'), { state: result })
       return
     }
     setQuestionIndex(i => i + 1); setPicks([]); setLocked(false); setHints(0); setWrong(0); setModel(0)
   }
   useEffect(() => {
-    const saved = sessionStorage.getItem('kv:mission-progress')
+    if (remote || pkg.contentLoading || pkg.contentError) return
+    const saved = sessionStorage.getItem(progressKey)
     if (!saved) return
     try {
       const state = JSON.parse(saved)
@@ -90,10 +113,38 @@ export default function SpotMistake() {
         setQuestionIndex(state.questionIndex); setScore(state.score); setReview(state.review || [])
       }
     } catch {}
-  }, [questions.length, subject])
+  }, [progressKey, questions.length, subject, pkg.contentLoading, pkg.contentError])
   useEffect(() => {
-    if (!locked) sessionStorage.setItem('kv:mission-progress', JSON.stringify({ questionIndex, score, review, total: questions.length, subject }))
-  }, [questionIndex, score, review, locked, questions.length, subject])
+    if (!remote && !locked && !pkg.contentLoading && !pkg.contentError) sessionStorage.setItem(progressKey, JSON.stringify({ questionIndex, score, review, total: questions.length, subject }))
+  }, [questionIndex, score, review, locked, questions.length, subject, progressKey, pkg.contentLoading, pkg.contentError])
+  useEffect(() => {
+    if (!remote || pkg.contentLoading || pkg.contentError || !pkg.apiMissionId) return
+    let active = true
+    setAttempt(null); setApiError('')
+    startLearningAttempt(g.state.activeChildId,pkg.apiMissionId).then(status=>{
+      if(!active)return
+      if(status.answered_questions===status.total_questions){
+        return completeLearningAttempt(status.attempt_id).then(saved=>{
+          if(!active)return
+          const result={score:saved.correct_count,gradeScore:saved.score,total:saved.total_questions,subject,studentId:g.state.activeChildId,attemptId:status.attempt_id,completedAt:saved.completed_at,xpAwarded:saved.xp_awarded,apiSaved:true,local:false}
+          sessionStorage.setItem('kv:last-mission-score',JSON.stringify(result));nav(withSubject('/missions/fractions/complete'),{state:result})
+        })
+      }
+      setAttempt(status); setQuestionIndex(status.answered_questions)
+    }).catch(error=>{if(active)setApiError(error.message)})
+    return ()=>{active=false}
+  }, [remote,pkg.contentLoading,pkg.contentError,pkg.apiMissionId,g.state.activeChildId])
+  useEffect(() => {
+    if (!remote || !attempt) return
+    let active = true
+    setRemoteQuestion(null)
+    getLearningQuestion(attempt.attempt_id,questionIndex+1).then(item=>{
+      if(active)setRemoteQuestion({...normalizeApiQuestion(item),title:'Check your understanding',feedback_correct:'Correct! Keep going.'})
+    }).catch(error=>{if(active)setApiError(error.message)})
+    return ()=>{active=false}
+  }, [remote,attempt?.attempt_id,questionIndex])
+  if (pkg.contentLoading || pkg.contentError) return <ContentStatus pkg={pkg} />
+  if(remote && (!remoteQuestion || apiError)) return <ContentStatus pkg={{contentLoading:!apiError,contentError:apiError}} />
   return (
     <Page>
       <Scene name="spot" />
@@ -107,7 +158,7 @@ export default function SpotMistake() {
 
       <Panel className="absolute left-[292px] top-[76px] w-[1125px] h-[735px] p-7 overflow-hidden" initial="hidden" animate="show">
         <div className="text-center">
-          <div className="label-caps mb-1">Question {questionIndex + 1} of {questions.length}</div>
+          <div className="label-caps mb-1">Question {questionIndex + 1} of {total}</div>
           <h1 className="font-display font-extrabold text-[48px] leading-none text-ink">{Q.title}</h1>
           <motion.div className="mx-auto mt-2 h-[5px] w-[84px] rounded-full" style={{ background: 'var(--grad-primary)' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.2 }} />
           <div className="mx-auto mt-3 max-w-[940px] rounded-[18px] border border-[var(--primary)] bg-[var(--lavender)] px-6 py-3 shadow-[0_14px_35px_-28px_rgba(93,67,238,.8)]">
@@ -138,8 +189,8 @@ export default function SpotMistake() {
             /* A wrong pick should not leave the child guessing which one was right:
                once they have answered, NO carries its green tick and colour whether
                or not it was the card they tapped. Nothing is coloured before that. */
-            const right = locked && answers.includes(v)
-            const wrong = locked && on && !answers.includes(v)
+            const right = locked && (remote ? on && serverCorrect : answers.includes(v))
+            const wrong = locked && on && (remote ? !serverCorrect : !answers.includes(v))
             /* `selected` paints its own lavender, which would sit on top of the green
                and make a right answer look merely picked, so once a card is marked
                right or wrong that colour is the one left to read. */
@@ -200,7 +251,7 @@ export default function SpotMistake() {
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => hints < HINTS.length && (sfx.unlock(), setHints(hints + 1))}><Lightbulb size={22} className="text-gold" fill="currentColor" /> Hint</button>
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => speak(Q.instruction)}><Headphones size={22} className="text-primary-ink" /> Listen</button>
       </motion.div>
-      <motion.div className="absolute text-center" style={{ ...bleedR(24), ...safeB(44) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!answered} sound="whoosh" onClick={locked ? advance : check}>{locked ? (questionIndex === questions.length - 1 ? 'Finish Mission' : 'Next Question') : 'Check Answer'}</Button>{!answered && <p className="mt-2 text-[13px] font-extrabold text-ink-2">Choose one answer to continue</p>}</motion.div>
+      <motion.div className="absolute text-center" style={{ ...bleedR(24), ...safeB(44) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!answered || saving} sound="whoosh" onClick={locked ? advance : check}>{locked ? (questionIndex === total - 1 ? 'Finish Mission' : 'Next Question') : 'Check Answer'}</Button>{!answered && <p className="mt-2 text-[13px] font-extrabold text-ink-2">Choose one answer to continue</p>}</motion.div>
     </Page>
   )
 }

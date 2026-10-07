@@ -21,7 +21,7 @@ export default function ParentVerification() {
   const [relation, setRelation] = useState('parent')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
-  const [challenge, setChallenge] = useState(null)
+  const [challenge, setChallenge] = useState(API_MODE==='mock' && new URLSearchParams(window.location.search).get('mockScreen')==='7' ? sessionStorage.getItem(`kv:mock-otp:${game.state.activeChildId}`) : null)
   const [verified, setVerified] = useState(false)
   const [message, setMessage] = useState('')
   const [demoCode, setDemoCode] = useState('')
@@ -38,7 +38,7 @@ export default function ParentVerification() {
       if (parent.full_name) setName(previous => previous || parent.full_name)
       if (parent.relationship) setRelation(parent.relationship)
       if (parent.phone) setPhone(previous => previous || parent.phone.replace(/^\+91/, ''))
-      if (parent.phone_verified_at) { setVerified(true); setMessage('This parent phone is already verified.') }
+      if (parent.phone_verified_at && !(API_MODE==='mock' && ['6','7'].includes(new URLSearchParams(window.location.search).get('mockScreen')))) { setVerified(true); setMessage('This parent phone is already verified.') }
     }).catch(() => {})
     return () => { active = false }
   }, [])

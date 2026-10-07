@@ -12,6 +12,7 @@ import { useGame } from '../state/GameProvider.jsx'
 import { api } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 import { ACTIVE_CONTENT_ID, useContent, withSubject } from '../content/index.js'
+import { isReviewMode } from '../lib/reviewMode.js'
 
 const CARDS = [
   { I: CalendarDays, c: '#7c3aed', t: 'Challenge practice', s: 'Answer the available challenge questions.', btn: 'Start', to: '/tests/mixed/intro?source=challenge', primary: true },
@@ -24,7 +25,10 @@ export default function ChallengeHome() {
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
   const subject = new URLSearchParams(window.location.search).get('subject') || g.state.progress.world || 'maths'
   const pkg = useContent(subject === 'maths' ? ACTIVE_CONTENT_ID : `demo-${subject}`)
-  const cards = CARDS.map(card => card.t === 'Challenge practice' && pkg.studio?.challenge?.questions?.length ? {
+  const review = isReviewMode()
+  const catalog = useLiveResource(() => api.challenges(), [review], { enabled: !review && Boolean(g.state.activeChildId) })
+  const available = review ? [{id:`review-challenge-${subject}`}]: catalog.data?.challenges || []
+  const cards = CARDS.filter(card => card.t !== 'Battle Arena' || available.length > 0).map(card => card.t === 'Challenge practice' && pkg.studio?.challenge?.questions?.length ? {
     ...card,
     s: `${pkg.studio.challenge.questions.length} question${pkg.studio.challenge.questions.length === 1 ? '' : 's'} about ${pkg.mission.title}.`,
   } : card)
@@ -39,6 +43,8 @@ export default function ChallengeHome() {
         <Item><div className="font-display font-extrabold text-[38px] leading-none text-ink uppercase">With exciting challenges</div></Item>
         <Item className="mt-3 text-[20px] font-bold text-ink-2 flex items-center gap-2"><Star size={22} className="text-gold" fill="currentColor" /> Learn. Compete. Grow. Shine!</Item>
       </Stack>
+      {catalog.loading && <p role="status" className="absolute left-[180px] top-[370px]">Loading challenges...</p>}
+      {catalog.error && <p role="alert" className="absolute left-[180px] top-[370px]">Could not load challenges. Please retry later.</p>}
       <Sparkles n={6} seed={25} className="left-[40px] top-[120px] w-[700px] h-[280px]" />
 
       <Stack className="absolute left-[180px] top-[405px] flex gap-[30px]" start={0.7} delay={0.1}>

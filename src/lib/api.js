@@ -2,7 +2,13 @@
  * One place for all browser-to-API traffic.  The origin is public configuration,
  * while database details and JWT signing secrets stay exclusively on the server.
  */
+import { createSessionSnapshot } from './session-snapshot.js'
+import { redactApi as redact } from './redact-api.js'
+import { isReviewMode, assertReviewRequestAllowed } from './reviewMode.js'
+import { parentProof } from './parent-pin.js'
+import { verificationRequest } from './verification-transport.js'
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL
+export const mockSnapshot = createSessionSnapshot(sessionStorage)
 
 export const API_BASE_URL = configuredBaseUrl?.replace(/\/$/, '') || ''
 export const API_MODE = import.meta.env.VITE_API_MODE || 'live'
@@ -12,7 +18,9 @@ let dummyToken = ''
 export const isDummyApiActive = () => import.meta.env.DEV && Boolean(dummyToken)
 export const getToken = () => isDummyApiActive() ? dummyToken : sessionStorage.getItem(SESSION_KEY) || ''
 export const setToken = token => token ? sessionStorage.setItem(SESSION_KEY, token) : sessionStorage.removeItem(SESSION_KEY)
+export function clearSession() { dummyToken = ''; setToken(''); catalogCache.clear(); mockSnapshot.clear() }
 export const requestLog = []
+let requestSequence = 0
 const catalogCache = new Map()
 // Local developer escape hatch: seed the Vite mock with the currently selected
 // child. It never writes to the live API or awards production XP.
@@ -29,9 +37,6 @@ export async function activateDummyApi(profile = {}, studentId) {
   window.dispatchEvent(new Event('kidsverse-dummy-api'))
   return data
 }
-const redact = value => Array.isArray(value) ? value.map(redact) : value && typeof value === 'object'
-  ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, /password|token|authorization|^code$|dev_code|otp/i.test(k) ? '[redacted]' : redact(v)])) : value
-
 export class ApiError extends Error {
   constructor(message, { status, data } = {}) {
     super(message)
@@ -52,14 +57,31 @@ function parseBody(response) {
  * Pass the JWT from authenticated app state; it is never baked into source code.
  */
 export async function apiRequest(path, { method = 'GET', token = getToken(), body, signal } = {}) {
+  // Fixture navigation must never submit scores, onboarding or account changes
+  // using the parent's retained live session. The inspector can still read live.
+  assertReviewRequestAllowed(isReviewMode() && !isDummyApiActive(), method)
   if (!API_BASE_URL && !isDummyApiActive()) throw new ApiError('API is not configured. Set VITE_API_BASE_URL in .env.local.')
 
   if (API_MODE === 'mock' && API_BASE_URL !== '/api/v1' && !isDummyApiActive()) throw new ApiError('Mock mode requires the local /api/v1 base URL. No request sent.')
   const dummy = isDummyApiActive()
   const baseUrl = dummy ? DUMMY_BASE_URL : API_BASE_URL
   if (dummy) token = dummyToken
-  const entry = { at: new Date().toISOString(), source: dummy ? 'local-dummy' : API_MODE, method, path, request: redact(body), status: 'pending' }
+  const headers = {
+    Accept: 'application/json',
+    ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(/^\/parent\/(overview|evidence|plan)$/.test(path) && parentProof(sessionStorage,token) ? {'X-Parent-PIN-Proof':parentProof(sessionStorage,token)} : {}),
+    ...(API_MODE === 'mock' && !dummy ? { 'X-Mock-Scenario': sessionStorage.getItem('kidsverse-mock-scenario') || 'success' } : {}),
+  }
+  const entry = { id: ++requestSequence, at: new Date().toISOString(), source: dummy ? 'local-dummy' : API_MODE, route: window.location.pathname + window.location.search, method, path, url: `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, headers: redact(headers), request: redact(body), status: 'pending' }
+  if(API_MODE==='mock' && !dummy){
+    const cached=mockSnapshot.request(method,path,body,token)
+    if(cached){Object.assign(entry,{status:cached.status,response:redact(cached.data),transport:'session-cache',ms:0});requestLog.unshift(entry);requestLog.splice(200);window.dispatchEvent(new Event('kidsverse-api-request'));return cached.data}
+  }
+  const cacheRevision=mockSnapshot.value?.revision
+  entry.transport='network'
   requestLog.unshift(entry); requestLog.splice(100)
+  window.dispatchEvent(new Event('kidsverse-api-request'))
   const started = performance.now()
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 15000)
@@ -67,18 +89,20 @@ export async function apiRequest(path, { method = 'GET', token = getToken(), bod
   signal?.addEventListener('abort', abort, { once: true })
   if (signal?.aborted) controller.abort()
   try {
-  const response = await fetch(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
+  const verification=API_MODE==='mock'&&!dummy&&import.meta.env.VITE_MOCK_VERIFICATION==='true'
+  if(verification)Object.assign(entry,{transport:'verification-rpc',wireMethod:'POST',wireUrl:baseUrl+'/verification'})
+  const response = verification ? await verificationRequest({baseUrl,method,path,body,token,context:{parentPinProof:headers['X-Parent-PIN-Proof']},signal:controller.signal}) : await fetch(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
     method,
     signal: controller.signal,
-    headers: {
-      Accept: 'application/json',
-      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(API_MODE === 'mock' && !dummy ? { 'X-Mock-Scenario': sessionStorage.getItem('kidsverse-mock-scenario') || 'success' } : {}),
-    },
+    headers,
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   })
-  const data = await parseBody(response)
+  const data = verification ? response.data : await parseBody(response)
+  if(API_MODE==='mock' && response.ok && !dummy){
+    if(data?.bootstrap)mockSnapshot.seed(data.bootstrap)
+    else if(method==='GET')mockSnapshot.put(path,data,token,cacheRevision)
+    else mockSnapshot.invalidate(token,path)
+  }
   Object.assign(entry, { status: response.status, response: redact(data) })
   if (!response.ok) {
     const message = data?.error?.message || data?.detail || `Request failed (${response.status})`
@@ -92,6 +116,7 @@ export async function apiRequest(path, { method = 'GET', token = getToken(), bod
   } finally {
     clearTimeout(timeout); signal?.removeEventListener('abort', abort)
     entry.ms = Math.round(performance.now() - started)
+    entry.responseRoute = window.location.pathname + window.location.search
     window.dispatchEvent(new Event('kidsverse-api-request'))
   }
 }
@@ -126,6 +151,9 @@ export const api = {
   challenges: () => apiRequest('/challenges'),
   signUp: body => apiRequest('/auth/parent/signup', { method: 'POST', body }),
   login: body => apiRequest('/auth/parent/login', { method: 'POST', body }),
+  logout: () => apiRequest('/auth/parent/logout', { method: 'POST', body: {} }),
+  forgotPassword: email => apiRequest('/auth/parent/forgot-password', { method: 'POST', body: { email } }),
+  parentStudents: () => apiRequest('/parent/students'),
   parentMe: token => apiRequest('/parent/me', { token }),
   startParentVerification: body => apiRequest('/parent/verification/start', { method: 'POST', body }),
   verifyParentPhone: body => apiRequest('/parent/verification/verify', { method: 'POST', body }),
@@ -141,4 +169,7 @@ export const api = {
   studentProfile: studentId => apiRequest(`/students/${studentId}/profile`),
   studentJourneySummary: studentId => apiRequest(`/students/${studentId}/profile/our-journey`),
   studentCards: studentId => apiRequest(`/students/${studentId}/profile/cards`),
+  curriculumTree: filters => apiRequest(`/curriculum/tree?${new URLSearchParams(filters)}`),
+  curriculums: () => apiRequest('/curriculums'),
+  themes: () => apiRequest('/themes'),
 }

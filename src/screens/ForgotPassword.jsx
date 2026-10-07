@@ -5,6 +5,7 @@ import Page from '../components/Page.jsx'
 import Scene from '../components/Scene.jsx'
 import { Panel } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
+import { api } from '../lib/api.js'
 
 export default function ForgotPassword() {
   const nav = useNavigate()
@@ -12,11 +13,13 @@ export default function ForgotPassword() {
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
-  const submit = () => {
+  const submit = async () => {
+    if (busy) return
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setError('Enter a valid parent email address.'); return }
     setBusy(true); setError('')
-    setSent(true)
-    setBusy(false)
+    try { await api.forgotPassword(email.trim().toLowerCase()); setSent(true) }
+    catch (error) { setError(error.status === 404 ? 'Password reset is currently unavailable. Please contact support.' : error.message) }
+    finally { setBusy(false) }
   }
   return <Page>
     <Scene name="login" />

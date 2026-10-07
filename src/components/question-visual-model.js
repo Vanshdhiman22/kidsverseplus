@@ -11,10 +11,11 @@ const asNumber = value => /^\d+$/.test(value) ? Number(value) : NUMBER_WORDS[val
 /** Count pictured quantities, not an answer number after an equals sign. */
 export function countableGroups(question) {
   const text = String(question ?? '').toLowerCase()
+  if (/\d\s*[\/\u00f7\u00d7\u2212]\s*\d/.test(text)) return null
   const named = [...text.matchAll(new RegExp(String.raw`\b(${NUMBER})\s+${ITEM}\b`, 'g'))].map(match => asNumber(match[1]))
   const expression = text.match(new RegExp(String.raw`\b(${NUMBER})\s*\+\s*(${NUMBER})(?:\s*\+\s*(${NUMBER}))?(?:\s*\+\s*(${NUMBER}))?`))
   const numbers = [...text.matchAll(new RegExp(String.raw`\b(${NUMBER})\b`, 'g'))].map(match => asNumber(match[1]))
-  const groups = named.length >= 2 ? named : expression ? expression.slice(1).filter(Boolean).map(asNumber) : numbers.slice(0, 2)
+  const groups = named.length >= 2 ? named : expression ? expression.slice(1).filter(Boolean).map(asNumber) : named.length && /more|plus|altogether/.test(text) ? numbers.slice(0, 2) : []
   return groups.length >= 2 && groups.length <= 4 && groups.every(value => Number.isInteger(value) && value >= 0 && value <= 10)
     ? groups
     : null

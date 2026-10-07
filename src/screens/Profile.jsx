@@ -14,7 +14,7 @@ import { gradeLabel, lessonProgress } from '../data/catalog.js'
 import { sfx } from '../lib/sound.js'
 import { MyCardSection } from '../components/StudentCard.jsx'
 import { onColor, useAccent } from '../lib/accent.js'
-import { api } from '../lib/api.js'
+import { api, apiRequest, API_MODE, getToken } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 
 /* Was four literals -- 42 days, 32 missions, 18 reading sessions, 6 battles -- identical
@@ -42,7 +42,7 @@ export const milestonesFor = st => {
 const MENU = [
   [Star, '#f59e0b', 'My Interests', 'Topics & themes you love', '/onboarding/interests'],
   [Map, '#3b82f6', 'My Journey', "See how far you've come", '/profile/journey'],
-  [Medal, '#f59e0b', 'Leaderboard', 'Live rankings are not available yet', null],
+  [Medal, '#f59e0b', 'Leaderboard', API_MODE==='mock'?'View demo rankings':'Live rankings are not available yet', API_MODE==='mock'?'/leaderboard':null],
   [Trophy, '#7c3aed', 'My Achievements', 'Badges & trophies', null],
   [Flame, '#f97316', 'My Streak', 'Keep the flame going', null],
   [Ticket, '#a855f7', 'Break Passes', 'Protect your learning streak', '/profile/break-passes'],
@@ -53,23 +53,37 @@ export default function Profile() {
   const nav = useNavigate()
   const g = useGame()
   const studentId = g.state.activeChildId
-  const { data: liveProfile } = useLiveResource(
-    () => api.studentProfile(studentId),
-    [studentId],
-    { enabled: Boolean(studentId) },
+  const resource = useLiveResource(
+    async () => {
+      const [profile,journey,cards,companions,evidence]=await Promise.all([
+        api.studentProfile(studentId),api.studentJourneySummary(studentId),api.studentCards(studentId),
+        apiRequest(`/students/${studentId}/companion-activities`),apiRequest('/parent/evidence'),
+      ])
+      return {profile,journey,cards:cards.cards,companions:companions.activities,evidence:evidence.students.find(s=>s.student_id===studentId)?.evidence || []}
+    },
+    [studentId,getToken()],
+    { enabled: Boolean(studentId && getToken()) },
   )
+  const liveProfile=resource.data?.profile
   const { face } = g.state.profile
   const name = liveProfile?.name ?? g.state.profile.name
   const grade = liveProfile?.grade ?? g.state.profile.grade
   const board = liveProfile?.board ?? g.state.profile.board
   const streak = liveProfile?.day_streak ?? g.state.stats.streak
   const badges = g.state.stats.badges
-  const liveState = liveProfile ? { ...g.state, stats: { ...g.state.stats, xp: liveProfile.total_xp, streak: liveProfile.day_streak } } : g.state
+  const liveState = liveProfile ? { ...g.state, stats: { ...g.state.stats, xp: liveProfile.total_xp, streak: liveProfile.day_streak, reading:resource.data.companions.filter(a=>a.type==='reading' && a.completion).length,battles:resource.data.evidence.filter(a=>a.assessment_type==='battle').length }, progress:{...g.state.progress,quizzesDone:resource.data.evidence.filter(a=>a.assessment_type==='cfu').length} } : g.state
+  const milestoneRows=milestonesFor(liveState).map((row,i)=>i===0 && resource.data ? [...row.slice(0,4),resource.data.journey.milestones_completed>0] : row)
+  const statRows=resource.data ? [
+    [CheckCircle2,'#f59e0b','Missions',resource.data.journey.milestones_completed,'completed'],
+    [Star,'#3b82f6','Saved XP',liveProfile.total_xp,'XP'],
+    [BookOpen,'#a855f7','Reading',liveState.stats.reading,'activities'],
+    [Swords,'#38bdf8','Bot Battles',liveState.stats.battles,'battles'],
+  ] : statsFor(liveState)
   const ac = useAccent()
-  const mileDone = milestonesFor(g.state).filter(m => m[4]).length
+  const mileDone = milestoneRows.filter(m => m[4]).length
   /* Six shelf slots; the first `badgesWon` are lit. A streak badge needs a streak, a
      battle badge needs a battle -- the same events the milestones read. */
-  const badgesWon = Math.min(6, mileDone + (streak >= 3 ? 1 : 0) + ((g.state.stats.xp ?? 0) >= 1000 ? 1 : 0))
+  const badgesWon = Math.min(6, mileDone + (streak >= 3 ? 1 : 0) + ((liveState.stats.xp ?? 0) >= 1000 ? 1 : 0))
   return (
     <Page>
       <Scene name="profile" />
@@ -87,12 +101,13 @@ export default function Profile() {
         <Card className="absolute left-6 bottom-6 w-[280px] h-[92px] px-5 flex items-center gap-4"><img src="/art/22-novahead.webp" alt="" className="w-[54px] floaty" /><span className="leading-tight"><span className="block font-display font-extrabold text-[22px] text-ink uppercase">Nova</span><span className="block text-[14px] font-semibold text-ink-3">Your learning buddy</span></span></Card>
       </Panel>
       <Child screen="profile" delay={0.5} amp={6} />
+      {(resource.loading || resource.error) && <p role="status" className="absolute left-[815px] top-[70px] text-red-600">{resource.loading?'Loading your profile…':resource.error}</p>}
       <Panel className="absolute left-[120px] top-[565px] w-[650px] h-[270px] px-5 py-2 flex flex-col justify-around" initial="hidden" animate="show">
         {MENU.map(([I, c, t, s, to, v]) => <button key={t} className="h-[42px] flex items-center gap-3 rounded-xl px-2 hover:bg-[var(--lavender)] transition-colors text-left" disabled={!to} onClick={to ? () => { sfx.tap(); nav(to) } : undefined}><span className="icon-orb w-[34px] h-[34px]" style={{ color: to ? c : 'var(--ink-3)', background: to ? `${c}1f` : 'var(--lavender)' }}>{to ? <I size={18} /> : <Lock size={16} />}</span><span className="flex-1 leading-tight"><span className="block text-[16px] font-extrabold text-ink">{t}</span><span className="block text-[12px] font-semibold text-ink-3">{s}</span></span>{v && <span className="text-[15px] font-bold text-ink-2">{t === 'My Streak' ? `${streak} days` : v}</span>}<ChevronRight size={18} className="text-ink-3" /></button>)}
       </Panel>
 
       <Panel className="absolute left-[815px] top-[95px] w-[775px] h-[225px] p-5" initial="hidden" animate="show">
-        <div className="grid grid-cols-4 divide-x divide-[var(--line)]">{statsFor(liveState).map(([I, c0, t, v, u]) => { const c = ac(c0); return <div key={t} className="flex flex-col items-center text-center"><I size={34} style={{ color: c }} /><span className="mt-2 text-[16px] font-bold text-ink-2">{t}</span><span className="font-display font-extrabold text-[40px] leading-none" style={{ color: c }}><Counter to={v} delay={0.24} /></span><span className="text-[15px] font-bold text-ink-3">{u}</span></div> })}</div>
+        <div className="grid grid-cols-4 divide-x divide-[var(--line)]">{statRows.map(([I, c0, t, v, u]) => { const c = ac(c0); return <div key={t} className="flex flex-col items-center text-center"><I size={34} style={{ color: c }} /><span className="mt-2 text-[16px] font-bold text-ink-2">{t}</span><span className="font-display font-extrabold text-[40px] leading-none" style={{ color: c }}><Counter to={v} delay={0.24} /></span><span className="text-[15px] font-bold text-ink-3">{u}</span></div> })}</div>
         {/* Said "12 days" while the live streak sat two panels away saying 7. It is a readout,
             not a link, so it no longer offers a chevron and a hover it cannot honour. */}
         <div className="card mt-4 h-[48px] px-5 flex items-center gap-3 text-[16px] font-bold text-ink"><Flame size={20} className="text-orange-500" fill="currentColor" /> Best streak <span className="ml-auto font-extrabold">{Math.max(streak, g.state.stats.bestStreak ?? 0)} days</span></div>
@@ -106,7 +121,7 @@ export default function Profile() {
             initial={{ width: 0 }} animate={{ width: `${(mileDone / 4) * 100}%` }} transition={{ duration: 1.1, delay: 0.3 }} />
           {[0, 1, 2, 3].map(i => <motion.span key={i} className="absolute -top-[9px] w-[20px] h-[20px] rounded-full grid place-items-center" style={{ left: `calc(${i * 33.3}% - 10px)`, background: i < mileDone ? 'var(--grad-primary)' : 'var(--lavender-2)', color: i < mileDone ? '#fff' : 'var(--ink-3)' }} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.09 + i * 0.15, type: 'spring' }}>{i < mileDone ? <Check size={12} strokeWidth={4} /> : <Lock size={10} />}</motion.span>)}
         </div>
-        <Stack className="mt-5 grid grid-cols-4 gap-4" start={0.8} delay={0.1}>{milestonesFor(g.state).map(([I, c, t, s, earned]) => <Item key={t} v="pop"><Card className={cn('h-[160px] p-3 flex flex-col items-center text-center', !earned && 'opacity-55')}><span className="icon-orb w-[58px] h-[58px]" style={{ color: earned ? c : 'var(--ink-3)', background: earned ? `${c}1f` : 'var(--lavender)' }}>{earned ? <I size={30} /> : <Lock size={26} />}</span><span className="mt-2 text-[14px] font-extrabold text-ink leading-tight">{t}</span><span className="mt-1 text-[12px] font-semibold text-ink-3 leading-tight">{s}</span></Card></Item>)}</Stack>
+        <Stack className="mt-5 grid grid-cols-4 gap-4" start={0.8} delay={0.1}>{milestoneRows.map(([I, c, t, s, earned]) => <Item key={t} v="pop"><Card className={cn('h-[160px] p-3 flex flex-col items-center text-center', !earned && 'opacity-55')}><span className="icon-orb w-[58px] h-[58px]" style={{ color: earned ? c : 'var(--ink-3)', background: earned ? `${c}1f` : 'var(--lavender)' }}>{earned ? <I size={30} /> : <Lock size={26} />}</span><span className="mt-2 text-[14px] font-extrabold text-ink leading-tight">{t}</span><span className="mt-1 text-[12px] font-semibold text-ink-3 leading-tight">{s}</span></Card></Item>)}</Stack>
       </Panel>
       <Panel className="absolute left-[815px] top-[605px] w-[775px] h-[150px] p-5" initial="hidden" animate="show">
         <div className="font-display font-extrabold text-[15px] text-ink uppercase tracking-wide">Badge shelf</div>
@@ -114,7 +129,7 @@ export default function Profile() {
               so an empty shelf looks empty and a filled one was actually filled. */}
         {BADGES.map((c, i) => <motion.span key={c} className="w-[76px] h-[80px] grid place-items-center" style={{ color: i < badgesWon ? onColor(c) : 'var(--ink-3)', background: i < badgesWon ? `linear-gradient(160deg, ${c}, ${c}99)` : 'var(--lavender-2)', clipPath: 'polygon(50% 0, 100% 15%, 100% 65%, 50% 100%, 0 65%, 0 15%)' }} initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.1 + i * 0.1, type: 'spring', stiffness: 300, damping: 14 }} whileHover={{ scale: 1.12, rotate: 6 }}>{i < badgesWon ? [<Star size={30} fill="currentColor" />, <BookOpen size={30} />, <span className="font-display font-extrabold text-[26px]">10</span>, <Flame size={30} fill="currentColor" />, <Mic size={30} />, <Trophy size={30} />][i] : <Lock size={26} />}</motion.span>)}<Card className="w-[76px] h-[80px] grid place-items-center text-center leading-tight"><span><span className="block font-display font-extrabold text-[22px] text-ink">+{Math.max(0, badges - 6)}</span><span className="text-[11px] font-bold text-ink-3">More badges</span></span></Card></div>
       </Panel>
-      <MyCardSection className="left-[815px] top-[762px] w-[775px] h-[88px]" />
+      <MyCardSection meOverride={liveProfile ? {...g.state.profile,name:liveProfile.name,xp:liveProfile.total_xp,streak:liveProfile.day_streak,level:liveProfile.level} : null} cards={resource.data?.cards} className="left-[815px] top-[762px] w-[775px] h-[88px]" />
     </Page>
   )
 }

@@ -1,3 +1,4 @@
+import { API_MODE } from '../lib/api.js'
 import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -32,9 +33,9 @@ const Section = ({ children }) => <h4 className="label-caps px-4 mt-4 mb-1">{chi
 
 export default function SettingsSheet() {
   const g = useGame(); const s = g.state.settings
-  const nav = useNavigate(); const { pathname } = useLocation()
+  const nav = useNavigate(); const { pathname, search } = useLocation()
   const voice = useNovaVoice()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(API_MODE==='mock' && new URLSearchParams(window.location.search).get('mockScreen')==='15')
   const [music, setMusic] = useState(getMusicOn)
   const [gate, setGate] = useState(null)
   const [confirm, setConfirm] = useState(null)
@@ -42,7 +43,7 @@ export default function SettingsSheet() {
   const [voiceName, setVoiceName] = useState(getPreferredVoice)
   useEffect(() => { const on = () => setOpen(true); window.addEventListener('kv:settings', on); return () => window.removeEventListener('kv:settings', on) }, [])
   useEffect(() => { const load = () => setVoices(listVoices()); load(); speechSynthesis?.addEventListener?.('voiceschanged', load); return () => speechSynthesis?.removeEventListener?.('voiceschanged', load) }, [])
-  useEffect(() => { setOpen(false); setConfirm(null) }, [pathname])
+  useEffect(() => { setOpen(API_MODE==='mock' && new URLSearchParams(search).get('mockScreen')==='15'); setConfirm(null) }, [pathname, search])
   useEffect(() => { if (!open) return; const k = e => { if (e.key === 'Escape') setOpen(false) }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k) }, [open])
 
   const set = patch => { sfx.tap(); g.setSettings(patch) }
@@ -102,7 +103,7 @@ export default function SettingsSheet() {
                     <p className="mt-1 text-[14px] font-semibold text-ink-3">{confirm === 'reset' ? 'Every lesson, badge and star on this device will be erased. This cannot be undone.' : 'Your progress stays saved. Sign back in to carry on where you left off.'}</p>
                     <div className="mt-3 flex gap-3">
                       <button className="btn btn-ghost btn-sm flex-1" onClick={() => setConfirm(null)}>{confirm === 'reset' ? 'Keep my progress' : 'Stay'}</button>
-                      <button className="btn btn-primary btn-sm flex-1" style={confirm === 'reset' ? { background: 'linear-gradient(95deg,#ef4444,#f97316)' } : undefined} onClick={() => { sfx.whoosh(); setConfirm(null); setOpen(false); if (confirm === 'reset') g.reset(); nav('/') }}>{confirm === 'reset' ? 'Yes, erase it' : 'Sign out'}</button>
+                      <button className="btn btn-primary btn-sm flex-1" style={confirm === 'reset' ? { background: 'linear-gradient(95deg,#ef4444,#f97316)' } : undefined} onClick={() => { sfx.whoosh(); setConfirm(null); setOpen(false); if (confirm === 'reset') g.reset(); else void g.signOut() }}>{confirm === 'reset' ? 'Yes, erase it' : 'Sign out'}</button>
                     </div>
                   </motion.div>
                 )}

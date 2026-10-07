@@ -8,6 +8,8 @@ import { explanationWays } from '../content/explanation-ways.js'
 import { sfx } from '../lib/sound.js'
 import { speak } from '../lib/voice.js'
 import './GuidedLearning.css'
+import ContentStatus from '../components/ContentStatus.jsx'
+import { API_MODE } from '../lib/api.js'
 
 const STEP_NAMES = ['Understand', 'See an example', 'Remember']
 
@@ -73,9 +75,9 @@ export default function GuidedLearning() {
   const nav = useNavigate()
   const pkg = useRouteContent()
   const steps = lessonSteps(pkg)
-  const [stepIndex, setStepIndex] = useState(0)
+  const [stepIndex, setStepIndex] = useState(() => import.meta.env.DEV || API_MODE==='mock' ? Math.max(0,Math.min(2,Number(new URLSearchParams(window.location.search).get('auditStep')) || 0)) : 0)
   const [pageIndex, setPageIndex] = useState(0)
-  const [wayIndex, setWayIndex] = useState(0)
+  const [wayIndex, setWayIndex] = useState(() => import.meta.env.DEV || API_MODE==='mock' ? Math.max(0,Math.min(2,Number(new URLSearchParams(window.location.search).get('auditWay')) || 0)) : 0)
   const [picks, setPicks] = useState({})
   const step = steps[stepIndex]
   const ways = stepIndex === 1 ? explanationWays(step) : []
@@ -106,6 +108,7 @@ export default function GuidedLearning() {
     else { setStepIndex(stepIndex + 1); setPageIndex(0); setWayIndex(0) }
   }
 
+  if (pkg.contentLoading || pkg.contentError) return <ContentStatus pkg={pkg} />
   return <Page>
     <Scene name="learn" />
     <main className="kv-learning">

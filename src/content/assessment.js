@@ -1,6 +1,9 @@
 export const assessmentBank = mode => mode === 'challenge' ? 'challenge_questions' : 'test_questions'
 
 export function cmsQuestions(pkg, mode) {
+  // Uploaded previews and bundled demos can be scored locally. Live assessments
+  // must use their attempt APIs even if mission content includes a question bank.
+  if (pkg?.contentSource === 'api') return null
   const questions = pkg?.assessments?.[assessmentBank(mode)]
   return pkg?.studio && Array.isArray(questions) && questions.length ? questions : null
 }

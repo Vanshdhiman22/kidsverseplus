@@ -1,0 +1,5 @@
+[
+  {"id":"read-together","type":"reading","title":"Moonlight Reading","passage":"Under the pale moonlight, Aarav spotted a glowing path across the quiet dunes. He followed the lights and discovered a hidden cave filled with sparkling crystals.","image_url":"/art/crops/moonlight.webp","image_alt":"Moonlit dunes and a sparkling cave","prompts":["What did Aarav discover?"],"tips":["Read each sentence without rushing.","Tell someone what happened."],"assessment_mode":"self_reported"},
+  {"id":"talk-nova","type":"speaking","title":"Talk with Nova","image_url":"/art/crops/starfruits.webp","image_alt":"A colourful fruit market","prompts":["Tell Nova about your favourite place.","Describe something you learned today."],"tips":["Take your time.","Use a complete sentence."],"assessment_mode":"self_reported"},
+  {"id":"raise-flag","type":"celebration","title":"Raise the Flag","prompts":["Celebrate finishing your learning journey."],"tips":[],"assessment_mode":"self_reported"}
+]

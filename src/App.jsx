@@ -14,6 +14,14 @@ import MusicPlayer from './components/MusicPlayer.jsx'
 import Landing from './screens/Landing.jsx'
 import MockInspector from './components/MockInspector.jsx'
 import DevDummyNavigator from './components/DevDummyNavigator.jsx'
+import MockDemo from './screens/MockDemo.jsx'
+import MockParentGate from './screens/MockParentGate.jsx'
+import DemoEntry from './screens/DemoEntry.jsx'
+import { API_MODE } from './lib/api.js'
+import AuditBridge from './components/AuditBridge.jsx'
+const ApiAudit = import.meta.env.DEV ? lazy(() => import('./screens/ApiAudit.jsx')) : null
+const MockApiReview = import.meta.env.DEV ? lazy(() => import('./screens/MockApiReview.jsx')) : null
+const ScreenApiInspector = import.meta.env.DEV || import.meta.env.VITE_ENABLE_API_REVIEW === 'true' ? lazy(() => import('./components/ScreenApiInspector.jsx')) : null
 
 const lazyScreen = p => lazy(p)
 const ParentLogin = lazyScreen(() => import('./screens/ParentLogin.jsx'))
@@ -100,6 +108,9 @@ function Overlays() {
    first screen has settled, in small batches so it never competes with paint. */
 function usePrefetch() {
   useEffect(() => {
+    // The walkthrough mounts a fresh iframe per screen. Prefetching every route
+    // and backdrop in each frame wastes memory and competes with its first paint.
+    if (window.parent !== window) return
     const net = navigator.connection
     if (net?.saveData || /2g/.test(net?.effectiveType ?? '')) return   // never spend a metered connection on this
     let dead = false
@@ -145,10 +156,11 @@ function Routed() {
      old one fades out underneath it, so a click reads as instant. */
   return (
     <AnimatePresence initial={false}>
-      <Suspense fallback={<Loading />} key={location.pathname}>
+      <Suspense fallback={<Loading />} key={location.pathname+(API_MODE==='mock' ? ':'+new URLSearchParams(location.search).get('mockScreen') : '')}>
         <Routes location={location}>
           <Route path="/" element={<Landing />} />
           <Route path="/parent/login" element={<ParentLogin />} />
+          <Route path="/demo" element={<DemoEntry />} />
           <Route path="/parent/forgot-password" element={<ForgotPassword />} />
           <Route path="/parent/create-account" element={<CreateAccount />} />
           <Route path="/onboarding/child" element={<CreateChild />} />
@@ -185,6 +197,7 @@ function Routed() {
           <Route path="/profile/journey" element={<OurJourney />} />
           <Route path="/profile/break-passes" element={<BreakPasses />} />
           <Route path="/switch" element={<SwitchStudent />} />
+          {API_MODE==='mock' && <Route path="/mock/parent-pin" element={<MockParentGate/>}/>}
           <Route path="/parent" element={<ParentOverview />} />
           <Route path="/parent/evidence" element={<ParentEvidence />} />
           <Route path="/parent/plan" element={<ParentPlan />} />
@@ -198,12 +211,17 @@ function Routed() {
 }
 
 export default function App() {
+  if(import.meta.env.DEV && API_MODE==='mock' && window.location.pathname==='/mock-api-review')return <Suspense fallback={<div>Loading mock API responses…</div>}><MockApiReview/></Suspense>
+  if(API_MODE==='mock' && window.location.pathname==='/mock-demo') return <GameProvider><MockDemo/></GameProvider>
+  if (import.meta.env.DEV && window.location.pathname === '/api-audit') return <Suspense fallback={<div>Loading API audit…</div>}><ApiAudit /></Suspense>
   return (
     <BrowserRouter>
       <GameProvider>
         <MotionConfig reducedMotion="user">
           <Cosmos lite />
           <MusicPlayer />
+          <AuditBridge />
+          {ScreenApiInspector && <Suspense fallback={null}><ScreenApiInspector /></Suspense>}
           <MockInspector />
           <DevDummyNavigator screens={SCREENS} />
           <Stage><Routed /><NavDrawer /><BackButton /><Overlays /></Stage>
@@ -212,4 +230,3 @@ export default function App() {
     </BrowserRouter>
   )
 }
-

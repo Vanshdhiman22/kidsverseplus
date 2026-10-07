@@ -1,3 +1,4 @@
+import { API_MODE } from '../lib/api.js'
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
@@ -21,6 +22,8 @@ import { useAccent } from '../lib/accent.js'
 import { useRouteContent, fill, withSubject, routeSubject } from '../content/index.js'
 import PerfectScorePopup from '../components/PerfectScorePopup.jsx'
 import AttemptReview from '../components/AttemptReview.jsx'
+import { useLiveResource } from '../lib/useLiveResource.js'
+import { getAttemptResult } from '../lib/gameApi.js'
 
 /* Chunky 3D headline: layered text-shadows give the extruded, toy-like look. */
 const Chunky = ({ children, className, delay = 0 }) => (
@@ -32,20 +35,22 @@ export default function MissionComplete() {
   const location = useLocation()
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats; const level = g.level
   const ac = useAccent()
-  const [showReview, setShowReview] = useState(false)
+  const [showReview, setShowReview] = useState(API_MODE==='mock' && new URLSearchParams(window.location.search).get('mockScreen')==='39')
   /* Words from the package. XP, the mastery ring and the skill bars are about the child,
      so they are never read from content -- see docs/CONTENT-CONTRACT.md. */
   const pkg = useRouteContent()
   const K = pkg.complete
   let savedResult = {}
   try { savedResult = JSON.parse(sessionStorage.getItem('kv:last-mission-score') ?? '{}') } catch { savedResult = {} }
-  const result = location.state?.attemptId ? location.state : savedResult
+  const candidate = location.state?.attemptId ? location.state : savedResult
+  const resultResource=useLiveResource(()=>getAttemptResult(candidate.attemptId,'cfu'),[candidate.attemptId],{enabled:Boolean(candidate.attemptId && !candidate.local && !candidate.documentedMission && (!candidate.studentId || candidate.studentId===g.state.activeChildId))})
+  const result = resultResource.data ? {...candidate,score:resultResource.data.correct_count,total:resultResource.data.total_questions,gradeScore:resultResource.data.score,xpAwarded:resultResource.data.xp_awarded} : candidate
   const XP = result.xpAwarded ?? 0
   const validResult = Boolean(result?.attemptId && Number.isFinite(Number(result.score)) && Number(result.total) > 0)
   const score = Number(result?.score ?? 0)
   const total = Number(result?.total ?? Math.min(pkg.check.questions.length, 6))
   const scoreRatio = total > 0 ? score / total : 0
-  const scorePercent = Math.round(scoreRatio * 100)
+  const scorePercent = Math.round(result.gradeScore ?? scoreRatio * 100)
   const OUTCOME = { understood: [Trophy, '#7c3aed'], improved: [TrendingUp, '#3b82f6'], next: [Flag, '#22c55e'] }
   useEffect(() => {
     if (!validResult) { nav(withSubject('/missions/fractions/spot-mistake'), { replace: true }); return }
@@ -67,6 +72,7 @@ export default function MissionComplete() {
   return (
     <Page>
       <Scene name="complete" />
+      {resultResource.error && <p role="alert" className="absolute left-[850px] top-[80px] text-red-600">{resultResource.error}</p>}
       {scorePercent < 70
         ? <Cutout id="complete-0" src="/art/generated/complete-low-score.png" delay={0.6} amp={3} />
         : <Child screen="complete" delay={0.6} amp={7} />}
@@ -102,7 +108,7 @@ export default function MissionComplete() {
         <Item v="pop" className="mt-4 grid grid-cols-2 gap-4"><Button variant="outline" size="md" className="h-[58px] text-[18px]" onClick={() => setShowReview(true)}>Review Answers</Button><Button variant="ghost" size="md" icon={<Home size={22} />} className="h-[58px] text-[18px]" onClick={() => nav('/journey')}>Back to Journey</Button></Item>
       </Stack>
       <PerfectScorePopup show={scorePercent === 100} mode="mission" />
-      <AttemptReview open={showReview} items={result?.review || []} onClose={() => setShowReview(false)} />
+      <AttemptReview open={showReview} items={result?.review || []} attemptId={!result?.local ? result?.attemptId : null} type="cfu" onClose={() => setShowReview(false)} />
     </Page>
   )
 }

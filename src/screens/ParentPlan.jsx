@@ -1,4 +1,5 @@
-import React from 'react'
+import React, {useEffect,useState} from 'react'
+import {API_MODE,apiRequest,mockSnapshot} from '../lib/api.js'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ArrowLeft, BookOpen, ClipboardCheck, MessageCircle, Target, TrendingUp } from 'lucide-react'
@@ -12,6 +13,8 @@ import { WORLDS, lessonProgress } from '../data/catalog.js'
 import { bleedR } from '../components/Stage.jsx'
 
 export default function ParentPlan() {
+  const [plan,setPlan]=useState(null)
+  useEffect(()=>{if(API_MODE==='mock'&&mockSnapshot.value)apiRequest('/parent/plan').then(setPlan)},[])
   const nav = useNavigate()
   const g = useGame()
   const { name } = g.state.profile
@@ -22,7 +25,7 @@ export default function ParentPlan() {
   const testSummary = lastTest?.total
     ? `${lastTest.correct} of ${lastTest.total} correct in the latest test.`
     : 'No completed test yet. A test can help show what to revisit.'
-  const steps = [
+  const steps = plan ? plan.days.filter(day=>!day.student_id||day.student_id===g.state.activeChildId).map(day=>({icon:BookOpen,color:'#7c3aed',title:`${day.day} · ${day.subject}`,detail:`${day.title} · ${day.duration_minutes} minutes`,to:`/missions/fractions/learn?subject=${encodeURIComponent(day.subject_slug||subject)}&mission=${encodeURIComponent(day.mission_id)}`})) : [
     { icon: BookOpen, color: '#7c3aed', title: `Explore ${subjectName}`, detail: 'Review the lesson and its three learning steps.', to: `/missions/fractions/learn?subject=${subject}` },
     { icon: ClipboardCheck, color: '#3b82f6', title: 'Practise with a test', detail: 'Use the available questions to check understanding.', to: `/tests/mixed/intro?subject=${subject}` },
     { icon: MessageCircle, color: '#22c55e', title: 'Read together', detail: 'Try the reading passage as an optional activity.', to: '/extra/reading' },
@@ -38,7 +41,7 @@ export default function ParentPlan() {
         <p className="mt-3 text-[18px] font-semibold text-ink-2">Choose an activity when it suits you. This is a suggestion, not a scheduled or scored plan.</p>
         <div className="mt-7 flex flex-col gap-4">
           {steps.map(({ icon: Icon, color, title, detail, to }, index) => (
-            <Card key={title} className="min-h-[145px] p-5 flex items-center gap-5">
+            <Card key={title} className="min-h-[95px] p-3 flex items-center gap-5">
               <span className="w-[52px] h-[52px] rounded-2xl grid place-items-center text-white shrink-0" style={{ background: color }}><Icon size={27} /></span>
               <div className="flex-1"><div className="text-[12px] font-extrabold uppercase tracking-wide text-primary-ink">Step {index + 1}</div><div className="font-display font-extrabold text-[23px] text-ink">{title}</div><p className="mt-1 text-[15px] font-semibold text-ink-2">{detail}</p></div>
               <Button size="sm" arrow className="px-5 h-[48px]" onClick={() => nav(to)}>Open</Button>

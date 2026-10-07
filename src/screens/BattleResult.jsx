@@ -1,4 +1,7 @@
-import React, { useEffect } from 'react'
+import React, { useEffect,useState } from 'react'
+import AttemptReview from '../components/AttemptReview.jsx'
+import {useLiveResource} from '../lib/useLiveResource.js'
+import {getAttemptResult,getAttemptReview} from '../lib/gameApi.js'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Swords, BookOpen, Timer, Target, PieChart, Clock, ChevronRight, CalendarDays, Star, Calculator, Zap, ChevronRight as Chev } from 'lucide-react'
@@ -17,16 +20,23 @@ const ICONS = { Maths: Calculator, Literacy: BookOpen, Speed: Zap }
 const COLORS = { Maths: '#3b82f6', Literacy: '#a855f7', Speed: '#22c55e' }
 
 export default function BattleResult() {
+  const [showReview,setShowReview]=useState(false)
   const nav = useNavigate(); const [sp] = useSearchParams()
   const bot = { ...(BOTS.find(b => b.id === sp.get('bot')) ?? BOTS[0]) }
-  const me = Number(sp.get('me') ?? 0), bs = Number(sp.get('bot_s') ?? 0)
   let savedResult = null
   try { savedResult = JSON.parse(sessionStorage.getItem('kv:last-battle-result') || 'null') } catch {}
+  const resource=useLiveResource(async()=>{
+    const [result,review]=await Promise.all([getAttemptResult(savedResult.battleId,'battle'),getAttemptReview(savedResult.battleId,'battle')])
+    return {result,review}
+  },[savedResult?.battleId],{enabled:Boolean(savedResult?.battleId && !savedResult.local)})
+  const total=resource.data?.review.items.length || 0
+  const me=savedResult?.local ? Number(sp.get('me') ?? 0) : resource.data?.review.items.filter(q=>q.is_correct).length || 0
+  const bs=savedResult?.local ? Number(sp.get('bot_s') ?? 0) : total-me
   const won = savedResult?.result === 'win', drew = savedResult?.result === 'draw'
   const rounds = me + bs
   const secs = Number(sp.get('t') ?? 0)
   const clock = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
-  const reward = savedResult?.xp_awarded || 0
+  const reward = resource.data?.result.xp_awarded ?? savedResult?.xp_awarded ?? 0
   const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
   const pkg = useRouteContent()
   try { bot.name = JSON.parse(sessionStorage.getItem(`kv:api-opponent:${g.state.activeChildId}`))?.name || bot.name } catch {}
@@ -43,6 +53,7 @@ export default function BattleResult() {
   return (
     <Page>
       <Scene name="bresult" />
+      {(resource.loading || resource.error) && <p role="status" className="absolute left-[545px] top-[90px] text-red-600">{resource.loading?'Loading saved battle result…':resource.error}</p>}
       {won && <Confetti />}
       <TopBar center={<span className="pill h-[48px] px-5 text-[17px] font-bold text-ink-2">Challenge <ChevronRight size={16} /> <span className="text-ink font-extrabold">Practice result</span></span>} right={<><StatPill kind="xp" value={xp.toLocaleString()} /><UserChip name={name} sub={`Level ${g.level}`} face={face} /></>} showControls={false} />
 
@@ -57,7 +68,7 @@ export default function BattleResult() {
         <div className="mt-4 font-display font-extrabold text-[16px] text-ink uppercase tracking-wide">Character traits · for fun</div>
         <div className="mt-2 flex flex-col gap-3">{bot.strengths.map(([k, v]) => { const I = ICONS[k]; return <div key={k} className="flex items-center gap-3"><span className="icon-orb w-[36px] h-[36px] text-white" style={{ background: COLORS[k] }}><I size={18} /></span><span className="w-[70px] text-[16px] font-bold text-ink">{k}</span><Bar value={v / 5} h={8} className="flex-1" delay={0.3} /><span className="text-[14px] font-extrabold text-ink-3">{v}/5</span></div> })}</div>
         <div className="mt-4 flex items-center gap-3"><img src="/art/hd/nova-v2.webp" alt="" className="w-[64px] floaty" /><div className="card px-3 py-2 text-[14px] font-semibold text-ink-2 leading-snug">{bot.tip}</div></div>
-        <div className="mt-5 flex flex-col gap-3"><Button size="md" icon={<Swords size={22} />} className="w-full h-[58px] uppercase text-[20px]" sound="whoosh" onClick={() => nav(withSubject(`/challenge/preview?bot=${bot.id}`))}>Battle again</Button><Button variant="outline" size="md" icon={<BookOpen size={20} />} className="w-full h-[52px] uppercase text-[17px] text-sky-600 border-sky-400" onClick={() => nav(withSubject('/missions/fractions'))}>Practise first</Button></div>
+        <div className="mt-5 flex flex-col gap-3"><Button onClick={()=>setShowReview(true)}>Review Answers</Button><Button size="md" icon={<Swords size={22} />} className="w-full h-[58px] uppercase text-[20px]" sound="whoosh" onClick={() => nav(withSubject(`/challenge/preview?bot=${bot.id}`))}>Battle again</Button><Button variant="outline" size="md" icon={<BookOpen size={20} />} className="w-full h-[52px] uppercase text-[17px] text-sky-600 border-sky-400" onClick={() => nav(withSubject('/missions/fractions'))}>Practise first</Button></div>
       </Panel>
 
       <Stack className="absolute left-[545px] top-[115px] w-[600px] text-center" start={0.3}>
@@ -83,6 +94,7 @@ export default function BattleResult() {
         <Card hover className="mt-2 h-[80px] px-4 flex items-center gap-3" onClick={() => nav(withSubject('/missions/fractions'))}><span className="icon-orb w-[46px] h-[46px] text-orange-500" style={{ background: '#ffedd5' }}><Timer size={24} /></span><span className="flex-1 leading-tight"><span className="block font-extrabold text-[17px] text-primary-ink">{pkg.mission.title} Mission</span><span className="block text-[13px] font-semibold text-ink-3">Sharpen your {pkg.subject} skills.</span></span><Chev size={22} className="text-ink-3" /></Card>
         <div className="mt-5 flex flex-col gap-3"><Button size="md" arrow className="w-full h-[58px] uppercase text-[20px]" sound="whoosh" onClick={() => nav(withSubject('/missions/fractions'))}><img src="/art/22-novahead.webp" alt="" className="w-[34px]" /> Train with Nova</Button><Button variant="ghost" size="md" icon={<CalendarDays size={20} />} className="w-full h-[52px] uppercase text-[17px]" onClick={() => nav(withSubject('/challenge'))}>Rematch later</Button></div>
       </Panel>
+      <AttemptReview open={showReview} type="battle" attemptId={!savedResult?.local ? savedResult?.battleId : null} onClose={()=>setShowReview(false)} />
     </Page>
   )
 }

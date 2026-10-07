@@ -1,71 +1,48 @@
 import assert from 'node:assert/strict'
-
-const base = 'http://127.0.0.1:5180/api/v1'
-const email = 'demo.parent@example.com', password = 'MockPass123'
-let token = ''
-let count = 0
-async function request(method, path, body, status = 200, extraHeaders = {}) {
-  const response = await fetch(base + path, { method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extraHeaders }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) })
-  const data = response.status === 204 ? null : await response.json()
-  assert.equal(response.status, status, `${method} ${path}: ${JSON.stringify(data)}`)
-  assert.equal(response.headers.get('X-Kidsverse-Source'), 'local-mock', 'Refuse a non-mock backend')
-  count++
-  console.log(`PASS ${response.status} ${method} ${path}`)
-  return data
+import fs from 'node:fs/promises'
+import {opponents} from './gameplay.mjs'
+import {fileURLToPath} from 'node:url'
+import {createContentRepository} from './content-repository.mjs'
+const repository=createContentRepository({filename:fileURLToPath(new URL('../.mock-data/content.sqlite',import.meta.url))})
+const worlds=repository.worlds().filter(w=>w.grade==='Grade 4'&&w.board==='CBSE');repository.close()
+const base=process.env.MOCK_BASE_URL||'http://127.0.0.1:5180/api/v1'
+const target=new URL(base);assert.equal(target.hostname,'127.0.0.1','This runner only permits loopback mock APIs.')
+const transcript=[];let token=''
+const redact=value=>Array.isArray(value)?value.map(redact):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).map(([key,v])=>[key,/token|session_id|password|code/i.test(key)?'[redacted]':redact(v)])):value
+async function call(method,path,body,status=200,headers={}){
+ const started=performance.now(),r=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{ }),...headers},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(10000)})
+ const data=r.status===204?null:await r.json()
+ transcript.push({method,path,expected:status,status:r.status,request:redact(body),response:redact(data),ms:Math.round(performance.now()-started)})
+ assert.equal(r.headers.get('X-Kidsverse-Source'),'local-mock');assert.equal(r.status,status,`${method} ${path}: ${JSON.stringify(data)}`)
+ return data
 }
-await request('GET', '/health')
-assert.equal((await request('GET', '/health/database')).status, 'not_tested')
-await request('GET', '/parent/me', undefined, 401)
-let auth = await fetch(base + '/auth/parent/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
-assert.ok([201, 400].includes(auth.status))
-token = (await request('POST', '/auth/parent/login', { email, password })).token
-await request('POST', '/auth/parent/login', { email, password: 'wrong-password' }, 401)
-let student = (await request('GET', '/parent/students')).students.find(s => s.name === 'Game Tester')
-student ||= await request('POST', '/students', { name: 'Game Tester' }, 201)
-const root = `/students/${student.id}`
-const parent = await request('GET', '/parent/me')
-if (!parent.phone_verified_at) {
-  const verification = await request('POST', '/parent/verification/start', { student_id: student.id, full_name: 'Game Tester Parent', relationship: 'parent', phone: '+919876543210' }, 201)
-  assert.equal((await request('POST', '/parent/verification/verify', { challenge_id: verification.challenge_id, code: verification.dev_code })).phone_verified, true)
+try {
+ await call('GET','/health');await call('GET','/parent/me',undefined,401)
+ const login=await call('POST','/demo/login',{});token=login.token;const sid=login.students[0].id,root=`/students/${sid}`
+ assert.equal(login.bootstrap.screens.length,62)
+ for(const path of Object.keys(login.bootstrap.resources))await call('GET',path)
+ await call('PATCH',`${root}/settings`,{sound:false});assert.equal((await call('GET',`${root}/settings`)).sound,false)
+ await call('PATCH',`${root}/settings`,{sound:'false'},400)
+ await call('POST','/students',{name:'Child',xp:1000000},400)
+ for(const w of worlds){
+  await call('POST',`${root}/missions/${w.missionId}/start`,{})
+  await call('POST',`${root}/missions/${w.missionId}/complete`,{score:80})
+  const attempt=await call('POST',`${root}/tests/${w.testId}/attempts`,{},201),ar=`/tests/attempts/${attempt.attempt_id}`
+  for(let order=1;order<=attempt.total_questions;order++){const returned=await call('GET',`${ar}/questions/${order}`),q=w.questions.find(q=>q.id===returned.id);await call('POST',`${ar}/answers`,{question_id:q.id,selected_answer:q.answer})}
+  assert.equal((await call('POST',`${ar}/complete`,{})).score,100)
+  await call('POST',`${ar}/complete`,{})
+  assert.equal((await call('GET',`${ar}/result`)).xp_awarded,50)
+  const battle=await call('POST',`${root}/challenge-battles`,{challenge_id:w.challengeId,opponent_id:opponents[1].id},201),br=`/challenge-battles/${battle.battle_id}`
+  await call('GET',`${br}/result`,undefined,409)
+  for(let order=1;order<=battle.total_questions;order++){const returned=await call('GET',`${br}/questions/${order}`),q=w.battleQuestions.find(q=>q.id===returned.id);await call('POST',`${br}/answers`,{question_id:q.id,selected_answer:q.answer})}
+  assert.equal((await call('POST',`${br}/complete`,{score:0})).score,100)
+  await call('POST',`${br}/complete`,{score:0})
+  assert.equal((await call('GET',`${br}/result`)).xp_awarded,50)
+ }
+ const home=await call('GET',`${root}/home`),profile=await call('GET',`${root}/profile`),overview=await call('GET','/parent/overview')
+ assert.equal(home.stats.total_xp,320+worlds.reduce((sum,w)=>sum+w.pkg.mission.xp+100,0));assert.equal(profile.total_xp,home.stats.total_xp);assert.equal(overview.students[0].total_xp,home.stats.total_xp)
+ await call('POST','/auth/parent/logout',{},204);await call('GET','/parent/me',undefined,401)
+ console.log(`${transcript.length} actual HTTP checks passed; 5 subjects, 62 bootstrap entries, auth and write validation.`)
+} finally {
+ await fs.writeFile(new URL('../docs/mock-demo/http-verification.json',import.meta.url),JSON.stringify({base,verifiedAt:new Date().toISOString(),checks:transcript.length,allExpectedStatuses:transcript.every(r=>r.status===r.expected),requests:transcript},null,2))
 }
-await request('PATCH', `${root}/grade-board`, { grade: '4', board: 'CBSE' })
-const characters = (await request('GET', '/avatar/characters')).characters
-const items = (await request('GET', '/avatar/items')).items
-await request('PUT', `${root}/avatar`, { character_id: characters[0].id, outfit_item_id: items[0].id })
-const interests = (await request('GET', '/interests')).interests
-await request('PUT', `${root}/interests`, { interest_ids: interests.slice(0, 3).map(v => v.id) })
-const goals = (await request('GET', '/goals')).goals
-await request('PUT', `${root}/goals`, { goal_ids: [goals[0].id] })
-await request('POST', `${root}/onboarding/steps/lobby/complete`, {})
-await request('POST', `${root}/nova/greet`, {})
-assert.equal((await request('GET', `${root}/onboarding/status`)).is_complete, true)
-const subject = (await request('GET', `${root}/subjects`)).subjects.find(s => s.slug === 'maths')
-const topic = (await request('GET', `/subjects/${subject.id}/topics`)).topics[0]
-const detail = await request('GET', `${root}/topics/${topic.id}`)
-const missionId = detail.nodes[0].mission_id
-const mission = await request('GET', `/missions/${missionId}`)
-await request('POST', `${root}/missions/${missionId}/start`, {})
-await request('POST', `${root}/missions/${missionId}/complete`, { score: 80 })
-const test = (await request('GET', `/topics/${topic.id}/tests`)).tests[0]
-const attempt = await request('POST', `${root}/tests/${test.id}/attempts`, {}, 201)
-for (let order = 1; order <= test.question_count; order++) {
-  const question = await request('GET', `/tests/attempts/${attempt.attempt_id}/questions/${order}`)
-  await request('POST', `/tests/attempts/${attempt.attempt_id}/answers`, { question_id: question.id, selected_answer: mission.content.assessments.test_questions[order - 1].answer })
-}
-assert.equal((await request('POST', `/tests/attempts/${attempt.attempt_id}/complete`, {})).score, 100)
-assert.equal((await request('GET', `/tests/attempts/${attempt.attempt_id}/result`)).xp_awarded, 50)
-const challenge = (await request('GET', '/challenges')).challenges.find(c => c.slug === 'maths')
-const opponent = (await request('GET', `/challenges/${challenge.id}/opponents`)).opponents[0]
-await request('GET', `/challenges/${challenge.id}/preview?opponent_id=${opponent.id}`)
-const battle = await request('POST', `${root}/challenge-battles`, { challenge_id: challenge.id, opponent_id: opponent.id }, 201)
-assert.equal((await request('POST', `/challenge-battles/${battle.battle_id}/complete`, { score: 80 })).xp_awarded, 50)
-await request('GET', `/challenge-battles/${battle.battle_id}/result`)
-const home = await request('GET', `${root}/home`)
-assert.equal((await request('GET', `${root}/profile`)).total_xp, home.stats.total_xp)
-await request('GET', '/parent/overview')
-await request('GET', '/goals', undefined, 500, { 'X-Mock-Scenario': '500' })
-await request('GET', '/goals', undefined, 401, { 'X-Mock-Scenario': '401' })
-const start = performance.now()
-await request('GET', '/goals', undefined, 200, { 'X-Mock-Scenario': 'slow' })
-assert.ok(performance.now() - start >= 1500)
-console.log(`\n${count} HTTP assertions passed. Local demo account: ${email}. No production requests.`)

@@ -14,7 +14,7 @@ import { useGame } from '../state/GameProvider.jsx'
 import { gradeLabel, lessonProgress } from '../data/catalog.js'
 import { bleedR } from '../components/Stage.jsx'
 import { useAccent } from '../lib/accent.js'
-import { api } from '../lib/api.js'
+import { api, apiRequest, getToken, API_MODE } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 
 const ACTIVITIES = [
@@ -27,13 +27,17 @@ export default function ParentOverview() {
   const nav = useNavigate()
   const g = useGame(); const { face, grade, board } = g.state.profile
   const studentId = g.state.activeChildId
-  const { data: overview } = useLiveResource(() => api.parentOverview(), [studentId], { enabled: Boolean(studentId) })
+  const resource=useLiveResource(async()=>{
+    const [overview,evidence,journey]=await Promise.all([api.parentOverview(),API_MODE === 'live' ? Promise.resolve(null) : apiRequest('/parent/evidence'),api.studentJourneySummary(studentId)])
+    return {overview,evidence:evidence ? evidence.students.find(s=>s.student_id===studentId)?.evidence || [] : null,journey}
+  },[studentId,getToken()],{enabled:Boolean(studentId && getToken())})
+  const overview=resource.data?.overview
   const liveStudent = overview?.students?.find(student => student.student_id === studentId) ?? overview?.students?.[0]
   const name = liveStudent?.name ?? g.state.profile.name
-  const journeyStops = lessonProgress(g.state.progress.worldDone).done
+  const journeyStops = resource.data?.journey.milestones_completed ?? 0
   const kpis = [
-    [BookOpen, '#3b82f6', 'Journey stops', String(journeyStops), 'Recorded in this game'],
-    [ClipboardCheck, '#7c3aed', 'Quizzes completed', String(g.state.progress.quizzesDone ?? 0), 'Recorded in this game'],
+    [BookOpen, '#3b82f6', 'Missions completed', String(journeyStops), 'Saved learning progress'],
+    [ClipboardCheck, '#7c3aed', 'Assessments', resource.data?.evidence == null ? '—' : String(resource.data.evidence.length), API_MODE === 'live' ? 'Assessment totals are not provided by this API' : 'Saved CFU, tests, challenges and battles'],
     [Trophy, '#f59e0b', 'Total XP', Number(liveStudent?.total_xp ?? g.state.stats.xp ?? 0).toLocaleString(), 'Earned so far'],
     [MessageCircle, '#22c55e', 'Learning streak', `${liveStudent?.day_streak ?? g.state.stats.streak ?? 0} days`, 'Current streak'],
   ]
@@ -41,6 +45,7 @@ export default function ParentOverview() {
   return (
     <Page>
       <Scene name="parent" />
+      {(resource.loading || resource.error) && <p role="status" className="absolute left-[460px] top-[155px] text-red-600">{resource.loading?'Loading parent overview…':resource.error}</p>}
       <ParentRail />
       <motion.div className="absolute left-[250px] top-[25px] pill h-[76px] pl-2 pr-5 gap-3" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}><img src={`/art/kid${face}-face-sm.webp`} alt="" className="w-[56px] h-[56px] rounded-full object-cover border-2 border-white" /><span className="leading-tight"><span className="block font-display font-extrabold text-[20px] text-ink">{name}</span><span className="block text-[14px] font-bold text-ink-3">{gradeLabel(grade)} • {board}</span></span><ChevronDown size={20} className="text-ink-3 ml-3" /></motion.div>
       <motion.div className="absolute top-[22px] flex items-center gap-3" style={bleedR(34)} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>

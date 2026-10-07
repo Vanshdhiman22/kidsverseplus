@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useGame } from '../state/GameProvider.jsx'
-import { activateDummyApi, API_MODE, isDummyApiActive, requestLog } from '../lib/api.js'
+import { activateDummyApi, API_MODE, isDummyApiActive, requestLog, mockSnapshot, getToken, apiRequest } from '../lib/api.js'
+import { nextMockScreen, prepareMockScreen } from '../lib/mock-walkthrough.js'
 import { startBattle, startMission, startTest } from '../lib/gameApi.js'
 import { enterReviewMode, exitReviewMode, isReviewMode } from '../lib/reviewMode.js'
 
@@ -63,13 +64,23 @@ export default function DevDummyNavigator({ screens }) {
     }
   }, [])
 
-  if (!next) return null
+  if ((API_MODE === 'live' && import.meta.env.VITE_ENABLE_DUMMY_NAVIGATION !== 'true') || (!import.meta.env.DEV && import.meta.env.VITE_ENABLE_API_REVIEW !== 'true') || (API_MODE !== 'mock' && !next) || window.parent!==window || ['/demo','/mock-demo','/api-audit','/mock-api-review'].includes(pathname)) return null
 
   const continueWithDummy = async () => {
     if (busy) return
     setBusy(true)
     setError('')
     try {
+      if(API_MODE==='mock') {
+        if(!getToken()||!mockSnapshot.value)await game.startMockDemo()
+        const snapshot=mockSnapshot.value
+        const screen=nextMockScreen(snapshot.screens,pathname+search)
+        if(!screen)throw Error('This route is not part of the 62-screen walkthrough.')
+        const studentId=snapshot.students.some(s=>s.id===game.state.activeChildId)?game.state.activeChildId:snapshot.students[0]?.id
+        const destination=await prepareMockScreen({screen,studentId,snapshot,storage:sessionStorage,request:apiRequest,startTest,startBattle,refreshStats:game.refreshStats})
+        navigate(destination)
+        return
+      }
       const destination = next === '/challenge/result'
         ? `${next}?me=2&bot_s=1&t=45`
         : `${next}${search && !['/parent', '/home', '/switch'].includes(next) ? search : ''}`
@@ -104,8 +115,9 @@ export default function DevDummyNavigator({ screens }) {
   }
 
   return <div data-testid="developer-dummy-control" style={{ position: 'fixed', left: '50%', bottom: 12, transform: 'translateX(-50%)', zIndex: 100001, maxWidth: 'min(94vw, 520px)', display: 'flex', alignItems: 'center', gap: 8, padding: 7, borderRadius: 14, color: '#fff', background: '#171d43', boxShadow: '0 8px 28px #11173980', font: '13px/1.3 system-ui' }}>
-    <span style={{ padding: '0 6px', whiteSpace: 'nowrap' }}>{!import.meta.env.DEV ? apiError || 'Live API active · dummy skip available' : review ? 'UI review · live API active' : dummy ? 'Dummy API active · local only' : apiError || 'Developer testing'}</span>
+    <span style={{ padding: '0 6px' }}>{API_MODE==='mock' ? 'Mock API active · dummy skip available' : review ? 'UI review · sample lessons · live saves disabled' : !import.meta.env.DEV ? apiError || 'Live API active · dummy skip available' : dummy ? 'Dummy API active · local only' : apiError || 'Developer testing'}</span>
     <button type="button" disabled={busy} onClick={continueWithDummy} style={{ border: 0, borderRadius: 9, padding: '9px 12px', background: '#baf7df', color: '#123830', fontWeight: 800, cursor: busy ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>{busy ? 'Preparing…' : 'Dummy → Next'}</button>
+    {import.meta.env.DEV && <button type="button" onClick={game.reset} style={{ border: 0, borderRadius: 9, padding: '9px 12px', background: '#fff', color: '#171d43', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Reset browser data</button>}
     {review && <button type="button" onClick={exitReviewMode} style={{ border: 0, borderRadius: 9, padding: '9px 12px', background: '#fff', color: '#171d43', fontWeight: 700, cursor: 'pointer' }}>Exit</button>}
     {error && <span role="alert" style={{ color: '#ffd2d2', maxWidth: 210 }}>{error}</span>}
   </div>

@@ -1,3 +1,4 @@
+import { API_MODE } from '../lib/api.js'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
@@ -54,7 +55,7 @@ export default function CreateChild() {
             </div>
             <p className="mt-3 flex items-center gap-2 text-[16px] font-semibold text-ink-3"><ShieldCheck size={18} className="text-primary-ink" /> Only a first name or nickname is needed.</p>
           </Item>
-          <Item v="pop" className="mt-9"><Button size="lg" arrow className="w-full uppercase" disabled={!ok} sound="whoosh" onClick={async () => { await g.addChild(name); nav('/onboarding/parent-details') }}>Continue</Button></Item>
+          <Item v="pop" className="mt-9"><Button size="lg" arrow className="w-full uppercase" disabled={!ok} sound="whoosh" onClick={async () => { await g.addChild(name); nav(API_MODE === 'live' ? '/onboarding/grade-board' : '/onboarding/parent-details') }}>Continue</Button></Item>
           <Item className="mt-5 text-center"><button className="text-[22px] font-extrabold text-primary-ink hover:underline" onClick={() => nav(-1)}>Back</button></Item>
         </Stack>
       </Panel>

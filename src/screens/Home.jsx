@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
+import { subjectKey } from '../lib/live-data.js'
 import { getToken } from '../lib/api.js'
+import { isReviewMode } from '../lib/reviewMode.js'
+import { reviewHome } from '../lib/review-learning.js'
+import { ACTIVE_CONTENT_ID } from '../content/index.js'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -11,7 +15,7 @@ import {
 import Scene, { Cutout, Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { Ring, Bar, Counter } from '../components/Widgets.jsx'
-import { WORLDS, lessonProgress } from '../data/catalog.js'
+import { WORLDS, FACES, lessonProgress } from '../data/catalog.js'
 import { useGame, XP_PER_LEVEL } from '../state/GameProvider.jsx'
 import { openSettings } from '../components/SettingsSheet.jsx'
 import ParentGate from '../components/ParentGate.jsx'
@@ -69,14 +73,19 @@ function Hex({ icon: Icon, color, label, delay }) {
 export default function Home() {
   const nav = useNavigate()
   const g = useGame()
-  const [apiHome, setApiHome] = useState(null)
+  const [liveHome, setApiHome] = useState(null)
+  const review = isReviewMode()
+  const apiHome = review ? reviewHome(g.state.profile,g.state.stats,ACTIVE_CONTENT_ID) : liveHome
+  const [homeError, setHomeError] = useState('')
   useEffect(() => {
     let active = true
-    if (g.state.activeChildId && getToken()) api.studentHome(g.state.activeChildId)
+    setApiHome(null); setHomeError('')
+    if (!review && g.state.activeChildId && getToken()) api.studentHome(g.state.activeChildId)
       .then(data => { if (active) { setApiHome(data); if (data.stats) g.dispatch({ type: 'remoteStats', stats: data.stats }) } })
-      .catch(() => { if (active) setApiHome(null) })
+      .catch(error => { if (active) { setApiHome(null); setHomeError(error.message) } })
     return () => { active = false }
-  }, [g.state.activeChildId])
+  }, [g.state.activeChildId,review])
+  const subjects = review || g.state.activeChildId ? (apiHome?.subjects || []).map(item => { const id = subjectKey(item.slug || item.name); return { ...(SUBJECT_STYLE[id] || SUBJECT_STYLE.maths), t: item.name, locked: item.locked, to: `/learn/topics/${id}` } }) : SUBJECTS
   const { name, face } = g.state.profile
   const { streak, xp } = g.state.stats
   const level = g.level
@@ -109,7 +118,7 @@ export default function Home() {
       <motion.div className="absolute top-[22px] flex items-center gap-4 z-20" style={bleedR(24)}
         initial={{ y: -24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: lead(0.2) }}>
         <button className="h-[56px] pl-2 pr-4 rounded-full bg-[var(--surface)] border border-[var(--line)] flex items-center gap-3 shadow-sm shrink-0" onClick={() => { sfx.tap(); nav('/profile') }}>
-          <img src={`/art/kid${face}-face-sm.webp`} alt="" className="w-[42px] h-[42px] rounded-full object-cover border-2 border-white" />
+          <img src={(FACES.find(item => item.id === Number(face)) || FACES[0]).sm} alt="" className="w-[42px] h-[42px] rounded-full object-cover border-2 border-white" />
           <span className="leading-tight text-left">
             <span className="block font-display font-extrabold text-[17px] text-ink">{name}</span>
             <span className="block text-[12px] font-bold text-ink-3">Level {level} Explorer</span>
@@ -137,11 +146,12 @@ export default function Home() {
 
       {/* ---------- subjects ---------- */}
       <Stack className="absolute left-[240px] top-[424px] flex gap-[15px] z-10" start={0.45} delay={0.04}>
-        {SUBJECTS.map(s => (
+        {!apiHome && <p role="status" className="text-[18px] font-bold text-ink">{homeError ? 'Could not load your subjects. Please reload to retry.' : 'Loading your subjects...'}</p>}
+        {subjects.map(s => (
           <Item key={s.t} v="pop">
             <motion.button className="w-[205px] h-[124px] rounded-[20px] px-3 pt-3 pb-3 flex flex-col items-center text-center relative overflow-hidden"
               style={{ background: s.bg, boxShadow: '0 16px 34px -18px rgba(40,30,120,.55)' }}
-              whileHover={{ y: -5 }} whileTap={{ scale: 0.97 }} onClick={() => { sfx.whoosh(); nav(s.to) }}>
+              disabled={s.locked} whileHover={{ y: -5 }} whileTap={{ scale: 0.97 }} onClick={() => { sfx.whoosh(); nav(s.to) }}>
               <span className="w-[44px] h-[44px] rounded-[14px] grid place-items-center bg-white/85 shrink-0" style={{ color: s.c }}><s.icon size={24} strokeWidth={2.4} /></span>
               <span className="mt-2 font-display font-extrabold text-[18px] leading-none" style={{ color: '#15185a' }}>{s.t}</span>
               <span className="mt-auto w-full flex items-center justify-between">
@@ -183,15 +193,15 @@ export default function Home() {
           <Ring size={132} stroke={14} value={lessons.pct / 100} id="home-ring" delay={lead(0.7)} track="#e8e6ff">
             <div className="text-center leading-none">
               <div className="font-display font-extrabold text-[30px] text-primary-ink"><Counter to={lessons.pct} delay={lead(0.7)} />%</div>
-              <div className="mt-1 text-[11px] font-bold text-ink-3">Journey Progress</div>
+              <div className="mt-1 text-[11px] font-bold text-ink-3">On this device</div>
             </div>
           </Ring>
           <div className="flex-1 flex flex-col gap-[10px]">
             {/* "Projects" is gone: nothing in the app ever creates one, so that row could
                 only ever be a fixed number. XP toward the next level is real and moves on
                 every mission, quiz and challenge. */}
-            {[[BookOpen, '#3b82f6', `${lessons.done}/${lessons.total} Journey stops`, lessons.done / lessons.total],
-              [Trophy, '#f59e0b', `${quizzesDone} Quizzes completed`, null],
+            {[[BookOpen, '#3b82f6', `${lessons.done}/${lessons.total} Journey stops on this device`, lessons.done / lessons.total],
+              [Trophy, '#f59e0b', `${quizzesDone} Quizzes on this device`, null],
               [Lightbulb, '#a855f7', `${XP_PER_LEVEL - toNext}/${XP_PER_LEVEL} XP to Level ${level + 1}`, (XP_PER_LEVEL - toNext) / XP_PER_LEVEL]].map(([I, c, t, v]) => (
               <div key={t} className="rounded-[14px] bg-[var(--lavender)]/60 px-3 py-2 flex items-center gap-3">
                 <span className="w-[30px] h-[30px] rounded-[10px] grid place-items-center bg-[var(--surface-2)] shrink-0" style={{ color: c }}><I size={17} /></span>

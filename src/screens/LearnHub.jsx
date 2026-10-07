@@ -14,32 +14,27 @@ import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 import { useAccent } from '../lib/accent.js'
 import { useGame } from '../state/GameProvider.jsx'
+import { availableWorlds } from '../lib/live-data.js'
+import ContentStatus from '../components/ContentStatus.jsx'
 import { api } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
+import { isReviewMode } from '../lib/reviewMode.js'
+import { reviewSubjects } from '../lib/review-learning.js'
 
 export default function LearnHub() {
   const nav = useNavigate()
   const ac = useAccent()
   const g = useGame()
   const studentId = g.state.activeChildId
-  const { data: subjectsResponse } = useLiveResource(
+  const review = isReviewMode()
+  const { data: subjectsResponse, loading, error } = useLiveResource(
     () => api.studentSubjects(studentId),
     [studentId],
-    { enabled: Boolean(studentId) },
+    { enabled: !review && Boolean(studentId) },
   )
-  const apiSubjects = subjectsResponse?.subjects ?? []
-  const worlds = WORLDS.map(world => {
-    const live = apiSubjects.find(subject => subject.slug === world.id)
-    return live ? {
-      ...world,
-      apiId: live.id || live.subject_id,
-      name: live.name,
-      pct: Number(live.progress_percent ?? 0),
-      done: Math.round((Number(live.progress_percent ?? 0) / 100) * world.total),
-      locked: Boolean(live.locked),
-      badge: live.badge,
-    } : world
-  })
+  const apiSubjects = review ? reviewSubjects() : subjectsResponse?.subjects ?? []
+  const worlds = review || studentId ? availableWorlds(apiSubjects, WORLDS) : WORLDS
+  if (!review && studentId && (loading || error)) return <ContentStatus activity="subjects" pkg={{ contentLoading: loading, contentError: error }} />
   return (
     <Page>
       <Scene name="learn" />
@@ -69,7 +64,7 @@ export default function LearnHub() {
                   <div className="mt-1 text-[14px] font-semibold text-ink-3 leading-snug">{w.desc}</div>
                   <div className="mt-auto flex flex-col items-center">
                     <Ring size={72} stroke={8} value={w.pct / 100} id={`w-${w.id}`} delay={0.3 + i * 0.1}><div className="leading-none"><div className={cn('font-display font-extrabold text-ink', 'text-[19px]')}>{w.pct}%</div></div></Ring>
-                    <div className="text-[13px] font-bold text-ink-3">{w.done} / {w.total}</div>
+                    <div className="text-[13px] font-bold text-ink-3">{w.total == null ? 'Progress saved online' : `${w.done ?? 0} / ${w.total}`}</div>
                   </div>
                   {w.locked ? <span className="mt-3 h-[44px] w-full rounded-[14px] border-2 border-[var(--line)] flex items-center justify-center gap-2 text-[16px] font-extrabold text-ink-3"><Lock size={18} /> Locked</span>
                     : <Button variant="outline" size="sm" arrow className="mt-3 w-full h-[44px] text-[16px]" style={{ borderColor: '#38bdf8', color: ac('#0284c7') }}>Explore</Button>}

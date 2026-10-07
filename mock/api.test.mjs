@@ -42,15 +42,16 @@ test('complete parent and child onboarding persists responses and validates owne
   assert.deepEqual(students[0].interest_ids, ids)
   assert.match((await call('GET', `${root}/home`)).data.greeting, /Local Explorer/)
   const other = await api('POST', '/auth/parent/signup', { email: 'other@example.com', password: 'MockPass123' })
-  assert.equal((await api('GET', `${root}/home`, {}, other.data.token)).status, 404)
+  assert.equal((await api('GET', `${root}/home`, {}, other.data.token)).status, 403)
   assert.equal((await call('GET', '/nonexistent')).status, 404)
   assert.equal((await call('POST', '/auth/parent/logout')).status, 204)
   assert.equal((await call('GET', '/parent/me')).status, 401)
 })
 
-test('mock DB is explicitly not tested and all catalog IDs are unique UUIDs', async () => {
+test('health distinguishes local SQLite content from the live database and catalog IDs are unique UUIDs', async () => {
   const api = createMockApi()
-  assert.equal((await api('GET', '/health/database')).data.status, 'not_tested')
+  const health=(await api('GET', '/health/database')).data
+  assert.equal(health.status,'ok');assert.equal(health.database,'local-sqlite-content');assert.equal(health.source,'mock');assert.equal(health.packages,5)
   const ids = Object.values(catalogs).flat().map(v => v.id)
   assert.equal(new Set(ids).size, ids.length)
   ids.forEach(id => assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/))

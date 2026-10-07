@@ -12,8 +12,12 @@ import SpeechBubble from '../components/SpeechBubble.jsx'
 import { topicFor, gradeLabel, WORLDS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { cn } from '../lib/utils.js'
+import ContentStatus from '../components/ContentStatus.jsx'
 import { loadLearningPath } from '../lib/gameApi.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
+import { isReviewMode } from '../lib/reviewMode.js'
+import { reviewLearning } from '../lib/review-learning.js'
+import { ACTIVE_CONTENT_ID } from '../content/index.js'
 
 
 export default function Topic() {
@@ -25,20 +29,22 @@ export default function Topic() {
   const localTopic = topicFor(world)
   const g = useGame(); const { name, face, grade } = g.state.profile; const { xp, streak } = g.state.stats
   const studentId = g.state.activeChildId
-  const { data: livePath } = useLiveResource(
+  const review = isReviewMode()
+  const { data: livePath, loading, error } = useLiveResource(
     () => loadLearningPath(studentId, world),
     [studentId, world],
-    { enabled: Boolean(studentId) },
+    { enabled: !review && Boolean(studentId) },
   )
-  const liveDetail = livePath?.detail
+  const liveDetail = review ? reviewLearning(world,{grade,contentId:ACTIVE_CONTENT_ID}).path.detail : livePath?.detail
   const T = liveDetail ? {
     ...localTopic,
     title: liveDetail.name,
     subject: liveDetail.subject,
     desc: liveDetail.description && liveDetail.description !== 'Local mock content' ? liveDetail.description : localTopic.desc,
+    nova: liveDetail.nodes?.length ? 'Choose an available lesson to get started.' : 'Lessons for this topic are not available yet. You can explore another topic.',
   } : localTopic
   // Only the mission API can claim completion. With no student/progress data, a mission is ready to start.
-  const missions = liveDetail?.nodes?.length ? liveDetail.nodes : [{ mission_id: world, name: T.title, status: 'unlocked' }]
+  const missions = review || studentId ? liveDetail?.nodes || [] : [{ mission_id: world, name: T.title, status: 'unlocked' }]
   const missionStatus = status => status === 'completed' ? ['Completed', 'done']
     : status === 'in_progress' ? ['In progress', 'progress']
       : status === 'locked' ? ['Locked', 'locked'] : ['Ready to start', 'ready']
@@ -49,6 +55,8 @@ export default function Topic() {
      was the only page this route served. Every subject opens it now, so the pizza was
      painted out and each world draws its own globe on the pedestal instead. */
   const globe = (WORLDS.find(w => w.id === world) ?? WORLDS[1]).img
+  const available = missions.find(m => m.status !== 'locked')
+  if (!review && studentId && (loading || error)) return <ContentStatus activity="topics" pkg={{ contentLoading: loading, contentError: error }} />
   return (
     <Page>
       <Scene name="topic" />
@@ -62,6 +70,7 @@ export default function Topic() {
       <Stack className="absolute left-[45px] top-[345px] w-[495px]" start={0.6} delay={0.1}>
         <Item v="left" className="mb-3"><div className="font-display text-[17px] font-extrabold uppercase tracking-wider text-primary-ink">Your learning path</div></Item>
         <div className="flex max-h-[350px] flex-col gap-3 overflow-y-auto pr-1">
+          {!missions.length && <p className="text-[20px] font-bold text-ink-2">No lessons are available for this topic yet.</p>}
           {missions.map((mission, index) => { const [status, key] = missionStatus(mission.status); return (
             <Item key={mission.mission_id ?? `${mission.name}-${index}`} v="left"><Card className="w-full min-h-[96px] px-5 py-4 flex items-center gap-4">
               <span className="icon-orb w-[58px] h-[58px] shrink-0" style={{ color: '#3b82f6', background: '#3b82f61a' }}><BookOpen size={28} strokeWidth={2} /></span>
@@ -81,8 +90,8 @@ export default function Topic() {
       <div className="absolute left-[1310px] top-[180px]"><SpeechBubble tail="left" text={T.nova} delay={0.3} className="w-[240px] text-[17px]" /></div>
 
       <Stack className="absolute left-[1225px] top-[612px] w-[400px]" start={1}>
-        <Item v="pop"><Button size="lg" arrow icon={<Rocket size={26} strokeWidth={2.4} />} className="w-full h-[78px] uppercase text-[22px] px-6 whitespace-nowrap" sound="whoosh" onClick={() => nav(`/missions/fractions?subject=${world}`)}>Learn with Nova</Button></Item>
-        <Item v="pop" className="mt-4 grid grid-cols-2 gap-4"><Button variant="ghost" size="md" icon={<Pencil size={20} />} className="h-[68px] uppercase text-[17px] px-4 whitespace-nowrap" onClick={() => nav(`/missions/fractions/learn?subject=${world}`)}>Practise</Button><Button variant="ghost" size="md" icon={<ClipboardCheck size={20} />} className="h-[68px] uppercase text-[17px] px-4 whitespace-nowrap" onClick={() => nav(`/tests/mixed/intro?subject=${world}`)}>Take Test</Button></Item>
+        <Item v="pop"><Button size="lg" arrow icon={<Rocket size={26} strokeWidth={2.4} />} className="w-full h-[78px] uppercase text-[22px] px-6 whitespace-nowrap" sound="whoosh" disabled={!available} onClick={() => nav(`/missions/fractions?subject=${world}&mission=${available?.mission_id}`)}>Learn with Nova</Button></Item>
+        <Item v="pop" className="mt-4 grid grid-cols-2 gap-4"><Button variant="ghost" size="md" icon={<Pencil size={20} />} className="h-[68px] uppercase text-[17px] px-4 whitespace-nowrap" disabled={!available} onClick={() => nav(`/missions/fractions/learn?subject=${world}&mission=${available?.mission_id}`)}>Practise</Button><Button variant="ghost" size="md" icon={<ClipboardCheck size={20} />} className="h-[68px] uppercase text-[17px] px-4 whitespace-nowrap" onClick={() => nav(`/tests/mixed/intro?subject=${world}&mission=${available?.mission_id || ''}`)}>Take Test</Button></Item>
       </Stack>
     </Page>
   )
