@@ -1,3 +1,4 @@
+import { checkFeedback } from '../content/check-feedback.js'
 import { API_MODE } from '../lib/api.js'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -54,12 +55,12 @@ export default function SpotMistake() {
   const total = remote ? attempt?.total_questions || 0 : questions.length
   const Q = remote ? remoteQuestion || questions[0] : questions[questionIndex] ?? checkQuestion(pkg)
   const QM = Q.models[model % Q.models.length] || {key:'text', label:'Question', hints:Q.hints || [], feedback_wrong:'Review this idea and try the next question.'}
-  const HINTS = QM.hints || Q.hints || []
+
   const answers = Array.isArray(Q.answer) ? Q.answer : [Q.answer]
   const multi = Q.type === 'multi_select' || Q.type === 'pick_n' || Array.isArray(Q.answer)
   const requiredCount = Q.required_count ?? answers.length
   const answered = multi ? picks.length === requiredCount : picks.length === 1
-  const correct = remote ? locked && serverCorrect : answered && picks.length === answers.length && picks.every(v => answers.includes(v))
+  const {selectionCorrect,correct,hints:HINTS,canRevealHints}=checkFeedback({picks,answers,answered,checked:locked,remote,serverCorrect,modelHints:QM.hints,questionHints:Q.hints})
   const choose = v => {
     if (locked || saving) return
     if (!multi) {
@@ -75,7 +76,7 @@ export default function SpotMistake() {
   }
   const check = async () => {
     if (!answered || locked || saving) return
-    let right = correct
+    let right = selectionCorrect
     if (remote) {
       setSaving(true)
       try {
@@ -92,15 +93,17 @@ export default function SpotMistake() {
   }
   const advance = async () => {
     if (questionIndex === total - 1) {
+      const finalReview=review.map((item,index)=>index===questionIndex?{...item,hintsUsed:hints}:item)
       const saved = remote
         ? await completeLearningAttempt(attempt.attempt_id)
         : liveMission ? await completeMission(g.state.activeChildId, subject, Math.round(score / total * 100), pkg.apiMissionId) : { completed_at: new Date().toISOString(), xp_awarded: 0 }
-      const result = { score:remote?saved.correct_count:score, gradeScore:remote?saved.score:undefined, total, review, subject, studentId:g.state.activeChildId, attemptId:remote?attempt.attempt_id:crypto.randomUUID(), completedAt: saved.completed_at, xpAwarded: saved.xp_awarded, apiSaved:remote || liveMission, documentedMission:liveMission, local:!remote && !liveMission }
+      const result = { score:remote?saved.correct_count:score, gradeScore:remote?saved.score:undefined, total, review:finalReview, subject, missionId:pkg.apiMissionId||pkg.content_id, studentId:g.state.activeChildId, attemptId:remote?attempt.attempt_id:crypto.randomUUID(), completedAt: saved.completed_at, xpAwarded: saved.xp_awarded, apiSaved:remote || liveMission, documentedMission:liveMission, local:!remote && !liveMission }
       sessionStorage.setItem('kv:last-mission-score', JSON.stringify(result))
       sessionStorage.removeItem(progressKey)
       nav(withSubject('/missions/fractions/complete'), { state: result })
       return
     }
+    setReview(items=>items.map((item,index)=>index===questionIndex?{...item,hintsUsed:hints}:item))
     setQuestionIndex(i => i + 1); setPicks([]); setLocked(false); setHints(0); setWrong(0); setModel(0)
   }
   useEffect(() => {
@@ -147,6 +150,7 @@ export default function SpotMistake() {
   if(remote && (!remoteQuestion || apiError)) return <ContentStatus pkg={{contentLoading:!apiError,contentError:apiError}} />
   return (
     <Page>
+      {pkg.contentSource==='api-preview'&&<div className="absolute left-1/2 top-[8px] z-[100] -translate-x-1/2 rounded-full bg-white px-5 py-2 text-[15px] font-bold text-indigo-800 shadow">Live API questions · Read-only local preview</div>}
       <Scene name="spot" />
       <motion.div className="absolute" style={{ ...bleedL(24), ...safeT(24) }} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}><Logo variant="planet" tagline="LEARN • EXPLORE • ACHIEVE" /></motion.div>
       <Panel className="absolute top-[110px] w-[250px] p-5" style={bleedL(24)} initial="hidden" animate="show">
@@ -219,16 +223,16 @@ export default function SpotMistake() {
         <div className="eyebrow text-[17px] flex items-center gap-2"><Lightbulb size={20} className="text-gold" fill="currentColor" /> Hint Progress</div>
         <Stack className="mt-3 flex flex-col gap-3" start={0.7}>
           {HINTS.map((h, i) => {
-            const st = i < hints ? 'open' : i === hints ? 'next' : 'locked'
+            const st = !canRevealHints ? 'locked' : i < hints ? 'open' : i === hints ? 'next' : 'locked'
             return (
-              <Item key={i} v="soft"><Card hover={st === 'next'} className="px-4 py-3 flex items-center gap-3" onClick={() => st === 'next' && (sfx.unlock(), setHints(hints + 1))}>
+              <Item key={i} v="soft"><Card hover={st === 'next'} className="px-4 py-3 flex items-center gap-3" role="button" tabIndex={st==='next'?0:-1} aria-disabled={st!=='next'} onKeyDown={e=>{if(st==='next'&&(e.key==='Enter'||e.key===' ')){e.preventDefault();sfx.unlock();setHints(value=>value+1)}}} onClick={() => canRevealHints && st === 'next' && (sfx.unlock(), setHints(value=>value+1))}>
                 <span className={cn('w-[38px] h-[38px] rounded-full grid place-items-center text-white shrink-0', st === 'open' ? 'bg-green-500' : st === 'next' ? 'bg-blue-500' : 'bg-[var(--lavender-2)] text-ink-3')}>{st === 'open' ? <Check size={20} strokeWidth={3.5} /> : st === 'next' ? <span className="font-display font-extrabold text-[17px]">{i + 1}</span> : <Lock size={18} />}</span>
-                <span className="leading-tight"><span className="block font-extrabold text-[17px] text-ink">Hint {i + 1}</span><span className="block text-[14px] font-semibold text-ink-3">{st === 'locked' ? 'Tap hint 2 first' : st === 'next' ? 'Tap to reveal' : h}</span></span>
+                <span className="leading-tight"><span className="block font-extrabold text-[17px] text-ink">Hint {i + 1}</span><span className="block text-[14px] font-semibold text-ink-3">{correct ? 'Not needed for a correct answer' : st === 'locked' ? `Reveal hint ${i} first` : st === 'next' ? 'Tap to reveal' : h}</span></span>
               </Card></Item>
             )
           })}
         </Stack>
-        <AnimatePresence>
+        <AnimatePresence key={`feedback:${Q.question_id}`} initial={false}>
           {locked && (
             <motion.div className="mt-4 card p-4" initial={{ opacity: 0, y: 20, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
               <div className="flex items-center gap-2"><img src="/art/22-novahead.webp" alt="" className="w-[40px]" /><span className="eyebrow text-[14px]">Nova's Feedback</span></div>
@@ -236,7 +240,7 @@ export default function SpotMistake() {
             </motion.div>
           )}
         </AnimatePresence>
-        <AnimatePresence>
+        <AnimatePresence key={`success:${Q.question_id}`} initial={false}>
           {correct && (
             <motion.div className="mt-4 rounded-[22px] p-4 text-white" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }} initial={{ opacity: 0, scale: 0.6, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 360, damping: 16, delay: 0.2 }}>
               <div className="font-display font-extrabold text-[26px] flex items-center gap-2"><Star size={24} className="text-gold" fill="currentColor" /> Correct answer</div>
@@ -248,7 +252,7 @@ export default function SpotMistake() {
 
       <motion.div className="absolute flex items-center gap-3" style={{ ...bleedL(24), ...safeB(37) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27 }}>
         <button className="pill h-[74px] px-4 gap-4 text-left" onClick={() => speak(`${Q.instruction}. ${Q.options.map(option => option.label).join('. ')}`)}><span className="icon-orb w-[54px] h-[54px] text-white" style={{ background: 'var(--grad-primary)' }}><Volume2 size={26} /></span><span className="leading-tight"><span className="block text-[17px] font-extrabold text-ink">Tap to hear the question</span><span className="block text-[13px] font-semibold text-ink-3">Listen anytime!</span></span></button>
-        <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => hints < HINTS.length && (sfx.unlock(), setHints(hints + 1))}><Lightbulb size={22} className="text-gold" fill="currentColor" /> Hint</button>
+        <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" disabled={!canRevealHints||hints>=HINTS.length} onClick={() => canRevealHints && hints < HINTS.length && (sfx.unlock(), setHints(value=>value+1))}><Lightbulb size={22} className="text-gold" fill="currentColor" /> Hint</button>
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => speak(Q.instruction)}><Headphones size={22} className="text-primary-ink" /> Listen</button>
       </motion.div>
       <motion.div className="absolute text-center" style={{ ...bleedR(24), ...safeB(44) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!answered || saving} sound="whoosh" onClick={locked ? advance : check}>{locked ? (questionIndex === total - 1 ? 'Finish Mission' : 'Next Question') : 'Check Answer'}</Button>{!answered && <p className="mt-2 text-[13px] font-extrabold text-ink-2">Choose one answer to continue</p>}</motion.div>

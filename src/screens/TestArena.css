@@ -33,3 +33,15 @@
 .test-arena__start:focus-visible { outline: 4px solid #f5b942; outline-offset: 4px; }
 .test-arena__loading { position: absolute; right: 62px; bottom: 14px; color: #607393; font-size: 13px; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .test-arena__start { transition: none; } }
+/* Keep the chooser and action in normal flow so longer test titles cannot overlap. */
+.test-arena__content { display:flex; flex-direction:column; padding:30px 48px; }
+.test-arena__topline { margin-top:16px; margin-bottom:12px; }
+.test-arena__content h2 { margin:12px 0 10px; font-size:38px; }
+.test-arena__intro { font-size:19px; }
+.test-arena__facts { margin-top:18px; }
+.test-arena__facts > div { height:88px; grid-template-rows:38px 22px; }
+.test-arena__facts strong { font-size:30px; }
+.test-arena__path { display:none; }
+.test-arena__footer { position:static; margin-top:auto; padding-top:18px; }
+.test-arena__footer p { margin-bottom:10px; }
+.test-arena__start { height:62px; }

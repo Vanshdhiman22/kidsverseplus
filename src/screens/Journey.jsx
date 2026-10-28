@@ -21,7 +21,7 @@ import { reviewLearning } from '../lib/review-learning.js'
 import { ACTIVE_CONTENT_ID } from '../content/index.js'
 
 /* Car sprite, in design pixels (public/art/chars/journey-0.webp ships at 2x). */
-const CAR = { w: 211, h: 203 }   // 0.62 of the source art: a map token, not a hero
+const CAR = { w: 170, h: 164 }   // 0.62 of the source art: a map token, not a hero
 
 /* Where the car parks at each station, in design pixels.
    These are placed per station rather than derived as one fixed offset from the card.
@@ -32,12 +32,12 @@ const CAR = { w: 211, h: 203 }   // 0.62 of the source art: a map token, not a h
    panel (x-170 > 355) and above the dock (y+85 < 831).
    Index matches STATION_SPOTS / the curriculum order. */
 const CAR_STOPS = [
-  [1030, 190],  // Number Forest
-  [1500, 190],  // Addition City
-  [990, 380],   // Multiplication Station
-  [1101, 493],  // Fractions Galaxy -- the designer's own placement
-  [1010, 610],  // Decimal Dunes
-  [1150, 750],  // Geometry Heights
+  [800, 225],
+  [1330, 245],
+  [650, 460],
+  [1450, 600],
+  [700, 755],
+  [1260, 845],
 ]
 
 /**
@@ -50,7 +50,7 @@ const CAR_STOPS = [
  * earlier on the path than station i+1.
  */
 function roadFromSpots(spots) {
-  const p = spots.map((s, i) => CAR_STOPS[i] ?? [s.x, s.y])
+  const p = [[600, 225], ...spots.map((s, i) => CAR_STOPS[i] ?? [s.x, s.y])]
   const at = i => p[Math.max(0, Math.min(p.length - 1, i))]
   let d = `M ${p[0][0]} ${p[0][1]}`
   for (let i = 0; i < p.length - 1; i++) {
@@ -134,7 +134,7 @@ function Car({ stations, road, seen, onArrive, face }) {
 
   return (
     <motion.div
-      className="absolute left-0 top-0 z-[2] pointer-events-none"
+      className="absolute left-0 top-0 z-[20] pointer-events-none"
       style={{
         offsetPath: `path("${d}")`,
         offsetRotate: '0deg',
@@ -163,26 +163,26 @@ function Car({ stations, road, seen, onArrive, face }) {
 }
 
 function Node({ n, i }) {
-  const icon = { done: <Check size={22} strokeWidth={3.5} />, here: <MapPin size={22} strokeWidth={2.6} />, next: <Plus size={22} strokeWidth={3} />, locked: <Lock size={20} /> }[n.state]
-  const color = { done: '#22c55e', here: '#f59e0b', next: '#3b82f6', locked: '#94a3b8' }[n.state]
+  const active = n.state === 'here'
+  const color = { done: '#22c55e', here: '#8b5cf6', next: '#3b82f6', locked: '#94a3b8' }[n.state]
   return (
-    <motion.div className={cn('absolute z-10 card px-4 py-3 flex items-center gap-3', n.state === 'here' && 'card-selected')} style={{ left: n.x, top: n.y, minWidth: 190 }} initial={{ opacity: 0, scale: 0.6, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.08 + i * 0.12 }} whileHover={{ scale: 1.04 }}>
-      {n.state !== 'here' && n.state !== 'done' && <span className="w-[42px] h-[42px] rounded-full grid place-items-center text-white shrink-0" style={{ background: color, boxShadow: `0 0 0 4px ${color}33` }}>{icon}</span>}
-      <div className="leading-tight">
-        <div className={cn('font-display font-extrabold text-ink', n.state === 'here' ? 'text-[24px]' : 'text-[19px]')}>{n.name}</div>
-        <div className="text-[15px] font-bold text-ink-3 flex items-center gap-2">{n.state === 'here' && <MapPin size={16} className="text-gold" />}{n.sub}</div>
-        {n.state === 'next' && <div className="text-[13px] font-extrabold tracking-wider text-blue-500">NEXT</div>}
-        {n.state === 'locked' && <div className="text-[13px] font-extrabold tracking-wider text-ink-3">LOCKED</div>}
-        {n.state === 'here' && <div className="text-[14px] font-extrabold tracking-wider text-orange-500">⬇ YOU ARE HERE</div>}
+    <motion.div className="absolute z-10 flex w-[230px] flex-col items-center" style={{left:i===0?550:n.x,top:i===0?160:n.y}}
+      initial={{opacity:0,scale:.7,y:12}} animate={{opacity:1,scale:1,y:0}} transition={{type:'spring',stiffness:260,damping:20,delay:.1+i*.12}}>
+      <div className="relative grid h-[72px] w-[72px] place-items-center rounded-full border-[5px] border-white font-display text-[30px] font-extrabold text-white" style={{background:`linear-gradient(145deg, ${color}, ${active?'#4f46e5':color})`,boxShadow:`0 6px 0 ${active?'#4338ca':color}, 0 10px 20px #312e8140`}}>
+        {n.state==='locked'?<Lock size={26}/>:n.state==='done'?<Check size={30} strokeWidth={3}/>:i+1}
+        {active&&<span className="absolute -right-2 -top-2 grid h-[25px] w-[25px] place-items-center rounded-full border-2 border-white bg-amber-400 text-amber-950"><MapPin size={14} strokeWidth={3}/></span>}
       </div>
-      {n.state === 'done' && <span className="ml-auto w-[30px] h-[30px] rounded-full bg-green-500 grid place-items-center text-white shadow-md"><Check size={18} strokeWidth={4} /></span>}
+      <div className="mt-4 max-w-full rounded-[14px] border border-white/90 bg-white/90 px-3 py-2 text-center shadow-sm">
+        <div className="font-display text-[16px] font-extrabold leading-tight text-ink">{n.name}</div>
+        <div className="mt-1 text-[12px] font-bold leading-tight text-ink-3">{n.sub}</div>
+      </div>
     </motion.div>
   )
 }
 
 export default function Journey() {
   const nav = useNavigate()
-  const g = useGame(); const { name, face } = g.state.profile; const { xp } = g.state.stats
+  const g = useGame(); const { name, face } = g.state.profile; const { xp, streak } = g.state.stats
   const [query, setQuery] = useSearchParams()
   const subject = query.get('subject') || g.state.progress.world || 'maths'
   const setSubject = id => { g.setProgress({ world: id }); setQuery({ subject: id }) }
@@ -198,7 +198,7 @@ export default function Journey() {
   const journey = review ? reviewLearning(subject,{contentId:ACTIVE_CONTENT_ID}).journey : liveJourney
   const apiWorlds = journey?.worlds ?? []
   const stations = review || studentId ? apiWorlds.map((live, index) => {
-    const state = live.status === 'completed' ? 'done' : ['current', 'in_progress'].includes(live.status) ? 'here' : live.status === 'unlocked' ? 'next' : 'locked'
+    const state = live.status === 'completed' ? 'done' : ['current','in_progress'].includes(live.status) ? 'here' : live.status === 'unlocked' ? 'next' : 'locked'
     return { ...STATION_SPOTS[index % STATION_SPOTS.length], id: live.topic_id, name: live.world_name, sub: live.tagline || live.world_name, state }
   }) : localStations
   const worldName = journey?.subject ?? WORLDS.find(w => w.id === subject)?.name ?? 'Maths'
@@ -220,27 +220,28 @@ export default function Journey() {
   return (
     <Page>
       <Scene name="journey" />
+
       {stations.length > 0 && <Car key={`car-${subject}`} face={face} stations={stations} road={road} seen={g.state.progress.journeySeen?.[subject]} onArrive={i => g.markJourneySeen(subject, i)} />}
       {(loading || error || !stations.length) && <Panel className="absolute left-[590px] top-[280px] w-[650px] p-8 text-[22px] text-center" role="status">{loading ? 'Loading journey...' : error || 'No worlds are available for this subject yet.'}</Panel>}
       {stations.map((n, i) => <Node key={subject + n.id} n={n} i={i} />)}
-      <motion.div key={subject} className="absolute z-10 left-[1268px] top-[535px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button disabled={!stations.some(s => s.state !== 'locked')} size="sm" arrow className="h-[52px] px-6 text-[18px] uppercase" sound="whoosh" onClick={() => nav(`/learn/topics/${subject}`)}>Continue {stations.find(s => s.state === 'here')?.sub ?? 'learning'}</Button></motion.div>
+      <motion.div key={subject} style={bleedL(40)} className="absolute z-10 top-[865px] w-[315px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button disabled={!stations.some(s => s.state !== 'locked')} size="sm" arrow className="w-full h-[52px] px-4 text-[17px] uppercase" sound="whoosh" onClick={() => nav(`/learn/topics/${subject}`)}>Continue Learning</Button></motion.div>
 
-      <TopBar right={<><div className="pill h-[60px] px-5 gap-4 text-[20px] font-extrabold text-ink"><span className="flex items-center gap-2 text-orange-500"><Flame size={22} fill="currentColor" /> <span className="text-ink">{xp.toLocaleString()}</span></span><span className="w-px h-6 bg-[var(--line)]" /><span className="flex items-center gap-2 text-gold"><Star size={22} fill="currentColor" /> <span className="text-ink">{g.state.stats.badges}</span></span></div><UserChip name={name} face={face} /></>} showControls={false} />
+      <TopBar right={<><div className="pill h-[60px] px-5 gap-4 text-[20px] font-extrabold text-ink"><span className="flex items-center gap-2 text-orange-500"><Flame size={22} fill="currentColor" /> <span className="text-ink">{streak}</span></span><span className="w-px h-6 bg-[var(--line)]" /><span className="flex items-center gap-2 text-gold"><Star size={22} fill="currentColor" /> <span className="text-ink">{xp.toLocaleString()}</span></span></div><UserChip name={name} face={face} /></>} showControls={false} />
       <Stack className="absolute top-[125px] w-[330px]" style={bleedL(55)} start={0.25}>
         <Item><h1 className="font-display font-extrabold text-[50px] leading-[1.05] text-ink">My Journey —<br /><span className="grad-text">{name} + Nova</span></h1></Item>
         <Item className="mt-1 font-display font-extrabold text-[34px] text-primary-ink">{worldName} World</Item>
         <Item className="mt-2 text-[19px] font-semibold text-ink-2 leading-snug">Explore, practice and master {worldName.toLowerCase()} step by step.</Item>
       </Stack>
-      <Panel className="absolute top-[400px] w-[315px] p-5" style={bleedL(40)} initial="hidden" animate="show">
+      <Panel className="absolute top-[390px] w-[315px] p-4" style={bleedL(40)} initial="hidden" animate="show">
         <div className="text-[18px] font-extrabold text-ink-2">Switch Subject</div>
         <div className="mt-3 flex flex-col gap-2">
-          {[['maths', 'Maths', Rocket], ['literacy', 'Literacy', BookOpen], ['evs', 'EVS / Science', Flag]].map(([id, l, I]) => <button key={id} className={cn('relative h-[56px] rounded-[16px] flex items-center gap-4 px-4 font-display font-extrabold text-[21px]', subject === id ? 'text-white' : 'text-ink')} onClick={() => { sfx.select(); setSubject(id) }}>{subject === id && <motion.span layoutId="subj" className="absolute inset-0 rounded-[16px]" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} />}<span className="relative z-10 flex items-center gap-4"><I size={26} /> {l}</span></button>)}
+          {[['maths', 'Maths', Rocket], ['literacy', 'Literacy', BookOpen], ['evs', 'EVS / Science', Flag]].map(([id, l, I]) => <button key={id} className={cn('relative h-[50px] rounded-[16px] flex items-center gap-4 px-4 font-display font-extrabold text-[21px]', subject === id ? 'text-white' : 'text-ink')} onClick={() => { sfx.select(); setSubject(id) }}>{subject === id && <motion.span layoutId="subj" className="absolute inset-0 rounded-[16px]" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} />}<span className="relative z-10 flex items-center gap-4"><I size={26} /> {l}</span></button>)}
         </div>
       </Panel>
-      <Panel className="absolute top-[640px] w-[315px] p-5" style={bleedL(40)} initial="hidden" animate="show">
+      <Panel className="absolute top-[630px] w-[315px] p-4" style={bleedL(40)} initial="hidden" animate="show">
         <div className="text-[18px] font-extrabold text-ink-2">Companion Moments</div>
         <Stack className="mt-3 flex flex-col gap-2" start={0.9}>
-          {[[Flag, activities[0]?.name || 'Raise the Flag', '#ef4444', () => completeActivity(0)], [BookOpen, activities[1]?.name || 'Read Together', '#8b5cf6', () => completeActivity(1)], [Mic, activities[2]?.name || 'Talk with Nova', '#3b82f6', () => completeActivity(2)]].map(([I, l, c, fn]) => <Item key={l} v="soft"><Card hover className="h-[50px] px-4 flex items-center gap-3 text-[17px] font-extrabold text-ink" onClick={() => { sfx.tap(); fn() }}><I size={22} style={{ color: c }} />{l}<ChevronRight size={20} className="ml-auto text-ink-3" /></Card></Item>)}
+          {[[Flag, activities[0]?.name || 'Raise the Flag', '#ef4444', () => completeActivity(0)], [BookOpen, activities[1]?.name || 'Read Together', '#8b5cf6', () => completeActivity(1)], [Mic, activities[2]?.name || 'Talk with Nova', '#3b82f6', () => completeActivity(2)]].map(([I, l, c, fn]) => <Item key={l} v="soft"><Card hover className="h-[44px] px-4 flex items-center gap-3 text-[17px] font-extrabold text-ink" onClick={() => { sfx.tap(); fn() }}><I size={22} style={{ color: c }} />{l}<ChevronRight size={20} className="ml-auto text-ink-3" /></Card></Item>)}
         </Stack>
       </Panel>
     </Page>

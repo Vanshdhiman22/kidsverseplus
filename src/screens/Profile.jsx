@@ -57,9 +57,9 @@ export default function Profile() {
     async () => {
       const [profile,journey,cards,companions,evidence]=await Promise.all([
         api.studentProfile(studentId),api.studentJourneySummary(studentId),api.studentCards(studentId),
-        apiRequest(`/students/${studentId}/companion-activities`),apiRequest('/parent/evidence'),
+        api.studentJourney(studentId,g.state.progress.world||'maths'),apiRequest('/parent/evidence'),
       ])
-      return {profile,journey,cards:cards.cards,companions:companions.activities,evidence:evidence.students.find(s=>s.student_id===studentId)?.evidence || []}
+      return {profile,journey,cards:cards.cards,companions:companions.companion_activities||[],evidence:evidence.students.find(s=>s.student_id===studentId)?.evidence || []}
     },
     [studentId,getToken()],
     { enabled: Boolean(studentId && getToken()) },
@@ -76,7 +76,7 @@ export default function Profile() {
   const statRows=resource.data ? [
     [CheckCircle2,'#f59e0b','Missions',resource.data.journey.milestones_completed,'completed'],
     [Star,'#3b82f6','Saved XP',liveProfile.total_xp,'XP'],
-    [BookOpen,'#a855f7','Reading',liveState.stats.reading,'activities'],
+    [BookOpen,'#a855f7','Reading',resource.data.companions.some(a=>a.type==='reading'&&'completion' in a)?liveState.stats.reading:'—','completion unavailable'],
     [Swords,'#38bdf8','Bot Battles',liveState.stats.battles,'battles'],
   ] : statsFor(liveState)
   const ac = useAccent()

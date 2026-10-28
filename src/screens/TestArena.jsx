@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ArrowRight, Clock3, HelpCircle, Sparkles } from 'lucide-react'
 import Scene, { Child } from '../components/Scene.jsx'
@@ -12,21 +12,25 @@ import { useLiveResource } from '../lib/useLiveResource.js'
 import { ACTIVE_CONTENT_ID, useContent } from '../content/index.js'
 import { cmsQuestions } from '../content/assessment.js'
 import { isReviewMode } from '../lib/reviewMode.js'
+import { reviewLearning } from '../lib/review-learning.js'
 import './TestArena.css'
 
 export default function TestArena() {
   const nav = useNavigate()
+  const [query] = useSearchParams()
+  const [selectedId,setSelectedId] = React.useState('')
   const g = useGame()
   const { name, face } = g.state.profile
   const studentId = g.state.activeChildId
-  const subject = g.state.progress.world || 'maths'
+  const subject = query.get('subject') || g.state.progress.world || 'maths'
   const pkg = useContent(subject === 'maths' ? ACTIVE_CONTENT_ID : `demo-${subject}`)
   const { data: testCatalog, loading, error } = useLiveResource(
     () => listTopicTests(studentId, subject),
     [studentId, subject],
     { enabled: !isReviewMode() && Boolean(studentId) },
   )
-  const liveTest = testCatalog?.tests?.[0]
+  const tests=(isReviewMode()?reviewLearning(subject).tests:testCatalog?.tests||[]).filter(t=>(t.assessment_type||'test')==='test')
+  const liveTest = tests.find(t=>t.id===selectedId) || tests[0]
   const authoredQuestions = cmsQuestions(pkg, 'test')
   const title = authoredQuestions ? `${pkg.mission.title} Test` : liveTest?.name || (loading ? 'Loading test...' : 'No test available')
   const questionCount = authoredQuestions?.length || liveTest?.questions_count || liveTest?.question_count || 0
@@ -34,7 +38,7 @@ export default function TestArena() {
   const intro = authoredQuestions
     ? `Questions about ${pkg.mission.title}.`
     : liveTest?.intro_text || error || 'Choose another topic or try again later.'
-  const openTest = () => nav(`/tests/mixed/intro?subject=${encodeURIComponent(subject)}`)
+  const openTest = () => nav(`/tests/mixed/intro?subject=${encodeURIComponent(subject)}${liveTest?`&test=${encodeURIComponent(liveTest.id)}`:''}`)
 
   return (
     <Page className="test-arena">
@@ -54,11 +58,12 @@ export default function TestArena() {
           <div className="test-arena__nova-note"><Sparkles size={21} aria-hidden="true" /> Nova is here to help</div>
         </section>
         <section className="test-arena__content" aria-labelledby="test-arena-title">
-          <span className="test-arena__eyebrow">Test with Nova</span>
+          <span className="test-arena__eyebrow">{isReviewMode()?'Local preview · sample content':'Test with Nova'}</span>
           <div className="test-arena__topline">
             <span className="test-arena__subject">{pkg.subject || subject}</span>
             <span className="test-arena__step">Your next step</span>
           </div>
+          {tests.length>0 && <label className="mb-4 flex flex-col gap-2 text-[17px] font-bold text-ink">Choose a test<select value={liveTest?.id||''} onChange={e=>setSelectedId(e.target.value)} className="rounded-2xl border-2 border-violet-200 bg-white p-3 text-[18px] focus:outline-violet-500">{tests.map(test=><option key={test.id} value={test.id}>{test.name}</option>)}</select></label>}
           <h2 id="test-arena-title">{title}</h2>
           <p className="test-arena__intro">{intro}</p>
           <div className="test-arena__facts" aria-label="Test details">

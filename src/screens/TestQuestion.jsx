@@ -100,7 +100,7 @@ export default function TestQuestion() {
         nav(withSubject(`/tests/mixed/result${mode === 'challenge' ? '?source=challenge' : ''}`), { state: run })
         return
       }
-      setQi(qi + 1); setPick(null); setSubmitted(false); setHintLevel(0); sfx.tap(); return
+      setApiQuestion(null); setQi(qi + 1); setPick(null); setSubmitted(false); setHintLevel(0); sfx.tap(); return
     }
     const saved = authoredQuestions ? null : await submitAnswer(g.state.activeChildId, routeSubject(), qi + 1, pick, q.instruction, mode)
     setSubmitted(true)

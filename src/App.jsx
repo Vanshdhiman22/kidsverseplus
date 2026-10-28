@@ -21,7 +21,6 @@ import { API_MODE } from './lib/api.js'
 import AuditBridge from './components/AuditBridge.jsx'
 const ApiAudit = import.meta.env.DEV ? lazy(() => import('./screens/ApiAudit.jsx')) : null
 const MockApiReview = import.meta.env.DEV ? lazy(() => import('./screens/MockApiReview.jsx')) : null
-const ScreenApiInspector = import.meta.env.DEV || import.meta.env.VITE_ENABLE_API_REVIEW === 'true' ? lazy(() => import('./components/ScreenApiInspector.jsx')) : null
 
 const lazyScreen = p => lazy(p)
 const ParentLogin = lazyScreen(() => import('./screens/ParentLogin.jsx'))
@@ -221,9 +220,7 @@ export default function App() {
           <Cosmos lite />
           <MusicPlayer />
           <AuditBridge />
-          {ScreenApiInspector && <Suspense fallback={null}><ScreenApiInspector /></Suspense>}
-          <MockInspector />
-          <DevDummyNavigator screens={SCREENS} />
+          {API_MODE==='mock'&&<><MockInspector /><DevDummyNavigator screens={SCREENS} /></>}
           <Stage><Routed /><NavDrawer /><BackButton /><Overlays /></Stage>
         </MotionConfig>
       </GameProvider>

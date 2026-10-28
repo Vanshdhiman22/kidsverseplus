@@ -1,8 +1,12 @@
 import { subjectKey } from './live-data.js'
+import {questionMedia} from './question-media.js'
+import {topicChallenges} from './challenge-selection.js'
 
 export function createGameClient({ request, getToken, storage, mode = "mock" }) {
 
 
+  const liveTransport = mode === 'live'
+  const mediaBanks = new Map()
   const paths = new Map()
   const missions = new Map()
   const startedMissions = new Map()
@@ -38,10 +42,20 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
       const selected = subjects.find(s => subjectKey(s.slug || s.name) === subjectKey(subject))
       if (!selected) throw new Error(`No API subject available for ${subject}.`)
       const { topics } = await request(`/subjects/${selected.id || selected.subject_id}/topics`)
-      const topic = requestedTopicId ? topics.find(t=>t.id===requestedTopicId && t.status!=='locked') : topics.find(t => t.student_status === 'current' && t.status !== 'locked') || topics.find(t => t.status !== 'locked')
-      if (!topic) throw new Error('This subject has no API topics.')
-      const detail = await request(`/students/${studentId}/topics/${topic.id}`)
-      return { subject: selected, topics, topic, detail, topicId: topic.id }
+      const candidates = requestedTopicId
+        ? topics.filter(t=>t.id===requestedTopicId && t.status!=='locked')
+        : [...topics.filter(t=>t.student_status==='current' && t.status!=='locked'), ...topics.filter(t=>t.student_status!=='current' && t.status!=='locked')]
+      if (!candidates.length) throw new Error('This subject has no API topics.')
+      // The public catalog includes other grades; student detail verifies access.
+      for (const topic of candidates) {
+        try {
+          const detail = await request(`/students/${studentId}/topics/${topic.id}`)
+          return { subject: selected, topics, topic, detail, topicId: topic.id }
+        } catch (error) {
+          if (requestedTopicId || error.status !== 404) throw error
+        }
+      }
+      throw new Error('No topic is available for this student class and board yet.')
     })().catch(error => { paths.delete(key); throw error }))
     return paths.get(key)
   }
@@ -79,7 +93,10 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
     if (!startedMissions.has(key)) startedMissions.set(key,
       request(`/students/${studentId}/missions/${missionId}/start`, { method: 'POST', body: {} })
         .catch(error => { startedMissions.delete(key); throw error }))
-    return startedMissions.get(key)
+    const result = await startedMissions.get(key)
+    for(const pathKey of paths.keys())if(pathKey.startsWith(resourceKey(studentId,subject)+':'))paths.delete(pathKey)
+    missions.clear()
+    return result
   }
   async function completeMission(studentId, subject, score, displayedMissionId) {
     const missionId = displayedMissionId || (await resolveLearning(studentId, subject)).missionId
@@ -129,8 +146,8 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
     const prefix = type === 'cfu' ? '/missions/attempts' : type === 'battle' ? '/challenge-battles' : '/tests/attempts'
     return request(`${prefix}/${id}/result`)
   }
-  async function startTest(studentId, subject, mode = 'test', missionId) {
-    const detail = await getTestOverview(studentId, subject, mode,missionId)
+  async function startTest(studentId, subject, mode = 'test', missionId, testId) {
+    const detail = await getTestOverview(studentId, subject, mode,missionId,testId)
     const total = Number(detail.questions_count ?? detail.question_count)
     const attempt = await request(`/students/${studentId}/tests/${detail.id}/attempts`, { method: 'POST', body: {} })
     if (!attempt.attempt_id) throw new Error('The test could not be started. Please try again.')
@@ -138,24 +155,38 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
     storage.setItem(attemptKey(studentId, subject, mode), JSON.stringify(saved))
     return saved
   }
-  async function getTestOverview(studentId, subject, mode = 'test',missionId) {
-    const { topicId } = missionId?await resolveLearning(studentId,subject,missionId):await resolveTopic(studentId, subject)
+  async function getTestOverview(studentId, subject, mode = 'test',missionId,testId) {
+    const context = missionId?await resolveLearning(studentId,subject,missionId):await resolveTopic(studentId, subject)
+    const {topicId}=context
     const { tests } = await request(`/topics/${topicId}/tests`)
     if (!tests.length) throw new Error('No test is available for this topic.')
     const candidates=tests.filter(t=>(t.assessment_type || 'test')===mode)
     // Older live contracts expose one topic test without a mission association.
     // Only that unambiguous case can fall back to the validated topic.
-    const selected=candidates.find(t=>!missionId || t.mission_id===missionId)
-      || (missionId && candidates.length===1 && !candidates[0].mission_id ? candidates[0] : null)
+    const selected=testId ? candidates.find(t=>t.id===testId) : candidates.find(t=>!missionId || t.mission_id===missionId)
+      || (!testId && missionId && candidates.length===1 && !candidates[0].mission_id ? candidates[0] : null)
     if(!selected)throw new Error(`No ${mode} assessment is published for this topic.`)
     const detail = await request(`/tests/${selected.id}`)
     const total = Number(detail.questions_count ?? detail.question_count)
     if (!Number.isInteger(total) || total < 1) throw new Error('This test has no available questions yet.')
-    return detail
+    const profile=liveTransport?await request(`/students/${studentId}/profile`).catch(()=>null):null
+    return {...detail,contentContext:{topic:context.detail.name,grade:profile?.grade??context.detail.grade_level,board:profile?.board}}
   }
   async function getTestQuestion(studentId, subject, order, mode = 'test') {
     const attempt = getTestAttempt(studentId, subject, mode)
-    return deliverQuestion(`/tests/attempts/${attempt.attempt_id}/questions/${order}`,attempt.attempt_id,order)
+    const question=await deliverQuestion(`/tests/attempts/${attempt.attempt_id}/questions/${order}`,attempt.attempt_id,order)
+    if(!liveTransport||question.image_url||!attempt.test.contentContext)return question
+    const context=attempt.test.contentContext
+    if(!context.grade||!context.board)return question
+    const key=`${getToken()}:${attempt.test.id}`
+    if(!mediaBanks.has(key))mediaBanks.set(key,(async()=>{
+      const {packages=[]}=await request('/admin/content/packages')
+      const grade=v=>String(v??'').replace(/^Grade\s*/i,'').trim()
+      const candidates=packages.filter(p=>p.topic_name===context.topic&&grade(p.grade)===grade(context.grade)&&p.board===context.board)
+      const data=await Promise.all(candidates.map(p=>request(`/admin/content/packages/${p.id}`)))
+      return data.flatMap(p=>p.test_questions?.questions||[])
+    })().catch(()=>{mediaBanks.delete(key);return []}))
+    return questionMedia(question,await mediaBanks.get(key))
   }
   async function submitAnswer(studentId, subject, order, selected, displayedQuestion, mode = 'test') {
     const attempt = getTestAttempt(studentId, subject, mode)
@@ -177,19 +208,37 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
       return { ...done, attemptId: attempt.attempt_id, resultPending: true, resultError: error.message }
     }
   }
-  async function battlePreview(botIndex = 0, subject = 'maths', missionId) {
+  async function resolveMissionSubject(studentId,missionId) {
+    const mission=await request(`/missions/${missionId}`)
+    const {subjects=[]}=await request(`/students/${studentId}/subjects`)
+    const lists=await Promise.all(subjects.map(async subject=>({subject,...await request(`/subjects/${subject.id||subject.subject_id}/topics`)})))
+    const matched=lists.filter(row=>row.topics?.some(topic=>topic.id===mission.topic_id))
+    if(matched.length!==1)throw new Error('The API did not identify one subject for this mission.')
+    return subjectKey(matched[0].subject.slug||matched[0].subject.name)
+  }
+  async function listTopicChallenges(studentId,subject='maths') {
+    const path=await resolveTopic(studentId,subject)
+    const {challenges=[]}=await request('/challenges')
+    return {...path,challenges:topicChallenges(challenges,path.topicId,path.detail.name)}
+  }
+  async function battlePreview(botIndex = 0, subject = 'maths', missionId, challengeId, studentId, opponentId) {
     const { challenges } = await request('/challenges')
-    const challenge = challenges.find(c => subjectKey(c.slug) === subjectKey(subject) && (!missionId || c.mission_id === missionId)) || (mode === 'live' ? challenges.find(c => c.mission_id && c.mission_id === missionId) : null)
-    if (!challenge) throw new Error('No challenges available.')
+    let challenge
+    if(liveTransport){
+      const path=missionId?await resolveLearning(studentId,subject,missionId):await resolveTopic(studentId,subject)
+      const candidates=topicChallenges(challenges,path.topicId,path.detail.name)
+      challenge=challengeId?candidates.find(c=>c.id===challengeId):candidates.length===1?candidates[0]:null
+    }else challenge=challenges.find(c=>subjectKey(c.slug)===subjectKey(subject)&&(!missionId||c.mission_id===missionId))
+    if (!challenge) throw new Error(liveTransport?'Choose an available challenge for this topic first.':'No challenges available.')
     const { opponents } = await request(`/challenges/${challenge.id}/opponents`)
-    const opponent = opponents[botIndex] || opponents[0]
-    if (!opponent) throw new Error('No opponent available.')
+    const opponent = opponentId?opponents.find(o=>o.id===opponentId):opponents[botIndex] || opponents[0]
+    if (!opponent) throw new Error('No opponent is published for this challenge yet.')
     const preview = await request(`/challenges/${challenge.id}/preview?opponent_id=${opponent.id}`)
     return { ...preview, challengeId: challenge.id, opponent }
   }
-  async function startBattle(studentId, botIndex = 0, subject = 'maths', missionId) {
+  async function startBattle(studentId, botIndex = 0, subject = 'maths', missionId, requestedChallengeId, opponentId) {
     if (!studentId) throw new Error('Create or select a child first.')
-    const { challengeId, opponent } = await battlePreview(botIndex, subject, missionId)
+    const { challengeId, opponent } = await battlePreview(botIndex, subject, missionId, requestedChallengeId, studentId, opponentId)
     const battle = await request(`/students/${studentId}/challenge-battles`, { method: 'POST', body: { challenge_id: challengeId, opponent_id: opponent.id } })
     const saved = { ...battle, total_questions: Number(battle.total_questions ?? battle.questions?.length) }
     // Older live starts may include a bank; never use it instead of a per-round GET.
@@ -231,5 +280,5 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
     return request(`/students/${studentId}/companion-activities/${activity.id}/complete`, { method: 'POST', body: {} })
   }
 
-  return { resolveLearning, loadLearningPath, listTopicTests, loadMission, startMission, completeMission, startLearningAttempt, getLearningQuestion, submitLearningAnswer, completeLearningAttempt, getAttemptReview, getAttemptResult, startTest, getTestOverview, getTestAttempt, getTestQuestion, submitAnswer, completeTest, battlePreview, startBattle, getBattleAttempt, getBattleQuestion, submitBattleAnswer, completeBattle, completeCompanionActivity }
+  return { resolveLearning, loadLearningPath, listTopicTests, listTopicChallenges, resolveMissionSubject, loadMission, startMission, completeMission, startLearningAttempt, getLearningQuestion, submitLearningAnswer, completeLearningAttempt, getAttemptReview, getAttemptResult, startTest, getTestOverview, getTestAttempt, getTestQuestion, submitAnswer, completeTest, battlePreview, startBattle, getBattleAttempt, getBattleQuestion, submitBattleAnswer, completeBattle, completeCompanionActivity }
 }

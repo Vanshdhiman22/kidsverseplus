@@ -1,3 +1,5 @@
+import {validMissionResult} from '../lib/mission-result.js'
+import { missionReviewSource } from '../lib/mission-review.js'
 import { API_MODE } from '../lib/api.js'
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -45,8 +47,9 @@ export default function MissionComplete() {
   const candidate = location.state?.attemptId ? location.state : savedResult
   const resultResource=useLiveResource(()=>getAttemptResult(candidate.attemptId,'cfu'),[candidate.attemptId],{enabled:Boolean(candidate.attemptId && !candidate.local && !candidate.documentedMission && (!candidate.studentId || candidate.studentId===g.state.activeChildId))})
   const result = resultResource.data ? {...candidate,score:resultResource.data.correct_count,total:resultResource.data.total_questions,gradeScore:resultResource.data.score,xpAwarded:resultResource.data.xp_awarded} : candidate
+  const reviewSource=missionReviewSource(result,g.state.activeChildId)
   const XP = result.xpAwarded ?? 0
-  const validResult = Boolean(result?.attemptId && Number.isFinite(Number(result.score)) && Number(result.total) > 0)
+  const validResult = validMissionResult(result,g.state.activeChildId,new URLSearchParams(window.location.search).get('mission'),routeSubject(),{allowLegacy:API_MODE==='mock'||Boolean(result.local)})
   const score = Number(result?.score ?? 0)
   const total = Number(result?.total ?? Math.min(pkg.check.questions.length, 6))
   const scoreRatio = total > 0 ? score / total : 0
@@ -65,8 +68,8 @@ export default function MissionComplete() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const mood = scorePercent < 70 ? { title: 'LET’S TRY AGAIN', message: 'A little practice will make this easier.' } : scorePercent < 95 ? { title: 'GOOD PROGRESS', message: 'You are close. Review the tricky parts and try again.' } : { title: 'MISSION COMPLETE!', message: K.encouragement }
   const outcomeCards = [
-    { kind: 'understood', heading: scorePercent >= 70 ? 'YOU UNDERSTOOD' : 'KEEP LEARNING', skill: K.topic_label, description: scorePercent >= 70 ? `You solved ${score} of ${total} picture questions.` : 'Review the picture and count each group slowly.', value: score },
-    { kind: 'improved', heading: 'YOU PRACTISED', skill: 'Combine and count', description: 'Every try helps your brain remember the steps.', value: score },
+    { kind: 'understood', heading: scorePercent >= 70 ? 'YOU UNDERSTOOD' : 'KEEP LEARNING', skill: K.topic_label, description: scorePercent >= 70 ? `You solved ${score} of ${total} picture questions.` : 'Review the lesson and the questions you found tricky.', value: score },
+    { kind: 'improved', heading: 'YOU PRACTISED', skill: pkg.mission.title, description: 'Every try helps your brain remember the steps.', value: score },
     { kind: 'next', heading: 'NEXT', skill: scorePercent < 95 ? 'Practise tricky questions' : 'Try a new challenge', description: scorePercent < 95 ? 'Nova will guide you through another example.' : 'You are ready to use the idea in a new way.' },
   ]
   return (
@@ -108,7 +111,7 @@ export default function MissionComplete() {
         <Item v="pop" className="mt-4 grid grid-cols-2 gap-4"><Button variant="outline" size="md" className="h-[58px] text-[18px]" onClick={() => setShowReview(true)}>Review Answers</Button><Button variant="ghost" size="md" icon={<Home size={22} />} className="h-[58px] text-[18px]" onClick={() => nav('/journey')}>Back to Journey</Button></Item>
       </Stack>
       <PerfectScorePopup show={scorePercent === 100} mode="mission" />
-      <AttemptReview open={showReview} items={result?.review || []} attemptId={!result?.local ? result?.attemptId : null} type="cfu" onClose={() => setShowReview(false)} />
+      <AttemptReview open={showReview} items={reviewSource.items} attemptId={reviewSource.attemptId} type="cfu" onClose={() => setShowReview(false)} />
     </Page>
   )
 }

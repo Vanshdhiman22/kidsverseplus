@@ -17,6 +17,7 @@ import { sfx } from '../lib/sound.js'
 import ContentStatus from '../components/ContentStatus.jsx'
 import { api } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
+import {listTopicChallenges} from '../lib/gameApi.js'
 import { withSubject } from '../content/index.js'
 import { isReviewMode } from '../lib/reviewMode.js'
 
@@ -28,8 +29,10 @@ export default function BattleOpponents() {
   const [sel, setSel] = useState('robo')
   const tint = useTint()
   const review = isReviewMode()
-  const { data: catalog, loading: catalogLoading, error: catalogError } = useLiveResource(() => api.challenges(), [review], { enabled: !review })
-  const challengeId = catalog?.challenges?.[0]?.id
+  const { data: catalog, loading: catalogLoading, error: catalogError } = useLiveResource(() => listTopicChallenges(g.state.activeChildId,new URLSearchParams(window.location.search).get('subject')||'maths'), [review,g.state.activeChildId], { enabled: !review })
+  const requested=new URLSearchParams(window.location.search).get('challenge')
+  const challenge=catalog?.challenges?.find(c=>c.id===requested)
+  const challengeId = challenge?.id
   const { data: opponentResponse, loading: opponentsLoading, error: opponentsError } = useLiveResource(
     () => api.challengeOpponents(challengeId),
     [challengeId],
@@ -43,14 +46,14 @@ export default function BattleOpponents() {
       apiId: live.id,
       name: live.name,
       level: live.ai_profile?.level ?? bot.level,
-      subject: live.ai_profile?.subject ?? catalog?.challenges?.[0]?.topic ?? bot.subject,
+      subject: live.ai_profile?.subject ?? challenge?.topic ?? bot.subject,
       spec: live.ai_profile?.specialty ?? bot.spec,
       blurb: live.ai_profile?.description ?? bot.blurb,
       style: live.difficulty ? `${live.difficulty} opponent` : bot.style,
     } : bot
   })
   const bot = bots.find(b => b.id === sel) ?? bots[0]
-  if (catalogLoading || opponentsLoading || catalogError || opponentsError || !bot) return <ContentStatus activity="opponents" pkg={{ contentLoading: catalogLoading || opponentsLoading, contentError: catalogError || opponentsError || "No opponents available" }} />
+  if (catalogLoading || opponentsLoading || catalogError || opponentsError || !bot) return <ContentStatus activity="opponents" pkg={{ contentLoading: catalogLoading || opponentsLoading, contentError: catalogError || opponentsError || (!challengeId?'Choose a concept from Challenge Home.':'No opponents are published for this concept yet.') }} />
   return (
     <Page>
       <Scene name="opponents" />
@@ -93,7 +96,7 @@ export default function BattleOpponents() {
           </motion.div>
         </AnimatePresence>
         <div className="flex flex-col gap-2 w-[285px]">
-          <Button size="md" arrow className="h-[56px] uppercase text-[20px]" sound="whoosh" onClick={() => nav(withSubject(`/challenge/preview?bot=${bot.id}`))}>View {bot.name}</Button>
+          <Button size="md" arrow className="h-[56px] uppercase text-[20px]" sound="whoosh" onClick={() => nav(withSubject(`/challenge/preview?bot=${bot.id}&challenge=${challengeId}&opponent=${bot.apiId}`))}>View {bot.name}</Button>
           <Button variant="ghost" size="md" icon={<ArrowLeft size={18} />} className="h-[44px] text-[16px]" onClick={() => nav(withSubject('/challenge'))}>Back to Challenge</Button>
         </div>
       </Panel>

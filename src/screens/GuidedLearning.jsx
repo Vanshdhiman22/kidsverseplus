@@ -110,6 +110,7 @@ export default function GuidedLearning() {
 
   if (pkg.contentLoading || pkg.contentError) return <ContentStatus pkg={pkg} />
   return <Page>
+      {pkg.contentSource==='api-preview'&&<div className="absolute left-1/2 top-[8px] z-[100] -translate-x-1/2 rounded-full bg-white px-5 py-2 text-[15px] font-bold text-indigo-800 shadow">Live API questions · Read-only local preview</div>}
     <Scene name="learn" />
     <main className="kv-learning">
       <nav className="kv-learning__progress" aria-label="Learning steps">{STEP_NAMES.map((name, index) => <div className={`kv-learning__milestone ${index === stepIndex ? 'is-current' : ''} ${index < stepIndex ? 'is-done' : ''}`} key={name}><span>{index < stepIndex ? <Check size={21} /> : index + 1}</span><div><strong>{name}</strong><small>{['Learn the idea', 'Watch it happen', 'Keep it in mind'][index]}</small></div></div>)}</nav>

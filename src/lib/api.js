@@ -15,7 +15,7 @@ export const API_MODE = import.meta.env.VITE_API_MODE || 'live'
 const SESSION_KEY = `kidsverse-session:${API_MODE}:${API_BASE_URL}`
 const DUMMY_BASE_URL = '/__dummy/api/v1'
 let dummyToken = ''
-export const isDummyApiActive = () => import.meta.env.DEV && Boolean(dummyToken)
+export const isDummyApiActive = () => import.meta.env.DEV && API_MODE==='mock' && Boolean(dummyToken)
 export const getToken = () => isDummyApiActive() ? dummyToken : sessionStorage.getItem(SESSION_KEY) || ''
 export const setToken = token => token ? sessionStorage.setItem(SESSION_KEY, token) : sessionStorage.removeItem(SESSION_KEY)
 export function clearSession() { dummyToken = ''; setToken(''); catalogCache.clear(); mockSnapshot.clear() }
@@ -25,7 +25,7 @@ const catalogCache = new Map()
 // Local developer escape hatch: seed the Vite mock with the currently selected
 // child. It never writes to the live API or awards production XP.
 export async function activateDummyApi(profile = {}, studentId) {
-  if (!import.meta.env.DEV) throw new Error('Dummy API is available only in the local developer build.')
+  if (!import.meta.env.DEV || API_MODE!=='mock') throw new Error('Dummy API is available only in explicit local mock mode.')
   const response = await fetch(`${DUMMY_BASE_URL}/__bootstrap`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({ student_id: studentId || undefined, name: profile.name || 'Demo Explorer', grade: profile.grade || '1', board: profile.board || 'CBSE', face: profile.face || 1 }),

@@ -7,8 +7,8 @@ import { API_BASE_URL, API_MODE, apiRequest } from '../lib/api.js'
 import { browserTimeZone, formatBrowserDateTime } from '../lib/time.js'
 
 const checks = [
-  { label: 'API health', path: '/health' },
-  { label: 'Database health', path: '/health/database' },
+  { label: 'Curriculum catalog', path: '/curriculums' },
+  { label: 'Themes catalog', path: '/themes' },
   { label: 'Interests catalog', path: '/interests' },
   { label: 'Goals catalog', path: '/goals' },
   { label: 'Avatar characters', path: '/avatar/characters' },

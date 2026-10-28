@@ -18,7 +18,7 @@ import { getContent, DEFAULT_CONTENT_ID } from './bundled.js'
 export { getContent } from './bundled.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { loadMission } from '../lib/gameApi.js'
-import { getToken } from '../lib/api.js'
+import { getToken, apiRequest } from '../lib/api.js'
 import { normalizeMissionContent } from './mission.js'
 import { isReviewMode } from '../lib/reviewMode.js'
 import { contentSource } from './source-policy.js'
@@ -59,11 +59,13 @@ export function useContent(id) {
     }
   }
   const token = getToken()
-  const source = contentSource({ review: isReviewMode(), studentId: g.state.activeChildId, token })
+  const apiPreview = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('apiPreview') : null
+  const publicPreview = /^[0-9a-f-]{36}$/i.test(apiPreview || '') ? apiPreview : null
+  const source = publicPreview ? 'api-preview' : contentSource({ review: isReviewMode(), studentId: g.state.activeChildId, token })
   const useApi = source === 'api'
   const missionId = new URLSearchParams(window.location.search).get('mission') || undefined
-  const resourceKey = `${source}:${missionId || ''}:${id}:${g.state.activeChildId}:${token}:${preview}`
-  const initial = () => ({ ...getContent(id), contentSource: source, contentLoading: useApi, resourceKey })
+  const resourceKey = `${source}:${publicPreview || missionId || ''}:${id}:${g.state.activeChildId}:${token}:${preview}`
+  const initial = () => ({ ...getContent(id), contentSource: source, contentLoading: useApi || Boolean(publicPreview), resourceKey })
   const [pkg, setPkg] = useState(() => ({ ...(previewPackage() ?? initial()), resourceKey }))
   useEffect(() => {
     let live = true
@@ -71,6 +73,14 @@ export function useContent(id) {
     if (imported) { setPkg({ ...imported, resourceKey }); return () => { live = false } }
     setPkg(initial())
     const subject = id.startsWith('demo-') ? id.slice(5) : 'maths'
+    if (publicPreview) {
+      apiRequest(`/missions/${publicPreview}`).then(mission=>{
+        if(!live)return
+        const normalized=normalizeMissionContent(mission,id,getContent(id),{subject:'Mathematics'})
+        setPkg({...normalized,contentSource:'api-preview',contentLoading:false,resourceKey})
+      }).catch(error=>{if(live)setPkg({...initial(),contentLoading:false,contentError:error.message})})
+      return ()=>{live=false}
+    }
     if (useApi) loadMission(g.state.activeChildId, subject, missionId).then(mission => {
       if (!live) return
       const normalized = normalizeMissionContent(mission, id, getContent(id), {
@@ -89,6 +99,9 @@ export const routeSubject = () => new URLSearchParams(window.location.search).ge
 export const withSubject = (path, subject = routeSubject()) => {
   const url = new URL(path, window.location.origin)
   url.searchParams.set('subject', subject)
+  for(const key of ['challenge','opponent']){const value=new URLSearchParams(window.location.search).get(key);if(value&&!url.searchParams.has(key))url.searchParams.set(key,value)}
+  const apiPreview = import.meta.env.DEV && new URLSearchParams(window.location.search).get('apiPreview')
+  if(apiPreview) url.searchParams.set('apiPreview',apiPreview)
   const missionId = new URLSearchParams(window.location.search).get('mission')
   if (missionId && !url.searchParams.has('mission')) url.searchParams.set('mission', missionId)
   if (new URLSearchParams(window.location.search).has('contentPreview') || sessionStorage.getItem('kidsverse-content-preview-active') === '1') url.searchParams.set('contentPreview', '1')

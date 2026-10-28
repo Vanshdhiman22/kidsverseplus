@@ -10,6 +10,7 @@ import Button from '../components/Button.jsx'
 import { Tilt, Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { api } from '../lib/api.js'
+import {listTopicChallenges,listTopicTests} from '../lib/gameApi.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 import { ACTIVE_CONTENT_ID, useContent, withSubject } from '../content/index.js'
 import { isReviewMode } from '../lib/reviewMode.js'
@@ -26,12 +27,17 @@ export default function ChallengeHome() {
   const subject = new URLSearchParams(window.location.search).get('subject') || g.state.progress.world || 'maths'
   const pkg = useContent(subject === 'maths' ? ACTIVE_CONTENT_ID : `demo-${subject}`)
   const review = isReviewMode()
-  const catalog = useLiveResource(() => api.challenges(), [review], { enabled: !review && Boolean(g.state.activeChildId) })
+  const [selected,setSelected]=React.useState('')
+  const catalog = useLiveResource(() => listTopicChallenges(g.state.activeChildId,subject), [review,g.state.activeChildId,subject], { enabled: !review && Boolean(g.state.activeChildId) })
+  const assessments=useLiveResource(()=>listTopicTests(g.state.activeChildId,subject),[g.state.activeChildId,subject,review],{enabled:!review&&Boolean(g.state.activeChildId)})
+  const challengeTest=assessments.data?.tests?.find(t=>t.assessment_type==='challenge')
   const available = review ? [{id:`review-challenge-${subject}`}]: catalog.data?.challenges || []
+  const chosen=available.find(c=>c.id===selected)||available[0]
   const cards = CARDS.filter(card => card.t !== 'Battle Arena' || available.length > 0).map(card => card.t === 'Challenge practice' && pkg.studio?.challenge?.questions?.length ? {
     ...card,
     s: `${pkg.studio.challenge.questions.length} question${pkg.studio.challenge.questions.length === 1 ? '' : 's'} about ${pkg.mission.title}.`,
   } : card)
+  const displayCards=cards.map(c=>c.t==='Battle Arena'?{...c,to:`/challenge/opponents?challenge=${encodeURIComponent(chosen?.id||'')}`,disabled:!chosen}:c.t==='Challenge practice'&&!review?{...c,to:challengeTest?`/tests/mixed/intro?source=challenge&test=${challengeTest.id}`:c.to,disabled:!challengeTest,s:challengeTest?c.s:'No challenge practice is published by the API yet.',btn:challengeTest?'Start':'Unavailable'}:c)
   return (
     <Page>
       <Scene name="challenge" />
@@ -45,14 +51,15 @@ export default function ChallengeHome() {
       </Stack>
       {catalog.loading && <p role="status" className="absolute left-[180px] top-[370px]">Loading challenges...</p>}
       {catalog.error && <p role="alert" className="absolute left-[180px] top-[370px]">Could not load challenges. Please retry later.</p>}
+      {!review&&available.length>0&&<label className="absolute left-[180px] top-[340px] flex items-center gap-3 font-bold text-ink">Choose a concept<select className="rounded-xl border bg-white p-2" value={chosen?.id||''} onChange={e=>setSelected(e.target.value)}>{available.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
       <Sparkles n={6} seed={25} className="left-[40px] top-[120px] w-[700px] h-[280px]" />
 
       <Stack className="absolute left-[180px] top-[405px] flex gap-[30px]" start={0.7} delay={0.1}>
-        {cards.map(c => (
+        {displayCards.map(c => (
           <Item key={c.t} v="pop"><Tilt max={5}>
-            <Card hover className="w-[450px] h-[235px] p-5 flex flex-col" onClick={() => nav(withSubject(c.to, subject))}>
+            <Card hover className="w-[450px] h-[235px] p-5 flex flex-col" onClick={() => !c.disabled&&nav(withSubject(c.to, subject))}>
               <div className="flex items-start gap-4"><span className="icon-orb w-[86px] h-[86px]" style={{ color: c.c, background: `${c.c}1f` }}><c.I size={44} /></span><span className="flex-1 leading-tight"><span className="block font-display font-extrabold text-[24px] text-ink">{c.t}</span><span className="block mt-1 text-[16px] font-semibold text-ink-2">{c.s}</span>{c.tag && <span className="block mt-2 text-[16px] font-extrabold text-orange-500 text-right">{c.tag}</span>}</span></div>
-              <div className="mt-auto">{c.primary ? <Button size="md" arrow className="w-full h-[54px] text-[19px] uppercase" sound="whoosh" onClick={e => { e.stopPropagation(); nav(withSubject(c.to, subject)) }}>{c.btn}</Button> : <Button size="md" className="w-full h-[54px] text-[18px] uppercase text-white" style={{ background: c.grad, boxShadow: `0 14px 30px -14px ${c.c}` }} onClick={e => { e.stopPropagation(); nav(withSubject(c.to, subject)) }}>{c.btn}<ChevronRight size={22} className="ml-auto" /></Button>}</div>
+              <div className="mt-auto">{c.primary ? <Button disabled={c.disabled} size="md" arrow className="w-full h-[54px] text-[19px] uppercase" sound="whoosh" onClick={e => { e.stopPropagation(); nav(withSubject(c.to, subject)) }}>{c.btn}</Button> : <Button size="md" className="w-full h-[54px] text-[18px] uppercase text-white" style={{ background: c.grad, boxShadow: `0 14px 30px -14px ${c.c}` }} onClick={e => { e.stopPropagation(); nav(withSubject(c.to, subject)) }}>{c.btn}<ChevronRight size={22} className="ml-auto" /></Button>}</div>
             </Card>
           </Tilt></Item>
         ))}

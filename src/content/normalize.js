@@ -141,7 +141,7 @@ export function normalizeContentPackage(raw, id, fallback) {
     complete: {
       ...fallback.complete,
       topic_label: conceptName,
-      encouragement: learning.nova_feedback ?? fallback.complete.encouragement,
+      encouragement: learning.nova_feedback || `Keep practising ${conceptName}.`,
       outcomes: fallback.complete.outcomes.map((outcome, index) => ({
         ...outcome,
         skill: index === 0 ? conceptName : index === 1 ? 'Keep practising' : 'Next mission',
