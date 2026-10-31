@@ -14,7 +14,9 @@ export const Panel = React.forwardRef(function Panel({ className, strong, soft, 
 
 export function Card({ className, selected, hover, children, variants = rise, onClick, ...rest }) {
   return (
-    <motion.div variants={variants} onClick={onClick} className={cn('card', hover && 'card-hover', selected && 'card-selected', className)} {...rest}>
+    <motion.div variants={variants} onClick={onClick} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onClick(event) } } : undefined}
+      className={cn('card', hover && 'card-hover', selected && 'card-selected', className)} {...rest}>
       {children}
     </motion.div>
   )

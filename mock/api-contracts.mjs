@@ -98,7 +98,7 @@ export const routes=operations.map(o=>({...o,pattern:pattern(o.path)}))
 const ajv=new Ajv2020({allErrors:true,strict:true})
 const validators=new Map(Object.keys(schemas).map(name=>[name,ajv.compile({$defs:schemas,...ref(name)})]))
 export function findOperation(method,path){return routes.find(r=>r.method===method&&r.pattern.test(path.split('?')[0]))}
-const queryFields=o=>o.method!=='GET'?[]:o.path.endsWith('/journey')&&!o.path.includes('/profile/')?['subject']:o.path.endsWith('/leaderboard')?['scope']:o.path.endsWith('/preview')?['opponent_id']:o.path==='/avatar/items'?['category']:o.path==='/subjects/{subject_id}/topics'?['grade']:o.path==='/admin/content/packages/{package_id}'?['version']:o.path==='/curriculums'?['grade','board']:['/curriculum/tree','/admin/content/packages'].includes(o.path)?['grade','board','subject','topic','theme','curriculum_id']:[]
+const queryFields=o=>o.method!=='GET'?[]:o.path.endsWith('/journey')&&!o.path.includes('/profile/')?['subject']:o.path.endsWith('/leaderboard')?['scope','student_id']:o.path.endsWith('/preview')?['opponent_id']:o.path==='/avatar/items'?['category']:o.path==='/subjects/{subject_id}/topics'?['grade']:o.path==='/admin/content/packages/{package_id}'?['version']:o.path==='/curriculums'?['grade','board']:['/curriculum/tree','/admin/content/packages'].includes(o.path)?['grade','board','subject','topic','theme','curriculum_id']:[]
 export function validateApiQuery(method,pathname){
  const url=new URL(pathname,'http://mock.local'),operation=findOperation(method,url.pathname);if(!operation)return
  const allowed=queryFields(operation)

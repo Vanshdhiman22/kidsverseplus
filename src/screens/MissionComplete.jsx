@@ -1,6 +1,7 @@
+import ContentStatus from '../components/ContentStatus.jsx'
 import {validMissionResult} from '../lib/mission-result.js'
 import { missionReviewSource } from '../lib/mission-review.js'
-import { API_MODE } from '../lib/api.js'
+import { API_MODE, apiRequest } from '../lib/api.js'
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
@@ -44,19 +45,27 @@ export default function MissionComplete() {
   const K = pkg.complete
   let savedResult = {}
   try { savedResult = JSON.parse(sessionStorage.getItem('kv:last-mission-score') ?? '{}') } catch { savedResult = {} }
-  const candidate = location.state?.attemptId ? location.state : savedResult
+  const missionId = new URLSearchParams(location.search).get('mission')
+  const cached = location.state?.attemptId ? location.state : savedResult
+  const cachedValid = validMissionResult(cached,g.state.activeChildId,missionId,routeSubject(),{allowLegacy:API_MODE==='mock'||Boolean(cached.local)})
+  const recovery = useLiveResource(async () => {
+    const data = await apiRequest(`/students/${g.state.activeChildId}/missions/${missionId}/review`)
+    if(data.mission?.id !== missionId || data.progress?.status !== 'completed' || data.progress.score == null || !Number.isFinite(Number(data.progress.score))) throw new Error('No completed mission score is available.')
+    return {studentId:g.state.activeChildId,missionId,subject:routeSubject(),gradeScore:Number(data.progress.score),score:null,total:null,recovered:true,documentedMission:true,review:[]}
+  },[g.state.activeChildId,missionId,routeSubject()],{enabled:!cachedValid && Boolean(g.state.activeChildId && missionId)})
+  const candidate = cachedValid ? cached : recovery.data || {}
   const resultResource=useLiveResource(()=>getAttemptResult(candidate.attemptId,'cfu'),[candidate.attemptId],{enabled:Boolean(candidate.attemptId && !candidate.local && !candidate.documentedMission && (!candidate.studentId || candidate.studentId===g.state.activeChildId))})
   const result = resultResource.data ? {...candidate,score:resultResource.data.correct_count,total:resultResource.data.total_questions,gradeScore:resultResource.data.score,xpAwarded:resultResource.data.xp_awarded} : candidate
   const reviewSource=missionReviewSource(result,g.state.activeChildId)
   const XP = result.xpAwarded ?? 0
-  const validResult = validMissionResult(result,g.state.activeChildId,new URLSearchParams(window.location.search).get('mission'),routeSubject(),{allowLegacy:API_MODE==='mock'||Boolean(result.local)})
+  const validResult = Boolean(result.recovered) || validMissionResult(result,g.state.activeChildId,new URLSearchParams(window.location.search).get('mission'),routeSubject(),{allowLegacy:API_MODE==='mock'||Boolean(result.local)})
   const score = Number(result?.score ?? 0)
-  const total = Number(result?.total ?? Math.min(pkg.check.questions.length, 6))
-  const scoreRatio = total > 0 ? score / total : 0
+  const total = Number(result?.total ?? pkg.check.questions.length)
+  const scoreRatio = result.recovered ? result.gradeScore / 100 : total > 0 ? score / total : 0
   const scorePercent = Math.round(result.gradeScore ?? scoreRatio * 100)
   const OUTCOME = { understood: [Trophy, '#7c3aed'], improved: [TrendingUp, '#3b82f6'], next: [Flag, '#22c55e'] }
   useEffect(() => {
-    if (!validResult) { nav(withSubject('/missions/fractions/spot-mistake'), { replace: true }); return }
+    if (!validResult || result.recovered) return
     const t = setTimeout(() => sfx.unlock(), 300)
     const rewardKey = `kv:rewarded:${result.attemptId}`
     const t2 = setTimeout(() => {
@@ -65,13 +74,15 @@ export default function MissionComplete() {
       g.refreshStats().catch(e => g.notice(e.message))
     }, 1400)
     return () => { clearTimeout(t); clearTimeout(t2) }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [validResult, result.recovered]) // eslint-disable-line react-hooks/exhaustive-deps
   const mood = scorePercent < 70 ? { title: 'LET’S TRY AGAIN', message: 'A little practice will make this easier.' } : scorePercent < 95 ? { title: 'GOOD PROGRESS', message: 'You are close. Review the tricky parts and try again.' } : { title: 'MISSION COMPLETE!', message: K.encouragement }
   const outcomeCards = [
     { kind: 'understood', heading: scorePercent >= 70 ? 'YOU UNDERSTOOD' : 'KEEP LEARNING', skill: K.topic_label, description: scorePercent >= 70 ? `You solved ${score} of ${total} picture questions.` : 'Review the lesson and the questions you found tricky.', value: score },
     { kind: 'improved', heading: 'YOU PRACTISED', skill: pkg.mission.title, description: 'Every try helps your brain remember the steps.', value: score },
     { kind: 'next', heading: 'NEXT', skill: scorePercent < 95 ? 'Practise tricky questions' : 'Try a new challenge', description: scorePercent < 95 ? 'Nova will guide you through another example.' : 'You are ready to use the idea in a new way.' },
   ]
+  if (pkg.contentLoading || pkg.contentError) return <ContentStatus pkg={pkg} />
+  if (!validResult) return <Page><Scene name="complete" /><div className="absolute inset-0 grid place-content-center text-center text-ink"><p role={recovery.error ? 'alert' : 'status'}>{recovery.error || 'Loading your saved mission score�'}</p><Button onClick={()=>nav('/learn')}>Back to learning</Button></div></Page>
   return (
     <Page>
       <Scene name="complete" />
@@ -87,15 +98,15 @@ export default function MissionComplete() {
         <motion.div className="mt-4 font-display font-extrabold text-[38px] text-sky-500" style={{ rotate: -4 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27 }}>{K.topic_label}</motion.div>
       </div>
       <Sparkles n={12} seed={8} className="left-[80px] top-[80px] w-[800px] h-[700px]" />
-      <motion.div className="absolute left-[520px] top-[400px] font-display font-extrabold text-[40px] text-primary-ink text-center leading-none" initial={{ opacity: 0, y: 30, scale: 0.5 }} animate={{ opacity: 1, y: [30, -10, 0], scale: 1 }} transition={{ delay: 0.3, type: 'spring', stiffness: 300, damping: 14 }}>+{XP}<br /><span className="text-[26px]">XP</span></motion.div>
+      <motion.div className="absolute left-[520px] top-[400px] font-display font-extrabold text-[40px] text-primary-ink text-center leading-none" initial={{ opacity: 0, y: 30, scale: 0.5 }} animate={{ opacity: 1, y: [30, -10, 0], scale: 1 }} transition={{ delay: 0.3, type: 'spring', stiffness: 300, damping: 14 }}>{result.recovered ? 'Saved result' : `+${XP}`}<br /><span className="text-[26px]">{result.recovered ? '' : 'XP'}</span></motion.div>
       <div className={scorePercent < 70 ? 'absolute left-[650px] top-[430px] z-20' : 'absolute left-[40px] top-[540px]'}><SpeechBubble tail={scorePercent < 70 ? 'left' : 'right'} delay={0.3} className="w-[220px] text-[17px]">{scorePercent < 70 ? `That's okay, ${name}. Let’s practise together.` : scorePercent < 95 ? `Good try, ${name}. You are getting closer.` : fill(K.nova.speech, { name })}</SpeechBubble></div>
 
       <Panel className="absolute left-[930px] top-[110px] w-[655px] h-[240px] p-6 flex items-center gap-8" initial="hidden" animate="show">
-        <div className="relative"><div className="label-caps absolute -top-1 left-0 whitespace-nowrap">Your Score</div><Ring size={180} stroke={16} value={scoreRatio} id="mc" delay={0.27} className="mt-6"><div className="text-center leading-none"><div className="font-display font-extrabold text-[44px] text-ink"><Counter to={scorePercent} delay={0.27} />%</div><div className="text-[15px] font-bold text-ink-3 mt-1">{score}/{total} correct</div></div></Ring></div>
-        <div className="flex-1"><div className="font-display font-extrabold text-[26px] text-ink">{K.topic_label}</div><div className="mt-2 font-display font-extrabold text-[32px] text-primary-ink">Score: {score}/{total}</div><div className="text-[18px] font-semibold text-ink-2">{mood.message}</div></div>
+        <div className="relative"><div className="label-caps absolute -top-1 left-0 whitespace-nowrap">Your Score</div><Ring size={180} stroke={16} value={scoreRatio} id="mc" delay={0.27} className="mt-6"><div className="text-center leading-none"><div className="font-display font-extrabold text-[44px] text-ink"><Counter to={scorePercent} delay={0.27} />%</div><div className="text-[15px] font-bold text-ink-3 mt-1">{result.recovered ? 'Saved score' : `${score}/${total} correct`}</div></div></Ring></div>
+        <div className="flex-1"><div className="font-display font-extrabold text-[26px] text-ink">{K.topic_label}</div><div className="mt-2 font-display font-extrabold text-[32px] text-primary-ink">Score: {result.recovered ? `${scorePercent}%` : `${score}/${total}`}</div><div className="text-[18px] font-semibold text-ink-2">{mood.message}</div></div>
       </Panel>
       <Stack className="absolute left-[850px] top-[365px] flex gap-[18px]" start={1} delay={0.12}>
-        {outcomeCards.map(o => { const [I, c0] = OUTCOME[o.kind] ?? OUTCOME.next; return [I, c0, o.heading, o.skill, o.description, o.value] }).map(([I, c0, t, s, d, v], i) => { const c = ac(c0); return (
+        {(result.recovered ? [] : outcomeCards).map(o => { const [I, c0] = OUTCOME[o.kind] ?? OUTCOME.next; return [I, c0, o.heading, o.skill, o.description, o.value] }).map(([I, c0, t, s, d, v], i) => { const c = ac(c0); return (
           <Item key={t} v="pop"><Card hover className="relative w-[240px] h-[300px] p-5 flex flex-col items-center text-center">
             {v != null && <span className="absolute top-3 right-3 w-[28px] h-[28px] rounded-full grid place-items-center text-white" style={{ background: c }}><Check size={16} strokeWidth={3.5} /></span>}
             <span className="icon-orb w-[74px] h-[74px]" style={{ color: c, background: `${c}1f` }}><I size={38} strokeWidth={2} /></span>
@@ -107,11 +118,11 @@ export default function MissionComplete() {
         ) })}
       </Stack>
       <Stack className="absolute left-[850px] top-[685px] w-[755px]" start={1.4}>
-        <Item v="pop" className={`grid gap-4 ${scorePercent < 95 ? 'grid-cols-3' : 'grid-cols-2'}`}><Button size="md" arrow icon={<Rocket size={22} />} className="h-[70px] uppercase text-[18px]" sound="whoosh" onClick={() => nav(withSubject(K.next_step))}>Nova's next step</Button>{scorePercent < 95 && <Button variant="outline" size="md" icon={<RefreshCw size={22} />} className="h-[70px] uppercase text-[18px]" onClick={() => nav(withSubject('/missions/fractions/learn'))}>Practise First</Button>}<Button variant="outline" size="md" icon={<Trophy size={22} />} className="h-[70px] uppercase text-[18px]" onClick={() => nav(withSubject('/tests/mixed/intro?source=challenge'))}>Try a challenge</Button></Item>
+        <Item v="pop" className={`grid gap-4 ${scorePercent < 95 ? 'grid-cols-3' : 'grid-cols-2'}`}><Button size="md" arrow icon={<Rocket size={22} />} className="h-[70px] uppercase text-[18px]" sound="whoosh" onClick={() => nav(withSubject(K.next_step))}>Nova's next step</Button>{scorePercent < 95 && <Button variant="outline" size="md" icon={<RefreshCw size={22} />} className="h-[70px] uppercase text-[18px]" onClick={() => nav(withSubject('/missions/fractions/learn'))}>Practise First</Button>}<Button variant="outline" size="md" icon={<Trophy size={22} />} className="h-[70px] uppercase text-[18px]" onClick={() => nav(withSubject('/challenge'))}>Try a challenge</Button></Item>
         <Item v="pop" className="mt-4 grid grid-cols-2 gap-4"><Button variant="outline" size="md" className="h-[58px] text-[18px]" onClick={() => setShowReview(true)}>Review Answers</Button><Button variant="ghost" size="md" icon={<Home size={22} />} className="h-[58px] text-[18px]" onClick={() => nav('/journey')}>Back to Journey</Button></Item>
       </Stack>
-      <PerfectScorePopup show={scorePercent === 100} mode="mission" />
-      <AttemptReview open={showReview} items={reviewSource.items} attemptId={reviewSource.attemptId} type="cfu" onClose={() => setShowReview(false)} />
+      <PerfectScorePopup show={!result.recovered && scorePercent === 100} mode="mission" />
+      <AttemptReview emptyMessage={result.recovered ? "The API saved your mission score, but does not provide your selected answers for this result." : undefined} open={showReview} items={reviewSource.items} attemptId={reviewSource.attemptId} type="cfu" onClose={() => setShowReview(false)} />
     </Page>
   )
 }

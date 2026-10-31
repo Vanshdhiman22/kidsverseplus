@@ -174,3 +174,46 @@ test('result retry preserves accepted completion and does not post completion tw
   assert.equal(retry.xp_awarded, 50)
   assert.equal(posts, 1)
 })
+
+
+test('buffered test prepares questions once, sends no answers on Next, and finishes with server grading once', async () => {
+  const { client, student, calls, dbWorlds } = await setup()
+  const world = dbWorlds[0]
+  await client.getTestOverview(student.id, 'maths')
+  const detailReads = calls.filter(c => c.path === `/tests/${world.testId}`).length
+  const attempt = await client.startTest(student.id, 'maths')
+  assert.equal(calls.filter(c => c.path === `/tests/${world.testId}`).length, detailReads)
+  for (let order = 1; order <= attempt.total; order++) {
+    const question = await client.prepareTestQuestion(student.id, 'maths', order)
+    assert.deepEqual(await client.prepareTestQuestion(student.id, 'maths', order), question)
+    assert.deepEqual(client.peekTestQuestion(student.id, 'maths', order), question)
+    client.queueTestAnswer(student.id, 'maths', order, world.questions.find(q => q.id === question.id).answer, question.question_text)
+  }
+  assert.equal(calls.filter(c => c.path.endsWith('/answers')).length, 0)
+  assert.equal(calls.filter(c => c.path.includes('/questions/')).length, attempt.total)
+  const [result, duplicate] = await Promise.all([client.finishBufferedTest(student.id, 'maths'), client.finishBufferedTest(student.id, 'maths')])
+  assert.equal(result.correct_count, attempt.total)
+  assert.ok(Object.values(result.answerResults).every(answer => answer.is_correct === true))
+  assert.deepEqual(result, duplicate)
+  assert.equal(calls.filter(c => c.path.endsWith('/complete')).length, 1)
+  assert.equal(calls.filter(c => c.path.endsWith('/answers')).length, attempt.total)
+})
+
+test('failed buffered answer stops completion; retry preserves acknowledged answers', async () => {
+  const values = new Map([['kv:api-test:child:maths:t', JSON.stringify({ attempt_id: 'a', total: 2, test: {} })]])
+  let failed = true
+  const calls = []
+  const client = createGameClient({ getToken: () => 't', storage: {getItem: k => values.get(k),setItem: (k,v) => values.set(k,v)}, request: async (path, options) => {
+    calls.push({path,body:options?.body})
+    if(path.includes('/questions/')) return {id:path.endsWith('/1')?'q1':'q2',question_text:'Choose',options:['A','B']}
+    if(path.endsWith('/answers')) { if(options.body.question_id==='q2' && failed) throw Error('Disconnected'); return {} }
+    return {correct_count:2,total_questions:2}
+  }})
+  for(let order=1;order<=2;order++) {await client.prepareTestQuestion('child','maths',order); client.queueTestAnswer('child','maths',order,'A','Choose')}
+  await assert.rejects(client.finishBufferedTest('child','maths'),/retry/)
+  assert.equal(calls.filter(c=>c.path.endsWith('/complete')).length,0)
+  failed=false
+  await client.finishBufferedTest('child','maths')
+  assert.deepEqual(calls.filter(c=>c.path.endsWith('/answers')).map(c=>c.body.question_id),['q1','q2','q2'])
+  assert.equal(calls.filter(c=>c.path.endsWith('/complete')).length,1)
+})

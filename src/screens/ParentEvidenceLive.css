@@ -1,0 +1,21 @@
+.stage-root:has(.parent-evidence-live) { display: block; overflow-y: auto; overflow-x: hidden; }
+.stage:has(.parent-evidence-live) { width: 100%; height: auto; min-height: 100%; zoom: 1 !important; transform: none !important; --bleed: 0px; --bleed-y: 0px; }
+.parent-evidence-live { position: relative; inset: auto; min-height: 100dvh; background: var(--bg, #edf3ff); color: var(--ink); }
+.evidence-shell { max-width: 1150px; margin: auto; padding: 24px max(20px, env(safe-area-inset-right)) 32px max(20px, env(safe-area-inset-left)); font-size: 17px; line-height: 1.5; }
+.evidence-shell header, .evidence-shell footer { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.evidence-shell header { padding-left: 52px; margin-bottom: 24px; justify-content: space-between; }
+.evidence-shell button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 18px; border: 2px solid var(--lavender-2); border-radius: 14px; color: var(--ink); background: var(--surface); cursor: pointer; font-weight: 750; }
+.evidence-shell button:focus-visible { outline: 3px solid var(--primary-ink); outline-offset: 3px; }
+.evidence-shell button:hover { border-color: var(--primary-ink); }
+.evidence-panel { padding: 28px; border-radius: 24px; background: var(--surface); border: 1px solid var(--lavender-2); }
+.evidence-panel h1 { font-size: clamp(28px, 4vw, 42px); font-weight: 850; line-height: 1.2; }
+.evidence-panel h2 { margin-top: 24px; font-size: 24px; font-weight: 800; }
+.evidence-panel p { margin: 8px 0; color: var(--ink-2); }
+.evidence-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
+.evidence-metrics article { padding: 20px; border-radius: 18px; background: var(--lavender); }
+.evidence-metrics h3 { margin: 12px 0; font-weight: 800; }
+.evidence-metrics strong { font-size: 32px; }
+.evidence-metrics p { font-size: 15px; }
+.evidence-detail { margin-bottom: 24px; }
+.stage:has(.parent-evidence-live) > button[aria-label='Open menu'] { position: fixed; top: 26px !important; left: max(12px, env(safe-area-inset-left)) !important; margin-top: 0 !important; width: 44px !important; height: 44px !important; border-radius: 14px; }
+@media (max-width: 600px) { .evidence-metrics { grid-template-columns: 1fr; } .evidence-panel { padding: 18px; } }

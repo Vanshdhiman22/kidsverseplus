@@ -12,5 +12,5 @@ export default function ApiButton({ onClick, disabled, children, ...props }) {
     try { await onClick() } catch (e) { setError(e.message || 'Request failed. Please retry.') }
     finally { lock.current = false; setBusy(false) }
   }
-  return <><Button {...props} disabled={disabled || busy} onClick={run}>{busy ? 'Saving…' : children}</Button>{error && <p role="alert" className="mt-2 text-[18px] font-bold text-red-500">{error}</p>}</>
+  return <><Button {...props} type={props.type || 'button'} disabled={disabled || busy} aria-busy={busy} onClick={run}>{busy ? 'Saving…' : children}</Button>{error && <p role="alert" className="mt-2 text-[18px] font-bold" style={{ color: 'var(--danger-ink)' }}>{error}</p>}</>
 }

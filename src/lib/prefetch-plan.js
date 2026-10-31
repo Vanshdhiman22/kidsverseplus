@@ -1,0 +1,25 @@
+const ONBOARDING = ['CreateChild', 'ParentWhatsApp', 'LearningSetup', 'Avatar', 'Interests', 'Goals', 'MeetNova', 'Welcome']
+const PATHS = ['/onboarding/child', '/onboarding/whatsapp', '/onboarding/grade-board', '/onboarding/avatar', '/onboarding/interests', '/onboarding/goals', '/onboarding/nova', '/welcome']
+
+export function prefetchPlan(pathname) {
+  if (pathname === '/') return ['ParentLogin', 'CreateAccount']
+  if (pathname === '/parent/create-account') return ['CreateChild']
+  if (pathname === '/parent/login') return ['Home', 'SwitchStudent']
+  const step = PATHS.indexOf(pathname)
+  if (step >= 0) return [ONBOARDING[step + 1] || 'Home']
+  if (pathname === '/home') return ['LearnHub', 'Journey', 'TestArena', 'ChallengeHome']
+  if (pathname === '/learn' || pathname === '/journey') return ['Topic']
+  if (pathname.startsWith('/learn/topics/')) return ['GuidedLearning', 'TestArena']
+  if (pathname.startsWith('/missions/')) return ['SpotMistake', 'MissionComplete']
+  if (pathname === '/tests') return ['TestIntro']
+  if (pathname === '/tests/mixed/intro') return ['TestQuestion']
+  if (pathname === '/tests/mixed/question') return ['TestResult']
+  if (pathname === '/challenge') return ['BattleOpponents', 'ChallengePractice']
+  if (pathname === '/challenge/opponents') return ['BattlePreview']
+  if (pathname === '/challenge/preview') return ['Battle']
+  if (pathname === '/challenge/battle') return ['BattleResult']
+  if (pathname === '/extra') return ['ReadingFluency', 'ConfidenceMission']
+  if (pathname === '/profile') return ['OurJourney', 'BreakPasses']
+  if (pathname === '/parent') return ['ParentEvidence', 'ParentPlan']
+  return []
+}

@@ -16,14 +16,14 @@ export default function Leaderboard() {
   const g = useGame()
   const { name } = g.state.profile
   const xp = g.state.stats.xp ?? 0
-  const battles = g.state.stats.battles ?? 0
+  const battles = null
 
   const subject=routeSubject()
   const [selected,setSelected]=React.useState('')
   const catalog=useLiveResource(()=>listTopicChallenges(g.state.activeChildId,subject),[subject,g.state.activeChildId,getToken()],{enabled:Boolean(getToken()&&g.state.activeChildId)})
   const challenges=catalog.data?.challenges||[]
   const challenge=challenges.find(c=>c.id===selected)||challenges[0]
-  const resource=useLiveResource(()=>apiRequest(`/challenges/${challenge.id}/leaderboard?scope=global&student_id=${encodeURIComponent(g.state.activeChildId)}`),[challenge?.id,getToken()],{enabled:Boolean(challenge&&getToken())})
+  const resource=useLiveResource(()=>apiRequest(`/challenges/${challenge.id}/leaderboard?scope=global&student_id=${encodeURIComponent(g.state.activeChildId)}`),[challenge?.id,g.state.activeChildId,getToken()],{enabled:Boolean(challenge&&getToken())})
   const rankings=resource.data?.entries
   return (
     <Page>
@@ -34,10 +34,10 @@ export default function Leaderboard() {
         {catalog.error&&<p role="alert">{catalog.error}</p>}
         {!catalog.loading&&!catalog.error&&!challenges.length&&<p>No leaderboard is published for this topic yet.</p>}
         <div className="flex items-center gap-4"><Trophy size={48} className="text-gold" /><h1 className="font-display font-extrabold text-[52px] text-ink">Learning League</h1></div>
-        {rankings ? <Card className="mt-7 p-6"><h2 className="font-display text-[26px] font-bold">Leaderboard</h2>{rankings.map(row=><div key={row.rank} className="flex justify-between py-3 border-b text-[20px]"><b>#{row.rank} {row.display_name??row.name}</b><span>{row.xp} XP</span></div>)}</Card> : <Card className="mt-7 p-6"><div className="flex items-center gap-3 text-primary-ink"><Users size={28} /><h2 className="font-display font-extrabold text-[26px]">No live rankings yet</h2></div><p className="mt-3 text-[18px] font-semibold text-ink-2">{resource.loading ? "Loading rankings…" : resource.error || "No rankings available."}</p></Card>}
+        {rankings?.length > 0 ? <Card className="mt-7 p-6"><h2 className="font-display text-[26px] font-bold">Leaderboard</h2>{rankings.map(row=><div key={row.rank} className="flex justify-between py-3 border-b text-[20px]"><b>#{row.rank} {row.display_name??row.name}</b><span>{row.xp} points</span></div>)}</Card> : <Card className="mt-7 p-6"><div className="flex items-center gap-3 text-primary-ink"><Users size={28} /><h2 className="font-display font-extrabold text-[26px]">No live rankings yet</h2></div><p className="mt-3 text-[18px] font-semibold text-ink-2">{catalog.loading || resource.loading ? "Loading rankings…" : resource.error || "No completed battles are ranked for this concept yet."}</p></Card>}
         <div className="mt-7 grid grid-cols-2 gap-5">
           <Card className="p-6"><div className="text-[14px] font-extrabold uppercase text-primary-ink">{name}'s earned XP</div><div className="mt-2 font-display font-extrabold text-[40px] text-ink">{xp.toLocaleString()}</div></Card>
-          <Card className="p-6"><div className="text-[14px] font-extrabold uppercase text-primary-ink">Battles played</div><div className="mt-2 font-display font-extrabold text-[40px] text-ink">{battles}</div></Card>
+          <Card className="p-6"><div className="text-[14px] font-extrabold uppercase text-primary-ink">Battles in this concept</div><div className="mt-2 font-display font-extrabold text-[40px] text-ink">{resource.data?.current_student?.battles_played ?? (resource.data ? 'Not ranked' : '—')}</div></Card>
         </div>
         <div className="mt-8 flex items-center gap-3 text-[16px] font-semibold text-ink-2"><Star size={22} className="text-gold" /> Your own progress still counts, even without a public ranking.</div>
         <Button size="md" arrow className="mt-8 h-[60px] px-8" onClick={() => nav('/challenge')}>Back to challenges</Button>

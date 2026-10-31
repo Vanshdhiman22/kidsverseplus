@@ -1,6 +1,6 @@
-import fs from 'node:fs'
 import { worlds, opponents } from './gameplay.mjs'
-export const demoScreens = JSON.parse(fs.readFileSync(new URL('../docs/api-audit/screens.json', import.meta.url), 'utf8'))
+import { demoScreens } from './screens.mjs'
+export { demoScreens } from './screens.mjs'
 export async function buildBootstrap(handle, token, parent, students,worldsOverride=worlds) {
   const worlds=worldsOverride
   const resources = {}

@@ -68,7 +68,7 @@ export function normalizeContentPackage(raw, id, fallback) {
   const learning = payload.learning_content ?? {}
   // Learning checks and formal tests are separate banks. Mixing them here made
   // children receive the same question twice in one learning journey.
-  const generated = list(payload.check_for_understanding).slice(0, 6)
+  const generated = list(payload.check_for_understanding)
   if (!generated.length) throw new Error('studio package has no questions')
 
   const questions = generated.map((question, index) => studioQuestion(question, index, learning))
@@ -76,14 +76,7 @@ export function normalizeContentPackage(raw, id, fallback) {
     throw new Error('studio questions require text, options and an answer')
   }
 
-  const questionKey = question => String(question.question ?? question.instruction ?? question.prompt ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ')
-  const usedQuestions = new Set(generated.map(questionKey))
-  const normalizeGroup = group => list(group).filter(question => {
-    const key = questionKey(question)
-    if (!key || usedQuestions.has(key)) return false
-    usedQuestions.add(key)
-    return true
-  }).map((question, index) => studioQuestion(question, index, learning))
+  const normalizeGroup = group => normalizeAuthoredQuestionBank(list(group), learning)
   const conceptName = payload.concept?.name ?? fallback.topic
   const objective = payload.concept?.learning_objective ?? fallback.learning_objective
   return {

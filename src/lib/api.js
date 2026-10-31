@@ -7,6 +7,9 @@ import { redactApi as redact } from './redact-api.js'
 import { isReviewMode, assertReviewRequestAllowed } from './reviewMode.js'
 import { parentProof } from './parent-pin.js'
 import { verificationRequest } from './verification-transport.js'
+import { createInflightReads } from './inflight-reads.js'
+import { createCatalogReads } from './catalog-reads.js'
+import { createBackendService, backendErrorMessage, settingsRequest } from './backend-service.js'
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL
 export const mockSnapshot = createSessionSnapshot(sessionStorage)
 
@@ -17,11 +20,16 @@ const DUMMY_BASE_URL = '/__dummy/api/v1'
 let dummyToken = ''
 export const isDummyApiActive = () => import.meta.env.DEV && API_MODE==='mock' && Boolean(dummyToken)
 export const getToken = () => isDummyApiActive() ? dummyToken : sessionStorage.getItem(SESSION_KEY) || ''
-export const setToken = token => token ? sessionStorage.setItem(SESSION_KEY, token) : sessionStorage.removeItem(SESSION_KEY)
-export function clearSession() { dummyToken = ''; setToken(''); catalogCache.clear(); mockSnapshot.clear() }
+export const setToken = token => {
+  if (getToken() !== (token || '')) contentCatalogReads.clear()
+  return token ? sessionStorage.setItem(SESSION_KEY, token) : sessionStorage.removeItem(SESSION_KEY)
+}
+export function clearSession() { dummyToken = ''; setToken(''); catalogCache.clear(); contentCatalogReads.clear(); mockSnapshot.clear(); inflightReads.clear() }
 export const requestLog = []
 let requestSequence = 0
 const catalogCache = new Map()
+const inflightReads = createInflightReads()
+const contentCatalogReads = createCatalogReads()
 // Local developer escape hatch: seed the Vite mock with the currently selected
 // child. It never writes to the live API or awards production XP.
 export async function activateDummyApi(profile = {}, studentId) {
@@ -56,7 +64,23 @@ function parseBody(response) {
  * Makes an API request and throws a structured error for non-2xx responses.
  * Pass the JWT from authenticated app state; it is never baked into source code.
  */
-export async function apiRequest(path, { method = 'GET', token = getToken(), body, signal } = {}) {
+export function apiRequest(path, options = {}) {
+  const method = (options.method || 'GET').toUpperCase()
+  const token = options.token === undefined ? getToken() : options.token
+  const send = () => sendApiRequest(path, { ...options, method, token })
+  if (method !== 'GET') {
+    inflightReads.clear()
+    contentCatalogReads.clear()
+    return send().finally(() => { inflightReads.clear(); contentCatalogReads.clear() })
+  }
+  // Independently cancellable requests must keep their own transport.
+  if (options.signal || API_MODE !== 'live') return send()
+  const key = JSON.stringify([API_BASE_URL, token, parentProof(sessionStorage, token), path, isReviewMode()])
+  if (path === '/admin/content/packages') return contentCatalogReads.run(key, () => inflightReads.run(key, send))
+  return inflightReads.run(key, send)
+}
+
+async function sendApiRequest(path, { method = 'GET', token = getToken(), body, signal } = {}) {
   // Fixture navigation must never submit scores, onboarding or account changes
   // using the parent's retained live session. The inspector can still read live.
   assertReviewRequestAllowed(isReviewMode() && !isDummyApiActive(), method)
@@ -105,7 +129,7 @@ export async function apiRequest(path, { method = 'GET', token = getToken(), bod
   }
   Object.assign(entry, { status: response.status, response: redact(data) })
   if (!response.ok) {
-    const message = data?.error?.message || data?.detail || `Request failed (${response.status})`
+    const message = backendErrorMessage(data, response.status)
     throw new ApiError(message, { status: response.status, data })
   }
   return data
@@ -143,7 +167,9 @@ export const warmCatalogs = () => Promise.allSettled([
 ])
 
 // Public catalog calls are safe to use before a parent signs in.
+export const backend = createBackendService(apiRequest)
 export const api = {
+  ...backend,
   interests: () => cachedCatalog('/interests'),
   goals: () => cachedCatalog('/goals'),
   avatarCharacters: () => cachedCatalog('/avatar/characters'),
@@ -155,9 +181,18 @@ export const api = {
   forgotPassword: email => apiRequest('/auth/parent/forgot-password', { method: 'POST', body: { email } }),
   parentStudents: () => apiRequest('/parent/students'),
   parentMe: token => apiRequest('/parent/me', { token }),
+  saveParentWhatsApp: whatsapp_number => apiRequest('/parent/me', { method: 'PATCH', body: { whatsapp_number } }),
   startParentVerification: body => apiRequest('/parent/verification/start', { method: 'POST', body }),
   verifyParentPhone: body => apiRequest('/parent/verification/verify', { method: 'POST', body }),
   parentOverview: () => apiRequest('/parent/overview'),
+  studentSettings: studentId => backend.getStudentSettings({ studentId }),
+  saveStudentSettings: (studentId, settings) => backend.patchStudentSettings({ studentId }, settingsRequest(settings, API_MODE)),
+  novaMessages: studentId => backend.getStudentNovaMessages({ studentId }),
+  sendNovaMessage: (studentId, message, topicId) => backend.postStudentNovaMessages({ studentId }, { message, ...(topicId ? { topic_id: topicId } : {}) }),
+  studentLearningPath: studentId => backend.getStudentLearningPath({ studentId }),
+  onboardingStatus: studentId => backend.getOnboardingStatus({ studentId }),
+  missionReview: (studentId, missionId) => backend.getStudentMissionReview({ studentId, missionId }),
+  learningPackage: packageId => backend.getLearningPackageDetail({ packageId }),
   studentHome: (studentId, token) => apiRequest(`/students/${studentId}/home`, { token }),
   studentSubjects: studentId => apiRequest(`/students/${studentId}/subjects`),
   subjectTopics: (subjectId, grade) => apiRequest(`/subjects/${subjectId}/topics${grade ? `?grade=${encodeURIComponent(grade)}` : ''}`),
@@ -171,5 +206,6 @@ export const api = {
   studentCards: studentId => apiRequest(`/students/${studentId}/profile/cards`),
   curriculumTree: filters => apiRequest(`/curriculum/tree?${new URLSearchParams(filters)}`),
   curriculums: () => apiRequest('/curriculums'),
+  curriculumDetail: curriculumId => backend.getCurriculumDetail({ curriculumId }),
   themes: () => apiRequest('/themes'),
 }

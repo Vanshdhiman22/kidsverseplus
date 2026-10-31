@@ -22,7 +22,7 @@ export default function SideRail({ active: forced, className, logo = 'planet' })
   const { pathname } = useLocation(); const nav = useNavigate()
   const active = forced ?? (ITEMS.find(i => i.match.some(m => pathname.startsWith(m)))?.id ?? 'home')
   return (
-    <motion.aside className={cn('absolute top-0 bottom-0 glass glass-soft flex flex-col pt-6 pb-5', className)} style={{ borderRadius: '0 34px 34px 0', borderLeft: 0, left: 'calc(0px - var(--bleed, 0px))', width: 'calc(215px + var(--bleed, 0px))', paddingLeft: 'calc(16px + var(--bleed, 0px))', paddingRight: 16 }} initial={{ x: -120, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 22 }}>
+    <motion.aside className={cn('kv-side-rail absolute top-0 bottom-0 glass glass-soft flex flex-col pt-6 pb-5', className)} style={{ borderRadius: '0 34px 34px 0', borderLeft: 0, left: 'calc(0px - var(--bleed, 0px))', width: 'calc(215px + var(--bleed, 0px))', paddingLeft: 'calc(16px + var(--bleed, 0px))', paddingRight: 16 }} initial={{ x: -120, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 22 }}>
       <RailBack />
       <div className="px-2 flex flex-col items-center text-center">
         <img src="/art/planet-sm.webp" alt="" className="w-[110px] floaty" />

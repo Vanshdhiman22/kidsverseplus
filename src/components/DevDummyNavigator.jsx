@@ -28,8 +28,9 @@ function nextScreen(pathname, screens) {
   const index = numbered.findIndex(([path]) => path === normalized)
   if (index >= 0) return numbered[index + 1]?.[0] ?? null
   if (pathname === '/parent/create-account' || pathname === '/parent/forgot-password') return '/onboarding/child'
-  if (pathname === '/onboarding/child') return '/onboarding/parent-details'
-  if (pathname === '/onboarding/parent-details') return '/onboarding/grade-board'
+  if (pathname === '/onboarding/child') return '/onboarding/whatsapp'
+  if (pathname === '/onboarding/parent-details') return '/onboarding/whatsapp'
+  if (pathname === '/onboarding/whatsapp') return '/onboarding/grade-board'
   if (pathname === '/profile/break-passes') return '/switch'
   return null
 }
@@ -64,7 +65,7 @@ export default function DevDummyNavigator({ screens }) {
     }
   }, [])
 
-  if ((API_MODE === 'live' && import.meta.env.VITE_ENABLE_DUMMY_NAVIGATION !== 'true') || (!import.meta.env.DEV && import.meta.env.VITE_ENABLE_API_REVIEW !== 'true') || (API_MODE !== 'mock' && !next) || window.parent!==window || ['/demo','/mock-demo','/api-audit','/mock-api-review'].includes(pathname)) return null
+  if ((API_MODE === 'live' && import.meta.env.VITE_ENABLE_DUMMY_NAVIGATION !== 'true') || (!import.meta.env.DEV && import.meta.env.VITE_ENABLE_API_REVIEW !== 'true') || (API_MODE !== 'mock' && !next) || new URLSearchParams(search).has('mockScreen') || window.parent!==window || ['/demo','/mock-demo','/api-audit','/mock-api-review'].includes(pathname)) return null
 
   const continueWithDummy = async () => {
     if (busy) return

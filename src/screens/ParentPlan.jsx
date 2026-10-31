@@ -2,7 +2,7 @@ import React, {useState} from 'react'
 import {apiRequest,getToken} from '../lib/api.js'
 import {useLiveResource} from '../lib/useLiveResource.js'
 import {isReviewMode} from '../lib/reviewMode.js'
-import {resolveMissionSubject} from '../lib/gameApi.js'
+import {resolveMissionSubject,startMission} from '../lib/gameApi.js'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ArrowLeft, BookOpen, ClipboardCheck, MessageCircle, Target, TrendingUp } from 'lucide-react'
@@ -39,7 +39,7 @@ export default function ParentPlan() {
   async function openStep(step){
     if(opening)return
     setOpening(true);setOpenError('')
-    try{const target=step.subjectSlug||await resolveMissionSubject(g.state.activeChildId,step.missionId);nav(`/missions/fractions/learn?subject=${encodeURIComponent(target)}&mission=${encodeURIComponent(step.missionId)}`)}
+    try{const target=step.subjectSlug||await resolveMissionSubject(g.state.activeChildId,step.missionId);await startMission(g.state.activeChildId,target,step.missionId);nav(`/missions/fractions/learn?subject=${encodeURIComponent(target)}&mission=${encodeURIComponent(step.missionId)}`)}
     catch(error){setOpenError(error.message)}finally{setOpening(false)}
   }
   return (

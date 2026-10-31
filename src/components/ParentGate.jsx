@@ -9,6 +9,7 @@ import { apiRequest, getToken, api, API_MODE } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 import { verifyParentPin } from '../lib/parent-pin.js'
 import { isReviewMode } from '../lib/reviewMode.js'
+import { grantParentAccess } from '../lib/parent-access.js'
 
 /* The child lock on the grown-up area: a four-digit code. First use sets one (typed twice). */
 const LEN = 4
@@ -77,25 +78,33 @@ function MockParentGate({ onPass, onCancel }) {
 }
 
 function LiveParentGate({onPass,onCancel}) {
+  const [method,setMethod]=useState('password')
   const [password,setPassword]=useState('')
   const [busy,setBusy]=useState(false)
   const [error,setError]=useState('')
   async function verify(event) {
     event.preventDefault();setBusy(true);setError('')
     try {
-      const parent=await api.parentMe()
-      if(!parent.email) throw Error('Your parent account email is unavailable. Sign in again.')
-      await api.login({email:parent.email,password})
+      if(method==='pin') {
+        const result=await api.postParentPinVerify({}, {pin:password})
+        if(!result.verified)throw Error('Parent PIN was not confirmed.')
+      } else {
+        const parent=await api.parentMe()
+        if(!parent.email) throw Error('Your parent account email is unavailable. Sign in again.')
+        await api.login({email:parent.email,password})
+      }
+      grantParentAccess(sessionStorage,getToken())
       setPassword('');onPass()
     } catch(e) {setError(e.message)} finally {setBusy(false)}
   }
   return <div role="dialog" aria-modal="true" aria-label="Verify parent account" className="absolute inset-0 z-[60] grid place-items-center bg-indigo-950/50">
     <form onSubmit={verify} className="glass glass-strong w-[420px] p-8 rounded-3xl">
       <h2 className="font-display text-3xl font-extrabold">Grown-ups only</h2>
-      <p className="mt-3">Enter your account password to open the parent area.</p>
-      <label className="block mt-4 font-bold">Password<input autoFocus required type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} className="block mt-2 w-full rounded-xl border p-3" /></label>
+      <p className="mt-3">Enter your {method==='pin'?'existing parent PIN':'account password'} to open the parent area.</p>
+      <label className="block mt-4 font-bold">{method==='pin'?'Parent PIN':'Password'}<input key={method} autoFocus required type="password" inputMode={method==='pin'?'numeric':undefined} autoComplete={method==='pin'?'off':'current-password'} value={password} onChange={e=>setPassword(e.target.value)} className="block mt-2 w-full rounded-xl border p-3" /></label>
+      <button type="button" disabled={busy} className="mt-3 underline font-bold text-primary-ink" onClick={()=>{setMethod(method==='pin'?'password':'pin');setPassword('');setError('')}}>Use {method==='pin'?'account password':'existing parent PIN'} instead</button>
       {error&&<p role="alert" className="mt-3 text-red-600">{error}</p>}
-      <button type="submit" disabled={busy} className="pill mt-4 p-3">{busy?'Verifying…':'Open parent area'}</button>
+      <button type="submit" disabled={busy} className="pill mt-4 p-3">{busy?'Verifyingâ€¦':'Open parent area'}</button>
       <button type="button" onClick={onCancel} className="pill mt-4 ml-3 p-3">Cancel</button>
     </form>
   </div>

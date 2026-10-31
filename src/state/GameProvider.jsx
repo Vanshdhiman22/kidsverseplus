@@ -1,13 +1,16 @@
-import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
 import { setSoundEnabled } from '../lib/sound.js'
 import { setVoiceEnabled } from '../lib/voice.js'
 
 import { emptyProfile, emptyStats, emptyProgress, beginChild, finishChild, selectChild, migrateFamily, loginRoute, openAccount, hydrateRemoteFamily, beginRemoteChild, remoteStudent } from './family.js'
-import { api as remote, apiRequest, API_MODE, setToken, warmCatalogs, clearSession, mockSnapshot } from '../lib/api.js'
+import { api as remote, apiRequest, API_MODE, getToken, setToken, warmCatalogs, clearSession, mockSnapshot } from '../lib/api.js'
 import { isReviewMode, takeReviewSeed } from '../lib/reviewMode.js'
 import { clearBrowserData } from '../lib/browserData.js'
 import { selectApiAvatar } from '../lib/avatar-selection.js'
 import { saveOnboardingStep } from '../lib/onboarding-save.js'
+import { parentSetupRoute } from '../lib/parent-contact.js'
+import { loadFamilyProfiles, settingsValues } from '../lib/backend-service.js'
+import { setMusicOn } from '../components/MusicPlayer.jsx'
 
 const KEY = `kidsverse-plus-v3-${API_MODE}${isReviewMode() ? '-review' : ''}`
 /* A finished mission pays about 45 XP; 400 per level keeps a level within a few sittings. */
@@ -52,7 +55,7 @@ let seq = 0
 function reducer(state, a) {
   switch (a.type) {
     case 'mockFamily': { const next=hydrateRemoteFamily(state,a.data.parent.email,a.data.students,a.data.resources['/avatar/characters'].characters);const stats=a.data.resources[`/students/${next.activeChildId}/home`]?.stats;return {...next,stats:{...next.stats,xp:stats?.total_xp ?? next.stats.xp,streak:stats?.day_streak ?? 0,battles:0},progress:{...next.progress,...a.data.demo.progress},parentLock:{pin:a.data.demo.pin}} }
-    case 'remoteStats': return { ...state, stats: { ...state.stats, ...a.stats, xp: a.stats.total_xp ?? state.stats.xp, streak: a.stats.day_streak ?? state.stats.streak } }
+    case 'remoteStats': return a.studentId && a.studentId !== state.activeChildId ? state : { ...state, stats: { ...state.stats, ...a.stats, xp: a.stats.total_xp ?? state.stats.xp, streak: a.stats.day_streak ?? state.stats.streak } }
     case 'profile': return { ...state, profile: { ...state.profile, ...a.patch } }
     case 'settings': return { ...state, settings: { ...state.settings, ...a.patch } }
     case 'progress': return { ...state, progress: { ...state.progress, ...a.patch } }
@@ -93,13 +96,21 @@ function reducer(state, a) {
     case 'refreshChildren': return { ...state, children: a.students.map(student => {
       const previous = state.children.find(child => child.id === student.id)
       const child = remoteStudent(student, a.characters)
-      return { ...previous, ...child, stats: previous?.stats || child.stats, progress: previous?.progress || child.progress }
+      return { ...previous, ...child, stats: student.remoteStatsLoaded ? child.stats : previous?.stats || child.stats, progress: previous?.progress || child.progress }
     }) }
     case 'switchChild': return selectChild(state, a.id)
     case 'addChild': return beginChild(state, a.name)
     case 'completeChild': return finishChild(state, a.id)
     case 'remoteFamily': return hydrateRemoteFamily(state, a.email, a.students, a.characters)
     case 'remoteChild': return beginRemoteChild(state, a.student)
+    case 'hydrateChild': {
+      if (state.activeChildId !== a.studentId) return state
+      const profile = a.profile
+      return { ...state,
+        profile: { ...state.profile, name: profile.name ?? state.profile.name, grade: profile.grade ?? state.profile.grade, board: profile.board ?? state.profile.board },
+        stats: { ...state.stats, xp: profile.total_xp ?? state.stats.xp, streak: profile.day_streak ?? state.stats.streak },
+      }
+    }
     case 'authIntent': return { ...state, authIntent: a.intent }
     case 'openAccount': return openAccount(state, a.email)
     case 'reset': return { ...initial, settings: state.settings }
@@ -110,32 +121,65 @@ function reducer(state, a) {
 const Ctx = createContext(null)
 export function GameProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, load)
+  const settingsRef = useRef(state.settings)
+  const settingsRevision = useRef(0)
+  const settingsQueue = useRef(Promise.resolve())
+  settingsRef.current = state.settings
+  const token = getToken()
+  const identity = useRef('')
+  identity.current = `${token}:${state.activeChildId}`
+  useEffect(() => {
+    if (!state.activeChildId || !token || isReviewMode()) return
+    let active = true
+    const studentId = state.activeChildId, revision = settingsRevision.current
+    remote.studentProfile(studentId).then(profile => {
+      if (active && getToken() === token) dispatch({ type: 'hydrateChild', studentId, profile })
+    }).catch(() => {})
+    remote.studentSettings(studentId).then(response => {
+      if (active && getToken() === token && settingsRevision.current === revision) dispatch({ type: 'settings', patch: settingsValues(response) })
+    }).catch(() => {})
+    return () => { active = false }
+  }, [state.activeChildId, token])
+  const saveSettings = patch => {
+    const merged = { ...settingsRef.current, ...patch }
+    settingsRef.current = merged
+    const revision = ++settingsRevision.current
+    dispatch({ type: 'settings', patch })
+    if (!state.activeChildId || !token || isReviewMode()) return Promise.resolve()
+    const studentId = state.activeChildId
+    const owner = `${token}:${studentId}`
+    const save = settingsQueue.current.catch(() => {}).then(() => {
+      if (getToken() !== token) return null
+      return remote.saveStudentSettings(studentId, merged)
+    }).then(response => {
+      if (response && identity.current === owner && revision === settingsRevision.current) dispatch({ type: 'settings', patch: settingsValues(response) })
+    }).catch(error => {
+      if (identity.current === owner) dispatch({ type: 'notice', message: `Settings could not be saved: ${error.message}` })
+    })
+    settingsQueue.current = save
+    return save
+  }
   useEffect(() => { try { const { toasts, flash, notices, ...rest } = state; localStorage.setItem(KEY, JSON.stringify(rest)) } catch {} }, [state])
   useEffect(() => { document.documentElement.dataset.theme = state.settings.theme }, [state.settings.theme])
   useEffect(() => { document.documentElement.dataset.motion = state.settings.motion ? 'full' : 'calm' }, [state.settings.motion])
   useEffect(() => { setSoundEnabled(state.settings.sound) }, [state.settings.sound])
   useEffect(() => { setVoiceEnabled(state.settings.voice) }, [state.settings.voice])
+  useEffect(() => { setMusicOn(state.settings.music) }, [state.settings.music])
   const api = useMemo(() => ({
     state, dispatch,
     refreshFamily: async () => {
-      const [{ students }, { characters }] = await Promise.all([remote.parentStudents(), remote.avatarCharacters()])
-      dispatch({ type: 'refreshChildren', students, characters })
+      const currentToken = getToken()
+      const { students, characters } = await loadFamilyProfiles(remote)
+      if (getToken() === currentToken) dispatch({ type: 'refreshChildren', students, characters })
     },
     level: levelOf(state.stats.xp), levelPct: levelPct(state.stats.xp), toNext: XP_PER_LEVEL - (state.stats.xp % XP_PER_LEVEL),
     setProfile: patch => dispatch({ type: 'profile', patch }),
-    setSettings: patch => {
-      if(API_MODE==='mock'&&mockSnapshot.value&&state.activeChildId) {
-        return apiRequest(`/students/${state.activeChildId}/settings`,{method:'PATCH',body:patch})
-          .then(saved=>dispatch({type:'settings',patch:saved}))
-          .catch(e=>dispatch({type:'notice',message:e.message}))
-      }
-      dispatch({type:'settings',patch})
-    },
+    setSettings: saveSettings,
     setProgress: patch => dispatch({ type: 'progress', patch }),
     refreshStats: async () => {
       if (!state.activeChildId) return
       const home = await remote.studentHome(state.activeChildId)
-      dispatch({ type: 'remoteStats', stats: home.stats })
+      dispatch({ type: 'remoteStats', studentId: state.activeChildId, stats: home.stats })
     },
     /* The car has now been watched arriving at this station, so it should not drive
        there again the next time the map is opened. */
@@ -146,7 +190,7 @@ export function GameProvider({ children }) {
     bumpStreak: () => dispatch({ type: 'streak' }),
     useBreakPass: async date => {
       const result=await apiRequest(`/students/${state.activeChildId}/break-passes`,{method:'POST',body:{date}})
-      dispatch({type:'remoteStats',stats:{breakPasses:result.available,breakPassUsedDates:result.used_dates}})
+      dispatch({type:'remoteStats',studentId:state.activeChildId,stats:{breakPasses:result.available_count ?? result.available,breakPassUsedDates:result.used_dates ?? state.stats.breakPassUsedDates}})
       return result
     },
     /* One finished test. Home's progress panel counts these. */
@@ -186,11 +230,11 @@ export function GameProvider({ children }) {
         return '/home'
       }
       void warmCatalogs()
-      const [{ students }, { characters }, parentResponse] = await Promise.all([apiRequest('/parent/students'), remote.avatarCharacters(), remote.parentMe().catch(() => null)])
+      const [{ students, characters }, parentResponse] = await Promise.all([loadFamilyProfiles(remote), remote.parentMe().catch(() => null)])
       const parent = parentResponse?.parent ?? parentResponse
       dispatch({ type: 'remoteFamily', email, students, characters })
       if (!students.length) return '/onboarding/child'
-      if (students.length === 1 && !students[0].onboarding_completed) return API_MODE === 'live' || parent?.phone_verified_at ? '/onboarding/grade-board' : '/onboarding/parent-details'
+      if (students.length === 1 && !students[0].onboarding_completed) return parentSetupRoute(parent)
       return loginRoute({ children: students }, state.authIntent === 'parent')
     },
     addChild: async name => {
@@ -236,8 +280,8 @@ export function GameProvider({ children }) {
       // Reload also discards in-memory dummy tokens and cached account resources.
       window.location.replace('/')
     },
-    toggleTheme: () => dispatch({ type: 'settings', patch: { theme: state.settings.theme === 'dark' ? 'light' : 'dark' } }),
-    toggleSound: () => dispatch({ type: 'settings', patch: { sound: !state.settings.sound } }),
+    toggleTheme: () => saveSettings({ theme: settingsRef.current.theme === 'dark' ? 'light' : 'dark' }),
+    toggleSound: () => saveSettings({ sound: !settingsRef.current.sound }),
   }), [state])
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>
 }

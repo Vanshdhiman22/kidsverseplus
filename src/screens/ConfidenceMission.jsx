@@ -1,3 +1,4 @@
+import { avatarPortrait } from '../lib/avatar-portrait.js'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
@@ -63,7 +64,7 @@ export default function ConfidenceMission() {
 
       <Panel className="absolute left-[1020px] top-[170px] w-[305px] h-[530px] p-6 flex flex-col items-center justify-center" initial="hidden" animate="show">
         <div className="relative grid place-items-center">
-          <motion.button className="w-[140px] h-[140px] rounded-full grid place-items-center text-white" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }} onClick={() => { sfx.select(); setTurn(v=>Math.min(v+1,chat.length-1)) }} whileTap={{ scale: 0.94 }}><MessageCircle size={60} /></motion.button>
+          <motion.button aria-label="Next speaking prompt" className="w-[140px] h-[140px] rounded-full grid place-items-center text-white" style={{ background: 'var(--grad-primary)', boxShadow: 'var(--glow-primary)' }} onClick={() => { sfx.select(); setTurn(v=>Math.min(v+1,chat.length-1)) }} whileTap={{ scale: 0.94 }}><MessageCircle size={60} /></motion.button>
         </div>
         <div className="mt-8 font-display font-extrabold text-[26px] text-ink uppercase">Next prompt</div>
         <div className="text-[17px] font-semibold text-ink-3">Say your answer aloud at your own pace.</div>
@@ -72,9 +73,9 @@ export default function ConfidenceMission() {
       <Stack className="absolute top-[135px] w-[315px] flex flex-col gap-4" style={bleedR(24)} start={0.7} delay={0.15}>
         {chat.map(([f, who, msg], i) => (
           <Item key={i} v="right"><Panel className="p-4 flex items-center gap-3 min-h-[150px]" style={{ opacity: i > turn ? 0.55 : 1 }}>
-            {who === 'kid' ? <img src={`/art/kid${f}-face-sm.webp`} alt="" className="w-[70px] h-[70px] rounded-full object-cover border-2 border-white shadow" /> : <img src="/art/hd/nova-v2.webp" alt="" className="w-[70px] floaty" />}
+            {who === 'kid' ? <img src={avatarPortrait(f, true)} alt="" className="w-[70px] h-[70px] rounded-full object-cover border-2 border-white shadow" /> : <img src="/art/hd/nova-v2.webp" alt="" className="w-[70px] floaty" />}
             <span className="flex-1 text-[18px] font-bold text-ink leading-snug">{msg}</span>
-            <button className="pill w-[36px] h-[36px] justify-center text-primary-ink" onClick={() => speak(msg)}><Volume2 size={16} /></button>
+            <button aria-label="Hear this prompt" className="pill w-[36px] h-[36px] justify-center text-primary-ink" onClick={() => speak(msg)}><Volume2 size={16} /></button>
           </Panel></Item>
         ))}
         <Item v="right"><Panel className="p-5 h-[145px]"><div className="flex items-center gap-2 text-[15px] font-extrabold text-primary-ink uppercase tracking-wide"><Lightbulb size={18} className="text-gold" /> Tips from Nova</div><p className="mt-2 text-[16px] font-semibold text-ink-2 leading-snug">{content.tips.join(' ')}</p></Panel></Item>

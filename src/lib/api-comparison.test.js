@@ -1,10 +1,20 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import fs from 'node:fs'
+import { demoScreens } from '../../mock/screens.mjs'
 import {comparisonPayload, comparisonPairs, comparisonScreens, fetchLiveRead, operationKey} from './api-comparison.js'
 
-const mock = JSON.parse(fs.readFileSync(new URL('../../docs/verification/all-62-mock-api-responses.json',import.meta.url)))
-const live = JSON.parse(fs.readFileSync(new URL('../../docs/api-audit/report.json',import.meta.url)))
+// Explicit unit fixtures: these are not captured production traffic or audit evidence.
+const mock = {
+  generated_at: '2026-01-01T00:00:00Z',
+  screens: demoScreens.map(s => ({ ...s, capture_ids: s.id === 14 ? [1] : s.id === 15 ? [2] : [] })),
+  captures: [
+    { id: 1, method: 'GET', path: '/students/11111111-1111-4111-8111-000000000001/home', response: { sample: 'home' } },
+    { id: 2, method: 'GET', path: '/students/11111111-1111-4111-8111-000000000001/settings', response: { sound: true } },
+  ],
+}
+const live = { finished: '2026-01-01T00:00:00Z', base: 'https://kidsverse-apinew.vercel.app/api/v1', requests: [
+  { method: 'GET', path: '/students/22222222-2222-4222-8222-000000000002/home', status: 200, screens: [14] },
+] }
 
 test('question captures pair their template with the actual order and keep separate question responses',()=>{
   const path='/challenge-battles/11111111-1111-4111-8111-000000001000/questions/2'

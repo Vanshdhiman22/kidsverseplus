@@ -48,7 +48,7 @@ export default function SpotMistake() {
   const [serverCorrect, setServerCorrect] = useState(false)
   const subject = routeSubject()
   const progressKey = `kv:mission-progress:${g.state.activeChildId}:${pkg.apiMissionId || pkg.content_id}:${pkg.content_version}`
-  const questions = pkg.check.questions.slice(0, 6)
+  const questions = pkg.check.questions
   const [questionIndex, setQuestionIndex] = useState(() => Math.min(pkg.check.selected ?? 0, questions.length - 1))
   /* The question, its options, the right answer, the hints for each picture and the
      feedback all come from the learning package. This file is the template. */
@@ -89,7 +89,7 @@ export default function SpotMistake() {
     const answerLabel = answers.map(key => Q.options.find(option => option.key === key)?.label).filter(Boolean).join(', ')
     setReview(items => [...items, { question: Q.instruction, selectedLabel, answerLabel, correct:right, hintsUsed: hints, explanation: Q.explanation || (right ? Q.feedback_correct : QM.feedback_wrong), model: QM }])
     if (right) { sfx.success(); setScore(value => value + 1) }
-    else { sfx.wrong(); setWrong(w => w + 1); setHints(value => Math.max(1, value)) }
+    else { sfx.wrong(); setWrong(w => w + 1) }
   }
   const advance = async () => {
     if (questionIndex === total - 1) {
@@ -97,7 +97,7 @@ export default function SpotMistake() {
       const saved = remote
         ? await completeLearningAttempt(attempt.attempt_id)
         : liveMission ? await completeMission(g.state.activeChildId, subject, Math.round(score / total * 100), pkg.apiMissionId) : { completed_at: new Date().toISOString(), xp_awarded: 0 }
-      const result = { score:remote?saved.correct_count:score, gradeScore:remote?saved.score:undefined, total, review:finalReview, subject, missionId:pkg.apiMissionId||pkg.content_id, studentId:g.state.activeChildId, attemptId:remote?attempt.attempt_id:crypto.randomUUID(), completedAt: saved.completed_at, xpAwarded: saved.xp_awarded, apiSaved:remote || liveMission, documentedMission:liveMission, local:!remote && !liveMission }
+      const result = { score:remote?saved.correct_count:score, gradeScore:remote?saved.score:undefined, total, review:finalReview, subject, missionId:pkg.apiMissionId||new URLSearchParams(window.location.search).get('mission')||pkg.content_id, studentId:g.state.activeChildId, attemptId:remote?attempt.attempt_id:crypto.randomUUID(), completedAt: saved.completed_at, xpAwarded: saved.xp_awarded, apiSaved:remote || liveMission, documentedMission:liveMission, local:!remote && !liveMission }
       sessionStorage.setItem('kv:last-mission-score', JSON.stringify(result))
       sessionStorage.removeItem(progressKey)
       nav(withSubject('/missions/fractions/complete'), { state: result })
@@ -149,7 +149,7 @@ export default function SpotMistake() {
   if (pkg.contentLoading || pkg.contentError) return <ContentStatus pkg={pkg} />
   if(remote && (!remoteQuestion || apiError)) return <ContentStatus pkg={{contentLoading:!apiError,contentError:apiError}} />
   return (
-    <Page>
+    <Page className="phone-game phone-quiz">
       {pkg.contentSource==='api-preview'&&<div className="absolute left-1/2 top-[8px] z-[100] -translate-x-1/2 rounded-full bg-white px-5 py-2 text-[15px] font-bold text-indigo-800 shadow">Live API questions · Read-only local preview</div>}
       <Scene name="spot" />
       <motion.div className="absolute" style={{ ...bleedL(24), ...safeT(24) }} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}><Logo variant="planet" tagline="LEARN • EXPLORE • ACHIEVE" /></motion.div>
@@ -160,7 +160,7 @@ export default function SpotMistake() {
       </Panel>
       <Child screen="spot" delay={0.5} />
 
-      <Panel className="absolute left-[292px] top-[76px] w-[1125px] h-[735px] p-7 overflow-hidden" initial="hidden" animate="show">
+      <Panel className="phone-quiz__question absolute left-[292px] top-[76px] w-[1125px] h-[735px] p-7 overflow-hidden" initial="hidden" animate="show">
         <div className="text-center">
           <div className="label-caps mb-1">Question {questionIndex + 1} of {total}</div>
           <h1 className="font-display font-extrabold text-[48px] leading-none text-ink">{Q.title}</h1>
@@ -171,7 +171,7 @@ export default function SpotMistake() {
         </div>
         {/* The thing being judged. It lives here in the DOM, not in the backdrop,
             so it can be re-drawn as a different model on request. */}
-        <div className="absolute left-[72px] top-[205px] w-[980px] h-[270px]">
+        <div className="phone-quiz__visual absolute left-[72px] top-[205px] w-[980px] h-[270px]">
           {/* Keyed, but with no exit to wait on: the new model mounts at once, so
               the picture and the words that name it can never disagree. */}
           <motion.div className="h-full" key={`${Q.question_id}:${QM.key}:${QM.image ?? QM.image_url ?? ''}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24 }}>
@@ -181,13 +181,13 @@ export default function SpotMistake() {
         {/* Tucked into the corner beside NO rather than sitting between the picture
             and the answers, where it read as a third thing to choose. */}
         {Q.models.length > 1 && (
-          <div className="absolute right-[26px] bottom-[26px] w-[182px] h-[150px] flex flex-col items-center justify-center gap-2">
+          <div className="phone-quiz__alternate absolute right-[26px] bottom-[26px] w-[182px] h-[150px] flex flex-col items-center justify-center gap-2">
             <Button variant="outline" size="sm" icon={<RefreshCw size={17} />} className="w-full h-[62px] px-3 text-[15px] leading-tight"
               onClick={() => { sfx.tap(); setModel(m => (m + 1) % Q.models.length) }}>Show it another way</Button>
             <span className="text-[13px] font-bold text-ink-3 text-center">Showing: {QM.label}</span>
           </div>
         )}
-        <div className={cn('absolute left-1/2 -translate-x-1/2 bottom-[22px] grid gap-3', Q.options.length > 4 ? 'grid-cols-3 w-[940px]' : 'grid-cols-2 w-[880px]')}>
+        <div className={cn('phone-quiz__answers absolute left-1/2 -translate-x-1/2 bottom-[22px] grid gap-3', Q.options.length > 4 ? 'grid-cols-3 w-[940px]' : 'grid-cols-2 w-[880px]')}>
           {Q.options.map(({ key: v, label: big, sub }) => {
             const on = picks.includes(v)
             /* A wrong pick should not leave the child guessing which one was right:
@@ -209,7 +209,7 @@ export default function SpotMistake() {
                         className={cn('w-[34px] h-[34px] rounded-full grid place-items-center text-white font-extrabold', right ? 'bg-green-500' : 'bg-red-500')}>
                         {right ? <Check size={20} strokeWidth={3.5} /> : '✕'}
                       </motion.span>
-                    : <span className="radio" />}
+                    : on ? <span aria-label="Selected" className="w-[34px] h-[34px] rounded-full grid place-items-center text-white" style={{background: 'var(--grad-primary)'}}><Check size={20} aria-hidden="true" /></span> : <span className="radio" />}
                 </span>
                 <span className={cn('font-display font-extrabold leading-tight', Q.options.length > 2 ? 'text-[25px]' : 'text-[46px]', right ? 'text-[var(--success-ink)]' : wrong ? 'text-[var(--danger-ink)]' : 'text-ink')}>{big}</span>
                 {sub && <span className={cn('mt-1 font-semibold text-ink-2', Q.options.length > 2 ? 'text-[14px]' : 'text-[19px]')}>{sub}</span>}
@@ -219,7 +219,7 @@ export default function SpotMistake() {
         </div>
       </Panel>
 
-      <Panel className="absolute top-[90px] w-[280px] h-[705px] p-5" style={bleedR(27)} initial="hidden" animate="show">
+      <Panel className="phone-quiz__hints absolute top-[90px] w-[280px] h-[705px] p-5" style={bleedR(27)} initial="hidden" animate="show">
         <div className="eyebrow text-[17px] flex items-center gap-2"><Lightbulb size={20} className="text-gold" fill="currentColor" /> Hint Progress</div>
         <Stack className="mt-3 flex flex-col gap-3" start={0.7}>
           {HINTS.map((h, i) => {
@@ -250,12 +250,12 @@ export default function SpotMistake() {
         </AnimatePresence>
       </Panel>
 
-      <motion.div className="absolute flex items-center gap-3" style={{ ...bleedL(24), ...safeB(37) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27 }}>
+      <motion.div className="phone-quiz__audio absolute flex items-center gap-3" style={{ ...bleedL(24), ...safeB(37) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27 }}>
         <button className="pill h-[74px] px-4 gap-4 text-left" onClick={() => speak(`${Q.instruction}. ${Q.options.map(option => option.label).join('. ')}`)}><span className="icon-orb w-[54px] h-[54px] text-white" style={{ background: 'var(--grad-primary)' }}><Volume2 size={26} /></span><span className="leading-tight"><span className="block text-[17px] font-extrabold text-ink">Tap to hear the question</span><span className="block text-[13px] font-semibold text-ink-3">Listen anytime!</span></span></button>
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" disabled={!canRevealHints||hints>=HINTS.length} onClick={() => canRevealHints && hints < HINTS.length && (sfx.unlock(), setHints(value=>value+1))}><Lightbulb size={22} className="text-gold" fill="currentColor" /> Hint</button>
         <button className="pill h-[60px] px-5 gap-2 text-[18px] font-extrabold text-ink" onClick={() => speak(Q.instruction)}><Headphones size={22} className="text-primary-ink" /> Listen</button>
       </motion.div>
-      <motion.div className="absolute text-center" style={{ ...bleedR(24), ...safeB(44) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!answered || saving} sound="whoosh" onClick={locked ? advance : check}>{locked ? (questionIndex === total - 1 ? 'Finish Mission' : 'Next Question') : 'Check Answer'}</Button>{!answered && <p className="mt-2 text-[13px] font-extrabold text-ink-2">Choose one answer to continue</p>}</motion.div>
+      <motion.div className="phone-quiz__action absolute text-center" style={{ ...bleedR(24), ...safeB(44) }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}><Button size="md" arrow className="w-[300px] h-[66px] text-[22px]" disabled={!answered || saving} sound="whoosh" onClick={locked ? advance : check}>{locked ? (questionIndex === total - 1 ? 'Finish Mission' : 'Next Question') : 'Check Answer'}</Button>{!answered && <p className="mt-2 text-[13px] font-extrabold text-ink-2">Choose one answer to continue</p>}</motion.div>
     </Page>
   )
 }

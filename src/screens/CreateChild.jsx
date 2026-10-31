@@ -1,4 +1,3 @@
-import { API_MODE } from '../lib/api.js'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
@@ -12,7 +11,7 @@ import { Steps } from '../components/Stepper.jsx'
 import { Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 
-export const ONBOARDING_STEPS = ['Child', 'Parent Check', 'Learning Setup', 'Goals', 'Meet Nova']
+export const ONBOARDING_STEPS = ['Child', 'Parent Contact', 'Learning Setup', 'Goals', 'Meet Nova']
 
 export default function CreateChild() {
   const nav = useNavigate()
@@ -45,17 +44,17 @@ export default function CreateChild() {
           <Item><h2 className="mt-5 font-display font-extrabold text-[46px] leading-[1.08] text-ink">Who is beginning<br />their adventure? <span className="text-gold">✦</span></h2></Item>
           <Item className="mt-4 text-[21px] font-semibold text-ink-3 leading-snug">Tell us your explorer's name so we can personalise their learning journey.</Item>
           <Item className="mt-8">
-            <label className="block text-[20px] font-extrabold text-ink mb-3">Child's first name</label>
+            <label htmlFor="child-first-name" className="block text-[20px] font-extrabold text-ink mb-3">Child's first name</label>
             <div className="relative">
               <User size={26} strokeWidth={2.2} className="absolute left-6 top-1/2 -translate-y-1/2 text-primary-ink" />
-              <input className="input h-[84px] text-[26px] rounded-[22px]" style={{ borderColor: ok ? 'var(--primary)' : undefined }} placeholder="Type a first name or nickname" value={name} onChange={e => setName(e.target.value)} autoFocus />
+              <input id="child-first-name" name="childFirstName" autoComplete="given-name" aria-describedby="child-name-help" className="input h-[84px] text-[26px] rounded-[22px]" style={{ borderColor: ok ? 'var(--primary)' : undefined }} placeholder="Type a first name or nickname" value={name} onChange={e => setName(e.target.value)} autoFocus />
               <AnimatePresence>
                 {ok && <motion.span className="absolute right-6 top-1/2 -translate-y-1/2 w-[32px] h-[32px] rounded-full grid place-items-center bg-green-500 text-white" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 18 }}><Check size={20} strokeWidth={3.5} /></motion.span>}
               </AnimatePresence>
             </div>
-            <p className="mt-3 flex items-center gap-2 text-[16px] font-semibold text-ink-3"><ShieldCheck size={18} className="text-primary-ink" /> Only a first name or nickname is needed.</p>
+            <p id="child-name-help" className="mt-3 flex items-center gap-2 text-[16px] font-semibold text-ink-3"><ShieldCheck size={18} className="text-primary-ink" /> Only a first name or nickname is needed.</p>
           </Item>
-          <Item v="pop" className="mt-9"><Button size="lg" arrow className="w-full uppercase" disabled={!ok} sound="whoosh" onClick={async () => { await g.addChild(name); nav(API_MODE === 'live' ? '/onboarding/grade-board' : '/onboarding/parent-details') }}>Continue</Button></Item>
+          <Item v="pop" className="mt-9"><Button size="lg" arrow className="w-full uppercase" disabled={!ok} sound="whoosh" onClick={async () => { await g.addChild(name); nav('/onboarding/whatsapp') }}>Continue</Button></Item>
           <Item className="mt-5 text-center"><button className="text-[22px] font-extrabold text-primary-ink hover:underline" onClick={() => nav(-1)}>Back</button></Item>
         </Stack>
       </Panel>

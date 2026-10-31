@@ -18,7 +18,7 @@ test('studio questions keep their matching image, choices and answer', () => {
   }
 
   const result = normalizeContentPackage(studio, 'fractions-equal-parts', fallback)
-  assert.equal(result.check.questions.length, 6)
+  assert.equal(result.check.questions.length, 7)
   assert.equal(result.check.questions[2].instruction, 'Generated question 3')
   assert.equal(result.check.questions[2].models[0].image, 'https://images.example/question-3.webp')
   assert.equal(result.check.questions[2].answer, 'option_2')
@@ -77,4 +77,13 @@ test('studio learn-before-test keeps all three authored tiny checks', () => {
   assert.equal(result.studio.learn_before_test.steps.length, 3)
   assert.equal(result.studio.learn_before_test.steps[1].mini_question.question, 'example question')
   assert.equal(result.studio.learn_before_test.steps[2].mini_question.answer, 'Total')
+})
+
+
+test('keeps duplicate text across authored assessment banks', () => {
+  const q = { question: 'Same wording', options: ['A', 'B'], answer: 'A' }
+  const result = normalizeContentPackage({ check_for_understanding: [q, q], test_questions: { questions: [q] }, battle_questions: [q] }, 'demo', fallback)
+  assert.equal(result.assessments.check_for_understanding.length, 2)
+  assert.equal(result.assessments.test_questions.length, 1)
+  assert.equal(result.assessments.battle_questions.length, 1)
 })

@@ -3,6 +3,7 @@ const SEED_KEY = 'kidsverse-ui-review-seed'
 
 export function isReviewMode() {
   if (typeof window === 'undefined') return false
+  if (import.meta.env?.VITE_API_MODE !== 'mock') { sessionStorage.removeItem(REVIEW_KEY); return false }
   const requested = new URLSearchParams(window.location.search).get('review')
   if (requested === '1') sessionStorage.setItem(REVIEW_KEY, '1')
   if (requested === '0') sessionStorage.removeItem(REVIEW_KEY)
@@ -21,6 +22,7 @@ export function exitReviewMode() {
 }
 
 export function enterReviewMode(destination, state, apiMode) {
+  if (apiMode !== 'mock') throw new Error('Sample review is disabled. Use the original API account.')
   // A dummy skip must not modify the real account's browser progress.
   localStorage.removeItem(`kidsverse-plus-v3-${apiMode}-review`)
   sessionStorage.setItem(SEED_KEY, JSON.stringify({

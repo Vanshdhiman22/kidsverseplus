@@ -9,7 +9,7 @@ export function availableWorlds(subjects = [], artwork = []) {
     const id = subjectKey(subject.slug || subject.name)
     const style = artwork.find(world => world.id === id) || artwork[0] || {}
     return { ...style, id, name: subject.name, apiId: subject.id || subject.subject_id,
-      pct: Number(subject.progress_percent ?? 0), locked: Boolean(subject.locked),
+      pct: subject.progress_percent == null || subject.progress_percent === '' || !Number.isFinite(Number(subject.progress_percent)) ? null : Math.max(0, Math.min(100, Number(subject.progress_percent))), locked: Boolean(subject.locked),
       total: subject.total_missions ?? null, done: subject.completed_missions ?? null,
       badge: subject.badge, desc: subject.description || 'Explore the available topics.' }
   })

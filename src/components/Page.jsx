@@ -1,5 +1,5 @@
 import React from 'react'
-import { motion } from 'motion/react'
+import { motion, useIsPresent } from 'motion/react'
 import { ChevronLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../lib/utils.js'
@@ -9,8 +9,9 @@ import { sfx } from '../lib/sound.js'
 /* Every screen mounts inside a Page so route changes get the same cinematic
    blur/scale cross-fade, and children can opt into staggered reveals. */
 export default function Page({ className, children, style }) {
+  const present = useIsPresent()
   return (
-    <motion.section className={cn('screen', className)} style={style} variants={page} initial="initial" animate="animate" exit="exit">
+    <motion.section className={cn('screen', !className && 'responsive-page', className)} data-exiting={!present || undefined} aria-hidden={!present || undefined} style={style} variants={page} initial="initial" animate="animate" exit="exit">
       {children}
     </motion.section>
   )

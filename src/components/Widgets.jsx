@@ -102,9 +102,9 @@ export function Confetti({ count = 220, duration = 4200, className }) {
 }
 
 /* ---------- iOS-style switch ---------- */
-export function Switch({ on, onChange, className }) {
+export function Switch({ on, onChange, className, label = 'Read instructions aloud' }) {
   return (
-    <button className={cn('relative w-[62px] h-[34px] rounded-full transition-colors', className)} style={{ background: on ? 'var(--grad-primary)' : 'var(--lavender-2)', boxShadow: on ? 'var(--glow-primary)' : 'none' }} onClick={() => onChange?.(!on)} role="switch" aria-checked={on}>
+    <button className={cn('relative w-[62px] h-[34px] rounded-full transition-colors', className)} style={{ background: on ? 'var(--grad-primary)' : 'var(--lavender-2)', boxShadow: on ? 'var(--glow-primary)' : 'none' }} onClick={() => onChange?.(!on)} role="switch" aria-label={label} aria-checked={on}>
       <motion.span className="absolute top-[4px] w-[26px] h-[26px] rounded-full bg-white shadow-md" animate={{ left: on ? 32 : 4 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }} />
     </button>
   )

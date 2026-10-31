@@ -21,8 +21,7 @@ test('uses three distinct authored ways for the same example', () => {
   assert.equal(ways[1].mini.question, 'How many now?')
 })
 
-test('adapts existing CMS fields when alternate ways are not authored', () => {
+test('does not turn speech and key idea into invented alternate examples', () => {
   const ways = explanationWays({ body: 'Put the groups together.', key: 'Count all the objects.', speech: 'Start with one group, then add the next.' })
-  assert.equal(ways.length, 3)
-  assert.equal(new Set(ways.map(way => way.body)).size, 3)
+  assert.equal(ways.length, 1)
 })

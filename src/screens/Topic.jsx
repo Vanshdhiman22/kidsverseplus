@@ -1,6 +1,6 @@
 import React from 'react'
 import {learningPathDisplay,nextLearningNode} from '../lib/learning-path-display.js'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useBack } from '../lib/nav.js'
 import { motion } from 'motion/react'
 import { ArrowLeft, BookOpen, Check, Lock, Pencil, ClipboardCheck, Rocket } from 'lucide-react'
@@ -24,6 +24,8 @@ import { ACTIVE_CONTENT_ID } from '../content/index.js'
 export default function Topic() {
   const nav = useNavigate()
   const { world = 'maths' } = useParams()
+  const [query] = useSearchParams()
+  const requestedTopicId = query.get('topic') || undefined
   /* Back goes where the child came from. This said "Back to Learn" and always went to the
      Learn Hub, which is wrong for the common path now: most children arrive from Home. */
   const goBack = useBack()
@@ -35,8 +37,8 @@ export default function Topic() {
   const [refresh,setRefresh] = React.useState(0)
   const review = isReviewMode()
   const { data: livePath, loading, error } = useLiveResource(
-    () => loadLearningPath(studentId, world),
-    [studentId, world, refresh],
+    () => loadLearningPath(studentId, world, requestedTopicId),
+    [studentId, world, requestedTopicId, refresh],
     { enabled: !review && Boolean(studentId) },
   )
   const liveDetail = review ? reviewLearning(world,{grade,contentId:ACTIVE_CONTENT_ID}).path.detail : livePath?.detail
@@ -96,7 +98,7 @@ export default function Topic() {
 
   if (!review && studentId && (loading || error)) return <ContentStatus activity="topics" pkg={{ contentLoading: loading, contentError: error }} />
   return (
-    <Page>
+    <Page className="responsive-page kv-topic">
       <Scene name="topic" />
       <TopBar back={false} right={<><div className="pill h-[68px] px-2 gap-0"><StatPill kind="streak" value={streak} label="Day streak" className="border-0 shadow-none bg-transparent" /><span className="w-px h-8 bg-[var(--line)]" /><StatPill kind="xp" value={xp.toLocaleString()} label="Nova XP" className="border-0 shadow-none bg-transparent" /></div><UserChip name={name} sub={gradeLabel(grade)} face={face} /></>} showControls={false} />
       <Stack className="absolute left-[50px] top-[115px] w-[500px]" start={0.2}>

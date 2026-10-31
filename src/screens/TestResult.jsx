@@ -22,7 +22,7 @@ export default function TestResult() {
   const nav = useNavigate()
   const g = useGame(); const { name, face, grade } = g.state.profile
   const [showReview, setShowReview] = useState(API_MODE==='mock' && new URLSearchParams(window.location.search).get('mockScreen')==='45')
-  const pkg = useRouteContent()
+  const pkg = useRouteContent({ loadLesson: false })
   /* The run's real numbers, handed over by TestQuestion. Opened directly (a bookmark, a
      refresh) there is no run to report, so the score reads as not-taken rather than as a
      confident 8 / 10 nobody earned. */
@@ -63,7 +63,7 @@ export default function TestResult() {
     return () => { clearTimeout(t); clearTimeout(t2) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const mood = pct < 70 ? { heading: `Let’s practise, ${name}`, sub: 'Nova will help with the questions that felt tricky.' } : pct < 95 ? { heading: `Good progress, ${name}`, sub: 'Review your answers, then try once more.' } : { heading: `Great work, ${name}`, sub: 'Your skills are getting stronger.' }
-  const wrongAnswers = run?.review?.filter(item => !item.correct) || []
+  const wrongAnswers = run?.review?.filter(item => item.correct === false) || []
   const rightAnswers = run?.review?.filter(item => item.correct) || []
   const recommendation = run?.extraLearning?.[0]
   const reviewPath = recommendation?.mission_id

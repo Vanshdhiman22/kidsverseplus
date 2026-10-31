@@ -15,6 +15,15 @@ test('wrong subject response cannot render as the requested journey', () => {
   assert.equal(checkedJourney({ subject: 'Mathematics' }, 'maths').subject, 'Mathematics')
 })
 
+test('missing subject progress stays unknown while an explicit zero is retained', () => {
+  const worlds = availableWorlds([
+    { name: 'Mathematics' },
+    { name: 'Mathematics', progress_percent: 0 },
+    { name: 'Mathematics', progress_percent: 'unavailable' },
+  ])
+  assert.deepEqual(worlds.map(world => world.pct), [null, 0, null])
+})
+
 test('question answer IDs survive normalization without invented visual or hints', () => {
   const q = normalizeApiQuestion({ id: 'q', question_text: '3/4 is the same as?', options: [{ id: 'a', text: '6/8' }, '1/2'] })
   assert.deepEqual(q.options, [{ key: 'a', label: '6/8' }, { key: '1/2', label: '1/2' }])

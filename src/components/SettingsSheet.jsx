@@ -13,6 +13,7 @@ import { bleedR, bleedX, safeT, safeB } from './Stage.jsx'
 import { LANGS } from '../data/catalog.js'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
+import useDialogFocus from '../lib/useDialogFocus.js'
 
 /* Settings — the gear in the top-right corner.
    Things a child may change alone (sound, voice, calm mode, language, their look) sit one tap away.
@@ -22,7 +23,7 @@ export const openSettings = () => window.dispatchEvent(new Event('kv:settings'))
 function Row({ icon: Icon, tint, title, sub, children, onClick, danger }) {
   const Tag = onClick ? 'button' : 'div'
   return (
-    <Tag className={cn('w-full flex items-center gap-4 px-4 py-3 rounded-[18px] text-left transition-colors', onClick && 'hover:bg-[var(--lavender)] cursor-pointer')} onClick={onClick}>
+    <Tag className={cn('settings-row w-full flex items-center gap-4 px-4 py-3 rounded-[18px] text-left transition-colors', onClick && 'hover:bg-[var(--lavender)] cursor-pointer')} onClick={onClick}>
       <span className="icon-orb w-[42px] h-[42px] shrink-0" style={{ color: tint, background: `${tint}1f` }}><Icon size={20} /></span>
       <span className="flex-1 leading-tight"><b className={cn('block text-[16px] font-extrabold', danger ? 'text-red-500' : 'text-ink')}>{title}</b>{sub && <i className="block text-[13px] font-semibold not-italic text-ink-3">{sub}</i>}</span>
       <span className="flex items-center gap-2">{children}</span>
@@ -36,6 +37,7 @@ export default function SettingsSheet() {
   const nav = useNavigate(); const { pathname, search } = useLocation()
   const voice = useNovaVoice()
   const [open, setOpen] = useState(API_MODE==='mock' && new URLSearchParams(window.location.search).get('mockScreen')==='15')
+  const dialog = useDialogFocus(open, () => setOpen(false))
   const [music, setMusic] = useState(getMusicOn)
   const [gate, setGate] = useState(null)
   const [confirm, setConfirm] = useState(null)
@@ -44,7 +46,6 @@ export default function SettingsSheet() {
   useEffect(() => { const on = () => setOpen(true); window.addEventListener('kv:settings', on); return () => window.removeEventListener('kv:settings', on) }, [])
   useEffect(() => { const load = () => setVoices(listVoices()); load(); speechSynthesis?.addEventListener?.('voiceschanged', load); return () => speechSynthesis?.removeEventListener?.('voiceschanged', load) }, [])
   useEffect(() => { setOpen(API_MODE==='mock' && new URLSearchParams(search).get('mockScreen')==='15'); setConfirm(null) }, [pathname, search])
-  useEffect(() => { if (!open) return; const k = e => { if (e.key === 'Escape') setOpen(false) }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k) }, [open])
 
   const set = patch => { sfx.tap(); g.setSettings(patch) }
   const guarded = what => { sfx.tap(); setGate(what) }
@@ -63,7 +64,7 @@ export default function SettingsSheet() {
         {open && (
           <>
             <motion.div className="absolute z-40" style={{ background: 'rgba(10,8,40,.35)', ...bleedX(0), ...safeT(0), ...safeB(0) }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setOpen(false)} />
-            <motion.section className="absolute w-[460px] z-50 glass glass-strong flex flex-col overflow-hidden" style={{ ...bleedR(20), ...safeT(20), ...safeB(20) }} role="dialog" aria-label="Settings" initial={{ x: 80, opacity: 0, scale: 0.98 }} animate={{ x: 0, opacity: 1, scale: 1 }} exit={{ x: 80, opacity: 0, scale: 0.98 }} transition={{ type: 'spring', stiffness: 260, damping: 26 }}>
+            <motion.section ref={dialog} className="absolute w-[460px] z-50 glass glass-strong flex flex-col overflow-hidden" style={{ ...bleedR(20), ...safeT(20), ...safeB(20) }} role="dialog" aria-modal="true" aria-label="Settings" initial={{ x: 80, opacity: 0, scale: 0.98 }} animate={{ x: 0, opacity: 1, scale: 1 }} exit={{ x: 80, opacity: 0, scale: 0.98 }} transition={{ type: 'spring', stiffness: 260, damping: 26 }}>
               <header className="flex items-center gap-4 px-6 pt-5 pb-3">
                 <span className="icon-orb w-[48px] h-[48px]"><Settings size={24} /></span>
                 <div className="flex-1"><b className="block font-display font-extrabold text-[24px] text-ink leading-none">Settings</b><p className="text-[14px] font-semibold text-ink-3">Make Kidsverse+ just right for you.</p></div>
@@ -71,20 +72,20 @@ export default function SettingsSheet() {
               </header>
               <div className="flex-1 overflow-auto no-scrollbar px-3 pb-4">
                 <Section>Sound</Section>
-                <Row icon={Music} tint="#a855f7" title="Music" sub="The soft tune in the background"><Switch on={music} onChange={v => { sfx.tap(); setMusicOn(v); setMusic(v) }} /></Row>
-                <Row icon={Bell} tint="#f59e0b" title="Sound effects" sub="Taps, cheers and whooshes"><Switch on={s.sound} onChange={v => set({ sound: v })} /></Row>
-                <Row icon={Volume2} tint="#38bdf8" title="Nova reads aloud" sub="Nova says every step out loud"><button className="chip h-[32px] px-3 text-[13px]" disabled={!s.voice} onClick={() => voice.say("Hi! I'm Nova. I'll read everything out loud for you.")}>▶ Hear</button><Switch on={s.voice} onChange={v => { set({ voice: v }); if (!v) voice.stop() }} /></Row>
+                <Row icon={Music} tint="#a855f7" title="Music" sub="The soft tune in the background"><Switch label="Music" on={s.music} onChange={v => { sfx.tap(); setMusicOn(v); setMusic(v); g.setSettings({ music: v }) }} /></Row>
+                <Row icon={Bell} tint="#f59e0b" title="Sound effects" sub="Taps, cheers and whooshes"><Switch label="Sound effects" on={s.sound} onChange={v => set({ sound: v })} /></Row>
+                <Row icon={Volume2} tint="#38bdf8" title="Nova reads aloud" sub="Nova says every step out loud"><button className="chip h-[32px] px-3 text-[13px]" disabled={!s.voice} onClick={() => voice.say("Hi! I'm Nova. I'll read everything out loud for you.")}>▶ Hear</button><Switch label="Nova reads aloud" on={s.voice} onChange={v => { set({ voice: v }); if (!v) voice.stop() }} /></Row>
                 {voices.length > 1 && s.voice && (
                   <Row icon={Sparkles} tint="#38bdf8" title="Nova's voice" sub="Voices on this device">
-                    <span className="relative"><select className="appearance-none pill h-[36px] pl-3 pr-8 text-[13px] font-bold text-ink max-w-[170px]" value={voiceName} onChange={e => { setVoiceName(e.target.value); setPreferredVoice(e.target.value); voice.say("Hi! I'm Nova. Does this sound better?") }}><option value="">Best available</option>{voices.map(v => <option key={v.name} value={v.name}>{v.name.replace(/^Microsoft |^Google /, '')}{v.natural ? ' ✦' : ''}</option>)}</select><ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-ink-3" /></span>
+                    <span className="relative"><select className="appearance-none pill h-[36px] pl-3 pr-8 text-[13px] font-bold text-ink max-w-[170px]" aria-label="Nova's voice" value={voiceName} onChange={e => { setVoiceName(e.target.value); setPreferredVoice(e.target.value); voice.say("Hi! I'm Nova. Does this sound better?") }}><option value="">Best available</option>{voices.map(v => <option key={v.name} value={v.name}>{v.name.replace(/^Microsoft |^Google /, '')}{v.natural ? ' ✦' : ''}</option>)}</select><ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-ink-3" /></span>
                   </Row>
                 )}
                 <Section>Screen</Section>
                 <ScreenRows />
-                <Row icon={s.theme === 'dark' ? Moon : Sun} tint="#818cf8" title="Dark mode" sub="Night sky instead of day"><Switch on={s.theme === 'dark'} onChange={v => set({ theme: v ? 'dark' : 'light' })} /></Row>
-                <Row icon={Moon} tint="#6366f1" title="Calm mode" sub="Fewer moving and flashing things"><Switch on={!s.motion} onChange={v => set({ motion: !v })} /></Row>
+                <Row icon={s.theme === 'dark' ? Moon : Sun} tint="#818cf8" title="Dark mode" sub="Night sky instead of day"><Switch label="Dark mode" on={s.theme === 'dark'} onChange={v => set({ theme: v ? 'dark' : 'light' })} /></Row>
+                <Row icon={Moon} tint="#6366f1" title="Calm mode" sub="Fewer moving and flashing things"><Switch label="Calm mode" on={!s.motion} onChange={v => set({ motion: !v })} /></Row>
                 <Row icon={Globe} tint="#22c55e" title="Language" sub={`${langLabel}${s.lang === 'en' ? ' · more coming soon' : ''}`}>
-                  <span className="relative"><select className="appearance-none pill h-[36px] pl-3 pr-8 text-[13px] font-bold text-ink" value={s.lang ?? 'en'} onChange={e => set({ lang: e.target.value })}>{LANGS.map(l => <option key={l.id} value={l.id} disabled={l.soon}>{l.label}{l.soon ? ' · soon' : ''}</option>)}</select><ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-ink-3" /></span>
+                  <span className="relative"><select className="appearance-none pill h-[36px] pl-3 pr-8 text-[13px] font-bold text-ink" aria-label="Language" value={s.lang ?? 'en'} onChange={e => set({ lang: e.target.value })}>{LANGS.map(l => <option key={l.id} value={l.id} disabled={l.soon}>{l.label}{l.soon ? ' · soon' : ''}</option>)}</select><ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-ink-3" /></span>
                 </Row>
                 <Section>Me</Section>
                 <Row icon={Palette} tint="#ec4899" title="Change my look" sub="Pick a new face or outfit" onClick={() => { sfx.select(); setOpen(false); nav('/onboarding/avatar') }} />

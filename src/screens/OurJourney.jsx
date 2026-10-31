@@ -28,7 +28,7 @@ export default function OurJourney() {
   const st = g.state
   const localMiles = milestonesFor(st)
   const liveEarned = liveJourney?.milestones_completed
-  const miles = localMiles.map((milestone, index) => liveEarned == null ? milestone : [...milestone.slice(0, 4), index < liveEarned])
+  const miles = localMiles.map((milestone, index) => liveEarned == null || index !== 0 ? milestone : [...milestone.slice(0, 4), liveEarned > 0])
   const earned = miles.filter(m => m[4]).length
   const stats = [...statsFor(st), liveJourney
     ? [Award, '#f97316', 'Milestones', liveJourney.milestones_completed, `of ${liveJourney.total_milestones}`]
@@ -36,7 +36,7 @@ export default function OurJourney() {
   return (
     <Page>
       <Scene name="ourjourney" />
-      <TopBar logo="planet" right={<><span className="pill h-[60px] px-5 gap-2 text-[18px] font-bold text-ink"><img src="/art/planet-sm.webp" alt="" className="w-[34px]" /> Explorer <span className="text-gold">✦</span> Level {g.level}</span><IconPill className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill><UserChip name={name} face={face} /></>} showControls={false} />
+      <TopBar logo="planet" right={<><span className="pill h-[60px] px-5 gap-2 text-[18px] font-bold text-ink"><img src="/art/planet-sm.webp" alt="" className="w-[34px]" /> Explorer <span className="text-gold">✦</span> Level {g.level}</span><IconPill disabled title="Notifications unavailable" aria-label="Notifications unavailable" className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill><UserChip name={name} face={face} /></>} showControls={false} />
       <Child screen="ourjourney" delay={0.4} amp={6} />
       <div className="absolute left-[40px] top-[665px]"><SpeechBubble tail="right" text="We've learned a lot together. ✨" delay={0.3} className="w-[215px] text-[22px] font-bold" /></div>
 

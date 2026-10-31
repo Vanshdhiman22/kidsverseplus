@@ -13,6 +13,9 @@ dist-connected
 /tmp/
 /output/
 
+# Local API captures and verification screenshots may contain account data.
+local-test-results/
+
 # archives and python caches
 *.rar
 *.zip

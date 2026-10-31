@@ -29,7 +29,7 @@ export default function TestIntro() {
   const nav = useNavigate()
   const [searchParams] = useSearchParams()
   const g = useGame(); const { name, face } = g.state.profile; const { readAloud } = g.state.settings
-  const pkg = useRouteContent()
+  const pkg = useRouteContent({ loadLesson: false })
   const source = searchParams.get('source') === 'challenge' ? 'challenge' : 'test'
   const localQuestions = cmsQuestions(pkg, source)
   const live = useLiveResource(() => getTestOverview(g.state.activeChildId, routeSubject(), source, searchParams.get('mission') || undefined, searchParams.get('test') || undefined), [g.state.activeChildId, routeSubject(), Boolean(localQuestions), source, searchParams.get('mission'), searchParams.get('test')], { enabled: !localQuestions })

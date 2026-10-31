@@ -1,0 +1,149 @@
+/* Desktop keeps the existing game composition. Standard screens reflow in
+   document order on smaller devices; routes and learning actions are unchanged. */
+.auth-field__action button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; }
+.auth-agreement { min-height: 44px; }
+.auth-agreement:has(input:focus-visible) { outline: 3px solid var(--primary); outline-offset: 5px; border-radius: 8px; }
+.auth-errors { background: var(--surface); border: 1px solid currentColor; }
+.kv-auth .text-red-600 { color: var(--danger-ink); }
+.kv-auth__panel { max-height: 835px; overflow-y: auto; scrollbar-width: thin; }
+.screen[data-exiting='true'] { position: absolute !important; pointer-events: none; }
+
+@media (max-width: 1024px) {
+  .stage-root:has(.responsive-page), .stage-root:has(.kv-auth) { display: block; overflow-y: auto; overflow-x: hidden; background: var(--bg); }
+  .stage:has(.responsive-page), .stage:has(.kv-auth) {
+    width: 100%; height: auto; min-height: 100%; zoom: 1 !important; transform: none !important;
+    --bleed: 0px; --bleed-y: 0px; --safe-t: 0px; --safe-b: 0px;
+  }
+  .responsive-page, .kv-auth {
+    position: relative; inset: auto; min-height: 100dvh; display: flex; flex-direction: column;
+    gap: 20px; padding: 76px max(16px, env(safe-area-inset-right)) max(96px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    background: var(--bg); isolation: isolate;
+  }
+  .kv-auth { padding-top: max(20px, env(safe-area-inset-top)); }
+  .responsive-page > .scene, .responsive-page > [data-scene-character], .responsive-page > img, .responsive-page > svg,
+  .responsive-page > .pointer-events-none, .responsive-page > .absolute:empty,
+  .kv-auth > :not(header):not(.kv-auth__hero):not(.kv-auth__panel) { display: none; }
+  .responsive-page > .absolute:not(.scene):not([data-scene-character]):not([role='dialog']):not(.inset-0),
+  .responsive-page > header, .kv-auth > header, .kv-auth__hero, .kv-auth__panel {
+    position: relative !important; inset: auto !important; width: 100% !important; height: auto;
+    min-height: 0; max-height: none; flex-shrink: 0; margin: 0; max-width: 100%;
+  }
+  .responsive-page > header, .kv-auth > header { transform: none !important; padding: 0; flex-wrap: wrap; gap: 16px; }
+  .responsive-page .kv-topbar__brand { gap: 10px; min-width: 0; flex-wrap: wrap; }
+  .responsive-page .kv-topbar__brand > div { gap: 10px; }
+  .responsive-page .kv-topbar__brand > div > :first-child { flex-shrink: 0; }
+  .responsive-page .kv-topbar__brand .font-display { font-size: 23px; }
+  .responsive-page .kv-topbar__brand .text-\[11px\] { font-size: 8px; }
+  .responsive-page .kv-topbar__actions { flex-wrap: wrap; gap: 8px; max-width: 100%; }
+  .responsive-page .kv-topbar__center { position: static; order: 3; transform: none; width: 100%; max-width: 100%; overflow-x: auto; padding: 6px 0; }
+  .responsive-page .kv-topbar__center > * { max-width: 100%; }
+  .responsive-page > .glass, .kv-auth__panel { padding: 22px 18px; overflow: visible; }
+  .responsive-page .glass > .pointer-events-none { overflow: hidden; }
+  .responsive-page h1, .kv-auth__hero h1 { font-size: clamp(30px, 7vw, 42px); line-height: 1.12; overflow-wrap: anywhere; }
+  .responsive-page h2, .kv-auth__panel h1, .kv-auth__panel h2 { font-size: 28px; line-height: 1.15; }
+  .responsive-page h3 { font-size: 22px; }
+  .responsive-page p, .responsive-page .leading-snug, .responsive-page .font-display { overflow-wrap: anywhere; }
+  .responsive-page :is(button, [role='button'], select, input), .kv-auth button { min-height: 44px; touch-action: manipulation; }
+  .responsive-page .btn { max-width: 100%; height: auto; min-height: 56px; padding: 14px 16px; font-size: 18px; white-space: normal; }
+  .responsive-page :is(.glass, .card, .pill, input, select, [class*='w-[']) { max-width: 100%; min-width: 0; }
+  .responsive-page .grid[class*='grid-cols-'] { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .responsive-page .grid-cols-1 { grid-template-columns: minmax(0, 1fr); }
+  .responsive-page .grid[class*='grid-cols-['] { grid-template-columns: minmax(0, 1fr); }
+  .responsive-page > .flex:not(.flex-col):not(header) { flex-wrap: wrap; gap: 12px; }
+  .responsive-page > .flex:not(.flex-col):not(header) > div { min-width: 0; flex: 1 1 180px; }
+  .responsive-page > .grid > div, .responsive-page > .flex > div { min-width: 0; }
+  .responsive-page > .grid :is(.card, button), .responsive-page > .flex > div > .card { width: 100%; }
+  .responsive-page > .grid .card { height: auto; min-height: 150px; padding: 18px; }
+  .responsive-page > .grid { align-items: stretch; }
+  .responsive-page .flex-1 { min-width: 0; }
+  .responsive-page .card.flex:not(.flex-col) { flex-wrap: wrap; }
+  .kv-parent-evidence .card.flex > .flex-1 { flex: 1 1 240px; }
+  .responsive-page .max-h-\[350px\] { max-height: none; overflow: visible; }
+  .kv-auth__hero > div { font-size: 18px; }
+  .kv-auth .kv-topbar__brand { flex-wrap: wrap; gap: 12px; max-width: 100%; }
+  .kv-auth > header > div:last-child { display: none; }
+  .kv-auth .input { font-size: 16px; width: 100%; min-width: 0; }
+  .kv-auth__panel { overflow: visible; }
+
+  /* The same Home destinations remain available as a compact, scrolling rail. */
+  .kv-home .kv-nav-pinned { order: -2; padding: 0; border-radius: 20px; overflow: hidden; }
+  .kv-home { padding-top: 16px; }
+  .responsive-page > .goal-constellation { display: none; }
+  .kv-home .kv-nav-pinned > div { padding: 16px !important; }
+  .kv-home .kv-nav-pinned > div > div:first-child { display: flex; }
+  .kv-home .kv-nav-pinned nav { flex-direction: row; overflow-x: auto; padding-bottom: 6px; }
+  .kv-home .kv-nav-pinned nav button { flex: 0 0 auto; white-space: nowrap; }
+  .kv-home .kv-nav-pinned > div > div:last-child { display: none; }
+  .kv-home > .bubble { display: none; }
+  .kv-home > .kv-home__subjects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kv-home__subjects > div { width: 100%; }
+  .kv-home__subjects button { width: 100%; height: 156px; }
+  .kv-home__subjects > div:last-child { grid-column: 1 / -1; }
+  .kv-home > section { padding: 18px; }
+  .kv-home > footer { padding: 20px; border-radius: 20px; }
+  .kv-home > footer > span:last-child { display: none; }
+  .kv-home > section .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  /* Avatar rotation remains usable; only the decorative duplicate character hides. */
+  .kv-avatar > .kv-avatar__preview { min-height: 300px; justify-content: center; flex-wrap: nowrap; }
+  .kv-avatar__preview img { height: 300px; }
+  .kv-avatar > .kv-avatar__preview > div { flex: 0 1 220px !important; }
+  .kv-avatar .pill button { font-size: 14px; }
+  .kv-topic .card { flex-wrap: wrap; }
+  .kv-topic .card > .btn { margin-left: auto; }
+  .test-arena .test-arena__stage { position: relative; inset: auto; display: flex; flex-direction: column; width: 100%; height: auto; border-radius: 24px; }
+  .test-arena .test-arena__art { min-height: 180px; }
+  .test-arena__art [data-scene-character], .test-arena__art-orbit { display: none; }
+  .test-arena .test-arena__art-copy { position: relative; inset: auto; padding: 24px; }
+  .test-arena .test-arena__art-copy h1 { color: white; font-size: 36px; line-height: 1.1; }
+  .test-arena .test-arena__art-copy p { font-size: 18px; }
+  .test-arena .test-arena__nova-note { display: none; }
+  .test-arena .test-arena__content { padding: 24px 18px; }
+  .test-arena .test-arena__content h2 { font-size: 30px; }
+  .test-arena .test-arena__facts { flex-wrap: wrap; }
+  .test-arena .test-arena__facts > div { flex: 1 1 120px; width: auto; }
+  .test-arena .test-arena__start { height: auto; min-height: 60px; padding: 14px; font-size: 20px; gap: 10px; }
+  .test-arena .test-arena__loading { position: static; margin-top: 10px; }
+
+  .responsive-page > .kv-parent-rail, .responsive-page > .kv-side-rail { padding: 16px !important; border-radius: 20px !important; }
+  .kv-parent-rail nav, .kv-side-rail nav { display: flex; flex-direction: row; overflow-x: auto; gap: 8px; }
+  .kv-parent-rail nav button, .kv-side-rail nav button { flex: 0 0 auto; white-space: nowrap; }
+  .kv-side-rail > div:has(img) { display: none; }
+  .kv-parent-rail > .mt-auto { margin-top: 12px; }
+
+  .stage:has(.responsive-page) > button[aria-label='Open menu'], .stage:has(.phone-game) > button[aria-label='Open menu'] {
+    position: fixed; top: 14px !important; left: 16px !important; margin: 0 !important; width: 44px !important; height: 44px !important; border-radius: 14px;
+  }
+  .stage:has(.responsive-page) > button[aria-label='Go back'] { position: fixed; top: 14px; left: 72px; min-height: 44px; }
+  .stage:has(.responsive-page) .kv-nav-backdrop, .stage:has(.phone-game) .kv-nav-backdrop { position: fixed; inset: 0; background: rgb(10 15 45 / .35); }
+  .stage:has(.responsive-page) .kv-nav-drawer, .stage:has(.phone-game) .kv-nav-drawer { position: fixed; top: 0; bottom: 0; left: 0 !important; width: min(280px, 85vw) !important; }
+  .kv-nav-drawer aside { overflow-y: auto; }
+  .kv-nav-drawer aside > div { width: 100%; height: auto; min-height: 100%; }
+  .stage:has(.responsive-page) .nova-island { position: fixed; top: 16px !important; }
+  .stage:has(.responsive-page) .nova-island.is-idle { display: none; }
+  .stage:has(.journey-cloud-page) .nova-island.is-idle { display: none; }
+  .stage [role='dialog'], .stage [role='alertdialog'], .responsive-page > .inset-0:has([role='dialog']) {
+    position: fixed !important; inset: 12px !important; width: auto !important; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; padding: 16px;
+  }
+  .stage [role='dialog'] > :is(section, form, .glass), .stage [role='dialog'] > div:has(h2) { max-width: 100%; width: 100%; max-height: calc(100dvh - 56px); }
+  .stage [role='dialog'] > section > .grid { grid-template-columns: 1fr; }
+  .stage [role='dialog'] article.grid { grid-template-columns: 1fr; }
+  .stage [role='dialog'] header { padding: 16px; gap: 12px; }
+  .stage [role='dialog'] h2 { font-size: 26px; }
+  .stage [role='dialog'] [class*='w-['] { max-width: 100%; }
+  .stage [role='dialog'] button { min-height: 44px; }
+  .stage [role='dialog'] select { min-height: 44px; }
+  .stage [role='dialog'][aria-label='Settings'] { padding: 0; }
+  .stage [aria-label='Settings'] .settings-row { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 8px 12px; }
+  .stage [aria-label='Settings'] .settings-row > span:last-child { grid-column: 2; justify-content: flex-start; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+  .stage [aria-label='Settings'] .settings-row > span:last-child:empty { display: none; }
+  .stage [aria-label='Settings'] .settings-row select { max-width: 100%; }
+  .stage [role='dialog'][aria-label='Navigation menu'] { position: relative !important; inset: auto !important; width: 100% !important; max-width: none; max-height: none; height: 100%; padding: 0; }
+}
+
+@media (max-width: 420px) {
+  .kv-parent-evidence .grid[class*='grid-cols-'] { grid-template-columns: minmax(0, 1fr); }
+  .responsive-page > .grid { grid-template-columns: minmax(0, 1fr); }
+  .responsive-page .kv-topbar__actions > .pill { max-width: 100%; }
+  .kv-auth__panel h2 { font-size: 27px; }
+}

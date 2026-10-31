@@ -7,6 +7,7 @@ import { cn } from '../lib/utils.js'
 export default function Character({ src, w = 320, x, y, right, bottom, delay = 0.2, amp = 9, dur = 3.8, flip, glow, podium, className, style, float = true, drop = 110 }) {
   return (
     <motion.div
+      data-scene-character="" aria-hidden="true"
       className={cn('absolute', className)}
       style={{ width: w, left: x, top: y, right, bottom, ...style }}
       initial={{ opacity: 0, y: drop, scale: 0.92 }}

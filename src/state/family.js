@@ -1,6 +1,6 @@
 export const emptyProfile = { name: '', grade: '', board: '', face: null, outfit: 'explorer', interests: [], goals: [], firstVisit: true }
 export const emptyStats = { xp: 0, xpToday: 0, streak: 0, coins: 0, badges: 0, day: 1, battles: 0, reading: 0, bestStreak: 0, breakPasses: 5, breakPassUsedDates: [] }
-export const emptyProgress = { lessonStage: 1, quizzesDone: 0, mastery: 0, world: 'maths', worldDone: {}, journeySeen: {}, lastTest: null }
+export const emptyProgress = { lessonStage: 1, quizzesDone: 0, mastery: 0, world: 'maths', worldDone: {}, journeySeen: {}, journeyAdvanced: {}, lastTest: null }
 export const accountKey = value => value.trim().toLowerCase()
 
 export function hasFamily(state, email) {
@@ -77,8 +77,10 @@ export function remoteStudent(student, characters = []) {
     face: student.face ?? (face || null),
     outfit: student.outfit ?? 'explorer',
     avatar: student.avatar ?? null,
+    xp: student.total_xp ?? 0,
+    streak: student.day_streak ?? 0,
     onboardingCompleted: Boolean(student.onboarding_completed ?? student.onboarding_completed_at),
-    stats: { ...emptyStats }, progress: { ...emptyProgress },
+    stats: { ...emptyStats, xp: student.total_xp ?? 0, streak: student.day_streak ?? 0 }, progress: { ...emptyProgress },
   }
 }
 

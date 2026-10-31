@@ -14,7 +14,7 @@ import { gradeLabel, lessonProgress } from '../data/catalog.js'
 import { sfx } from '../lib/sound.js'
 import { MyCardSection } from '../components/StudentCard.jsx'
 import { onColor, useAccent } from '../lib/accent.js'
-import { api, apiRequest, API_MODE, getToken } from '../lib/api.js'
+import { api, API_MODE, getToken } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 
 /* Was four literals -- 42 days, 32 missions, 18 reading sessions, 6 battles -- identical
@@ -42,7 +42,7 @@ export const milestonesFor = st => {
 const MENU = [
   [Star, '#f59e0b', 'My Interests', 'Topics & themes you love', '/onboarding/interests'],
   [Map, '#3b82f6', 'My Journey', "See how far you've come", '/profile/journey'],
-  [Medal, '#f59e0b', 'Leaderboard', API_MODE==='mock'?'View demo rankings':'Live rankings are not available yet', API_MODE==='mock'?'/leaderboard':null],
+  [Medal, '#f59e0b', 'Leaderboard', 'View challenge rankings', '/challenge/leaderboard'],
   [Trophy, '#7c3aed', 'My Achievements', 'Badges & trophies', null],
   [Flame, '#f97316', 'My Streak', 'Keep the flame going', null],
   [Ticket, '#a855f7', 'Break Passes', 'Protect your learning streak', '/profile/break-passes'],
@@ -55,11 +55,11 @@ export default function Profile() {
   const studentId = g.state.activeChildId
   const resource = useLiveResource(
     async () => {
-      const [profile,journey,cards,companions,evidence]=await Promise.all([
+      const [profile,journey,cards,companions]=await Promise.all([
         api.studentProfile(studentId),api.studentJourneySummary(studentId),api.studentCards(studentId),
-        api.studentJourney(studentId,g.state.progress.world||'maths'),apiRequest('/parent/evidence'),
+        api.studentJourney(studentId,g.state.progress.world||'maths'),
       ])
-      return {profile,journey,cards:cards.cards,companions:companions.companion_activities||[],evidence:evidence.students.find(s=>s.student_id===studentId)?.evidence || []}
+      return {profile,journey,cards:cards.cards,companions:companions.companion_activities||[]}
     },
     [studentId,getToken()],
     { enabled: Boolean(studentId && getToken()) },
@@ -71,13 +71,13 @@ export default function Profile() {
   const board = liveProfile?.board ?? g.state.profile.board
   const streak = liveProfile?.day_streak ?? g.state.stats.streak
   const badges = g.state.stats.badges
-  const liveState = liveProfile ? { ...g.state, stats: { ...g.state.stats, xp: liveProfile.total_xp, streak: liveProfile.day_streak, reading:resource.data.companions.filter(a=>a.type==='reading' && a.completion).length,battles:resource.data.evidence.filter(a=>a.assessment_type==='battle').length }, progress:{...g.state.progress,quizzesDone:resource.data.evidence.filter(a=>a.assessment_type==='cfu').length} } : g.state
+  const liveState = liveProfile ? { ...g.state, stats: { ...g.state.stats, xp: liveProfile.total_xp, streak: liveProfile.day_streak, reading:resource.data.companions.filter(a=>a.type==='reading' && a.completion).length } } : g.state
   const milestoneRows=milestonesFor(liveState).map((row,i)=>i===0 && resource.data ? [...row.slice(0,4),resource.data.journey.milestones_completed>0] : row)
   const statRows=resource.data ? [
-    [CheckCircle2,'#f59e0b','Missions',resource.data.journey.milestones_completed,'completed'],
+    [CheckCircle2,'#f59e0b','Journey milestones',resource.data.journey.milestones_completed,'completed'],
     [Star,'#3b82f6','Saved XP',liveProfile.total_xp,'XP'],
     [BookOpen,'#a855f7','Reading',resource.data.companions.some(a=>a.type==='reading'&&'completion' in a)?liveState.stats.reading:'—','completion unavailable'],
-    [Swords,'#38bdf8','Bot Battles',liveState.stats.battles,'battles'],
+    [Swords,'#38bdf8','Bot Battles','—','count unavailable'],
   ] : statsFor(liveState)
   const ac = useAccent()
   const mileDone = milestoneRows.filter(m => m[4]).length
@@ -107,7 +107,7 @@ export default function Profile() {
       </Panel>
 
       <Panel className="absolute left-[815px] top-[95px] w-[775px] h-[225px] p-5" initial="hidden" animate="show">
-        <div className="grid grid-cols-4 divide-x divide-[var(--line)]">{statRows.map(([I, c0, t, v, u]) => { const c = ac(c0); return <div key={t} className="flex flex-col items-center text-center"><I size={34} style={{ color: c }} /><span className="mt-2 text-[16px] font-bold text-ink-2">{t}</span><span className="font-display font-extrabold text-[40px] leading-none" style={{ color: c }}><Counter to={v} delay={0.24} /></span><span className="text-[15px] font-bold text-ink-3">{u}</span></div> })}</div>
+        <div className="grid grid-cols-4 divide-x divide-[var(--line)]">{statRows.map(([I, c0, t, v, u]) => { const c = ac(c0); return <div key={t} className="flex flex-col items-center text-center"><I size={34} style={{ color: c }} /><span className="mt-2 text-[16px] font-bold text-ink-2">{t}</span><span className="font-display font-extrabold text-[40px] leading-none" style={{ color: c }}>{typeof v === 'number' && Number.isFinite(v) ? <Counter to={v} delay={0.24} /> : v ?? '—'}</span><span className="text-[15px] font-bold text-ink-3">{u}</span></div> })}</div>
         {/* Said "12 days" while the live streak sat two panels away saying 7. It is a readout,
             not a link, so it no longer offers a chevron and a hover it cannot honour. */}
         <div className="card mt-4 h-[48px] px-5 flex items-center gap-3 text-[16px] font-bold text-ink"><Flame size={20} className="text-orange-500" fill="currentColor" /> Best streak <span className="ml-auto font-extrabold">{Math.max(streak, g.state.stats.bestStreak ?? 0)} days</span></div>

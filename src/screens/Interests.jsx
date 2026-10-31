@@ -28,19 +28,19 @@ export default function Interests() {
     img: INTERESTS.find(local => local.id === item.key)?.img || item.thumbnail_url,
     apiId: item.id,
   }))), [])
-  const { data: interests, source, loading } = useApiCatalog(loadInterests, INTERESTS)
+  const { data: interests, source, loading, error } = useApiCatalog(loadInterests, INTERESTS)
   const toggle = id => { const on = sel.includes(id); sfx[on ? 'tap' : 'select'](); g.setProfile({ interests: on ? sel.filter(i => i !== id) : [...sel, id] }) }
-  const enough = sel.length >= 3
+  const enough = !loading && !error && sel.filter(id => interests.some(item => item.id === id)).length >= 3
   return (
     <Page>
       <Scene name="interests" />
       <Child screen="interests" delay={0.35} />
-      <TopBar back={false} center={<div className="flex items-center gap-5"><button className="pill w-[46px] h-[46px] justify-center text-ink" onClick={() => nav(-1)}><ChevronLeft size={24} strokeWidth={2.8} /></button><Segments total={8} current={2} /><img src="/art/planet-sm.webp" alt="" className="w-[50px] floaty" /></div>} />
+      <TopBar back={false} center={<div className="flex items-center gap-5"><button aria-label="Go back" className="pill w-[46px] h-[46px] justify-center text-ink" onClick={() => nav(-1)}><ChevronLeft size={24} strokeWidth={2.8} /></button><Segments total={8} current={2} /><img src="/art/planet-sm.webp" alt="" className="w-[50px] floaty" /></div>} />
       <Stack className="absolute left-[545px] top-[110px] w-[980px] text-center" start={0.2}>
         <Item><h1 className="font-display font-extrabold text-[66px] leading-tight text-ink">What makes you curious?</h1></Item>
         <Item className="mt-1 text-[22px] font-semibold text-ink-3">Choose <span className="text-primary-ink font-extrabold">three or more</span>. Nova will weave them into your missions.</Item>
       </Stack>
-      <div className="absolute right-[70px] top-[120px] rounded-full px-4 py-2 text-[13px] font-extrabold" style={{ background: source === 'api' ? (API_MODE === 'mock' ? 'rgba(59,130,246,.16)' : 'rgba(34,197,94,.16)') : 'rgba(245,158,11,.16)', color: source === 'api' ? (API_MODE === 'mock' ? '#1d4ed8' : '#15803d') : '#b45309' }}>{loading ? 'Loading catalog…' : source === 'api' ? `${API_MODE === 'mock' ? 'Mock' : 'Live'} API catalog · ${interests.length} items` : source === 'review' ? 'UI review · sample catalog' : 'Demo catalog fallback'}</div>
+      {error && <p role="alert" className="absolute left-[545px] top-[185px] text-red-500 font-bold">{error.message}</p>}
 
       <div className="absolute left-[255px] top-[135px]"><SpeechBubble tail="bottom" delay={0.3} className="w-[240px] text-[18px]"><span className="font-extrabold">Great choices!</span><br /><span className="font-semibold text-[16px]">I already have ideas. ✨</span></SpeechBubble></div>
 

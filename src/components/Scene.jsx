@@ -48,7 +48,7 @@ export function Cutout({ id, src, box, delay = 0.3, amp = 8, dur = 3.8, float = 
   const img = src ?? `/art/chars/${id}.webp`
   const d = lead(delay)
   return (
-    <motion.div className={className} style={{ position: 'absolute', left: x + dx, top: y + dy, width: w * scale, height: h * scale, ...style }}
+    <motion.div data-scene-character="" aria-hidden="true" className={className} style={{ position: 'absolute', left: x + dx, top: y + dy, width: w * scale, height: h * scale, ...style }}
       initial={{ opacity: 0, y: 28, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 24, delay: d }}>
       <div className="char-shadow" style={{ width: '70%' }} />
       <motion.img src={img} alt="" draggable={false} className="block w-full h-full object-contain" style={{ filter: 'drop-shadow(0 18px 24px rgba(40,20,120,.28))' }}

@@ -3,6 +3,7 @@ export function validMissionResult(result,studentId,missionId,subject,{allowLega
  if(result.studentId!==studentId&&!allowLegacy)return false;
  if(result.studentId&&result.studentId!==studentId)return false;
  if(result.subject&&result.subject!==subject)return false;
- if(missionId&&result.missionId!==missionId&&!allowLegacy)return false;
+ if(missionId&&result.missionId&&result.missionId!==missionId)return false;
+ if(missionId&&!result.missionId&&!allowLegacy)return false;
  return true;
 }

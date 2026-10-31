@@ -17,6 +17,8 @@ import { reviewHome } from '../lib/review-learning.js'
 import { ACTIVE_CONTENT_ID } from '../content/index.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 import { subjectKey } from '../lib/live-data.js'
+import { usePublishedSubjects } from '../lib/usePublishedSubjects.js'
+import { WORLDS as SUBJECT_ART } from '../data/catalog.js'
 import { cn } from '../lib/utils.js'
 import { useTint, useDark, useAccent } from '../lib/accent.js'
 
@@ -24,15 +26,14 @@ const STEPS = [
   { t: 'Meet Nova', s: 'Completed', k: 'done' }, { t: 'Discovery Mission', s: 'Current', k: 'current', n: 2 },
   { t: 'Unlock Your Universe', s: 'Locked', k: 'locked' }, { t: 'Your First Learning Path', s: 'Locked', k: 'locked' },
 ]
-const WORLDS = [
-  { t: 'Literacy Kingdom', s: 'Stories unlock new worlds!', img: '/art/world-literacy.webp', bg: 'linear-gradient(180deg, #f3e8ff, #e9d5ff)', c: '#a855f7' },
-  { t: 'Science Planet', s: 'Curiosity powers discovery!', img: '/art/world-evs.webp', bg: 'linear-gradient(180deg, #ecfeff, #cffafe)', c: '#14b8a6' },
-  { t: 'Explore My Goals', s: 'Dream it. Plan it. Achieve it!', img: '/art/world-general.webp', bg: 'linear-gradient(180deg, #fff7ed, #fed7aa)', c: '#f97316' },
-]
-
 export default function Welcome() {
   const nav = useNavigate()
   const g = useGame(); const { name, face } = g.state.profile
+  const subjects = usePublishedSubjects(g.state.activeChildId)
+  const worlds = (subjects.data || []).map(item => {
+    const id = subjectKey(item.slug || item.name)
+    return { ...SUBJECT_ART.find(world => world.id === id), id, t: item.name, s: item.description || 'Explore your available lessons.', c: '#7c3aed', bg: 'linear-gradient(180deg, #f3e8ff, #e9d5ff)' }
+  })
   const home = useLiveResource(() => api.studentHome(g.state.activeChildId), [g.state.activeChildId], { enabled: Boolean(g.state.activeChildId) && !isReviewMode() })
   const recommended = isReviewMode() ? reviewHome(g.state.profile,g.state.stats,ACTIVE_CONTENT_ID).recommended_mission : home.data?.recommended_mission
   const tint = useTint(); const dark = useDark(); const ac = useAccent()
@@ -41,8 +42,8 @@ export default function Welcome() {
       <Scene name="welcome" />
       <SideRail active="home" />
       <motion.div className="absolute top-[22px] flex items-center gap-3" style={bleedR(34)} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-        <IconPill><Search size={22} /></IconPill>
-        <IconPill className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill>
+        <IconPill disabled title="Search unavailable" aria-label="Search unavailable"><Search size={22} /></IconPill>
+        <IconPill disabled title="Notifications unavailable" aria-label="Notifications unavailable" className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill>
         <UserChip name={`Hi, ${name}!`} sub="Keep Exploring!" face={face} />
       </motion.div>
 
@@ -84,16 +85,16 @@ export default function Welcome() {
       </Stack>
 
       <Stack className="absolute left-[250px] top-[578px] flex items-end gap-4" start={0.9} delay={0.1}>
-        <Item v="pop">
-          <Card hover className="w-[430px] h-[160px] px-6 flex items-center gap-4 overflow-hidden relative" style={{ background: dark ? 'var(--tint-primary)' : 'linear-gradient(120deg, rgba(255,255,255,.95), #ede9fe)' }} onClick={() => nav('/learn')}>
+        {worlds.some(world => world.id === 'maths') && <Item v="pop">
+          <Card hover className="w-[430px] h-[160px] px-6 flex items-center gap-4 overflow-hidden relative" style={{ background: dark ? 'var(--tint-primary)' : 'linear-gradient(120deg, rgba(255,255,255,.95), #ede9fe)' }} onClick={() => nav('/learn/topics/maths')}>
             <div className="w-[190px]"><div className="font-display font-extrabold text-[24px] text-ink leading-tight">Maths Galaxy</div><div className="text-[16px] font-semibold text-ink-3">Numbers come to life!</div></div>
             <img src="/art/world-maths.webp" alt="" className="absolute right-[70px] top-[14px] w-[140px] floaty" />
             <span className="absolute right-5 bottom-5 w-[46px] h-[46px] rounded-full grid place-items-center text-white" style={{ background: 'var(--grad-primary)' }}><ChevronRight size={26} strokeWidth={3} /></span>
           </Card>
-        </Item>
-        {WORLDS.map(w => (
+        </Item>}
+        {worlds.filter(world => world.id !== 'maths').map(w => (
           <Item key={w.t} v="pop">
-            <Card hover className="w-[205px] h-[300px] p-5 overflow-hidden relative" style={{ background: tint(w.bg, w.c) }} onClick={() => nav('/learn')}>
+            <Card hover className="w-[205px] h-[300px] p-5 overflow-hidden relative" style={{ background: tint(w.bg, w.c) }} onClick={() => nav(`/learn/topics/${w.id}`)}>
               <div className="font-display font-extrabold text-[22px] text-ink leading-tight">{w.t}</div>
               <div className="text-[14px] font-semibold text-ink-3 mt-1">{w.s}</div>
               <img src={w.img} alt="" className="absolute left-1/2 -translate-x-1/2 bottom-[40px] w-[150px] floaty" />

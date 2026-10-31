@@ -1,3 +1,4 @@
+import { avatarPortrait } from '../lib/avatar-portrait.js'
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useBack, parentOf, NO_BACK } from '../lib/nav.js'
@@ -26,7 +27,7 @@ export function TopBar({ logo = 'plus', center, right, className, showControls =
   const onBack = () => { sfx.tap(); back === true || back == null ? goBack() : nav(back) }
   return (
     <motion.header className={cn('absolute flex items-center justify-between px-9 pt-7 z-20', className)} style={{ ...bleedX(0), ...safeT(0) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: EASE }}>
-      <div className="flex items-center gap-4">
+      <div className="kv-topbar__brand flex items-center gap-4">
         {showBack && (
           <motion.button type="button" className="pill h-[54px] pl-3 pr-5 gap-2 text-primary-ink"
             aria-label="Go back" whileHover={{ x: -3 }} onClick={onBack}>
@@ -36,8 +37,8 @@ export function TopBar({ logo = 'plus', center, right, className, showControls =
         )}
         <Logo variant={logo} />
       </div>
-      {center && <div className="absolute left-1/2 -translate-x-1/2 top-7">{center}</div>}
-      <div className="flex items-center gap-3">
+      {center && <div className="kv-topbar__center absolute left-1/2 -translate-x-1/2 top-7">{center}</div>}
+      <div className="kv-topbar__actions flex items-center gap-3">
         {right}
         {showControls && <Controls />}
       </div>
@@ -96,10 +97,9 @@ export function LangPill() {
 }
 
 export function UserChip({ name, sub, face = 1, className, extra }) {
-  const safeFace = [1, 4].includes(Number(face)) ? Number(face) : 1
   return (
     <div className={cn('pill h-[68px] pl-2 pr-5 gap-3', className)}>
-      <img src={`/art/kid${safeFace}-face-sm.webp`} alt="" className="w-[52px] h-[52px] rounded-full object-cover border-2 border-white shadow-md" />
+      <img src={avatarPortrait(face, true)} alt="" className="w-[52px] h-[52px] rounded-full object-cover border-2 border-white shadow-md" />
       <div className="leading-tight">
         <div className="font-display font-extrabold text-[19px] text-ink">{name}</div>
         {sub && <div className="text-[14px] font-bold text-ink-3">{sub}</div>}

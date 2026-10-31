@@ -1,3 +1,4 @@
+import { avatarPortrait } from '../lib/avatar-portrait.js'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
@@ -16,6 +17,10 @@ import { bleedR } from '../components/Stage.jsx'
 import { useAccent } from '../lib/accent.js'
 import { api, apiRequest, getToken, API_MODE } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
+import { loadParentEvidence } from '../lib/parent-evidence.js'
+import { loadLearningPath } from '../lib/gameApi.js'
+import { useCompanionCatalog } from '../lib/useCompanionActivity.js'
+import { usableCompanion } from '../lib/companion-catalog.js'
 
 const ACTIVITIES = [
   [BookOpen, '#3b82f6', 'Learning steps', 'Understand, see an example, then remember.', '/learn'],
@@ -27,17 +32,20 @@ export default function ParentOverview() {
   const nav = useNavigate()
   const g = useGame(); const { face, grade, board } = g.state.profile
   const studentId = g.state.activeChildId
+  const subject = g.state.progress.world || 'maths'
+  const companions = useCompanionCatalog(studentId, subject)
+  const activities = ACTIVITIES.filter(item => item[4] !== '/extra/reading' || companions.data?.some(activity => activity.type === 'reading' && usableCompanion(activity)))
   const resource=useLiveResource(async()=>{
-    const [overview,evidence,journey]=await Promise.all([api.parentOverview(),API_MODE === 'live' ? Promise.resolve(null) : apiRequest('/parent/evidence'),api.studentJourneySummary(studentId)])
-    return {overview,evidence:evidence ? evidence.students.find(s=>s.student_id===studentId)?.evidence || [] : null,journey}
-  },[studentId,getToken()],{enabled:Boolean(studentId && getToken())})
+    const [overview,summary]=await Promise.all([api.parentOverview(),loadParentEvidence({request:apiRequest,resolveTopic:loadLearningPath,studentId,subject}).then(data=>({data,error:''})).catch(error=>({data:null,error:error.message}))])
+    return {overview,summary:summary.data,summaryError:summary.error}
+  },[studentId,subject,getToken()],{enabled:Boolean(studentId && getToken())})
   const overview=resource.data?.overview
-  const liveStudent = overview?.students?.find(student => student.student_id === studentId) ?? overview?.students?.[0]
+  const liveStudent = overview?.students?.find(student => student.student_id === studentId)
   const name = liveStudent?.name ?? g.state.profile.name
-  const journeyStops = resource.data?.journey.milestones_completed ?? 0
+  const summary = resource.data?.summary
   const kpis = [
-    [BookOpen, '#3b82f6', 'Missions completed', String(journeyStops), 'Saved learning progress'],
-    [ClipboardCheck, '#7c3aed', 'Assessments', resource.data?.evidence == null ? '—' : String(resource.data.evidence.length), API_MODE === 'live' ? 'Assessment totals are not provided by this API' : 'Saved CFU, tests, challenges and battles'],
+    [BookOpen, '#3b82f6', 'Missions completed', summary ? `${summary.missions_completed} / ${summary.missions_total}` : '—', summary?.topic?.name || 'Current topic summary unavailable'],
+    [ClipboardCheck, '#7c3aed', 'Latest test', summary?.latest_test_score != null ? `${Number(summary.latest_test_score)}%` : '—', summary?.latest_test_score != null ? 'Latest saved score in this topic' : 'No saved score for this topic'],
     [Trophy, '#f59e0b', 'Total XP', Number(liveStudent?.total_xp ?? g.state.stats.xp ?? 0).toLocaleString(), 'Earned so far'],
     [MessageCircle, '#22c55e', 'Learning streak', `${liveStudent?.day_streak ?? g.state.stats.streak ?? 0} days`, 'Current streak'],
   ]
@@ -46,13 +54,14 @@ export default function ParentOverview() {
     <Page>
       <Scene name="parent" />
       {(resource.loading || resource.error) && <p role="status" className="absolute left-[460px] top-[155px] text-red-600">{resource.loading?'Loading parent overview…':resource.error}</p>}
+      {resource.data?.summaryError && <p role="alert" className="absolute left-[460px] top-[155px] text-red-600">Topic summary unavailable. Open Topic Evidence to retry.</p>}
       <ParentRail />
-      <motion.div className="absolute left-[250px] top-[25px] pill h-[76px] pl-2 pr-5 gap-3" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}><img src={`/art/kid${face}-face-sm.webp`} alt="" className="w-[56px] h-[56px] rounded-full object-cover border-2 border-white" /><span className="leading-tight"><span className="block font-display font-extrabold text-[20px] text-ink">{name}</span><span className="block text-[14px] font-bold text-ink-3">{gradeLabel(grade)} • {board}</span></span><ChevronDown size={20} className="text-ink-3 ml-3" /></motion.div>
+      <motion.div className="absolute left-[250px] top-[25px] pill h-[76px] pl-2 pr-5 gap-3" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}><img src={avatarPortrait(face, true)} alt="" className="w-[56px] h-[56px] rounded-full object-cover border-2 border-white" /><span className="leading-tight"><span className="block font-display font-extrabold text-[20px] text-ink">{name}</span><span className="block text-[14px] font-bold text-ink-3">{gradeLabel(grade)} • {board}</span></span><ChevronDown size={20} className="text-ink-3 ml-3" /></motion.div>
       <motion.div className="absolute top-[22px] flex items-center gap-3" style={bleedR(34)} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
         <UserChip name="Hi, Parent!" sub={`${name}'s learning hub`} face={face} />
       </motion.div>
 
-      <motion.img src={`/art/kid${face}-face.webp`} alt="" className="absolute left-[250px] top-[180px] w-[200px] h-[220px] object-cover rounded-full border-4 border-white shadow-xl" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.14, type: 'spring', stiffness: 200, damping: 16 }} />
+      <motion.img src={avatarPortrait(face)} alt="" className="absolute left-[250px] top-[180px] w-[200px] h-[220px] object-cover rounded-full border-4 border-white shadow-xl" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.14, type: 'spring', stiffness: 200, damping: 16 }} />
       <Stack className="absolute left-[460px] top-[190px] w-[340px]" start={0.3}>
         <Item><h1 className="font-display font-extrabold text-[62px] leading-[0.95] text-ink">{name}'s<br />learning <span className="text-gold text-[44px]">✦</span></h1></Item>
         <Item className="mt-3 text-[16px] font-semibold text-ink-2 leading-snug">See the activities {name} has completed and choose what to explore next. 💜</Item>
@@ -72,7 +81,7 @@ export default function ParentOverview() {
       <Panel className="absolute left-[1065px] top-[150px] w-[565px] h-[710px] p-6" initial="hidden" animate="show">
         <div className="flex items-center gap-2 font-display font-extrabold text-[20px] text-ink uppercase"><span className="text-primary-ink">✦</span> Activities available</div>
         <p className="mt-2 text-[15px] font-semibold text-ink-2">These are choices, not automated recommendations or scheduled tasks.</p>
-        <Stack className="mt-4 flex flex-col gap-3" start={0.8}>{ACTIVITIES.map(([I, c0, t, s, to]) => { const c = ac(c0); return <Item key={t} v="soft"><Card hover className="h-[90px] px-4 flex items-center gap-4" onClick={() => nav(to)}><span className="icon-orb w-[54px] h-[54px]" style={{ color: c, background: `${c}1f` }}><I size={28} /></span><span className="flex-1 leading-tight"><span className="block font-display font-extrabold text-[19px] text-ink">{t}</span><span className="block text-[15px] font-semibold text-ink-2">{s}</span></span></Card></Item> })}</Stack>
+        <Stack className="mt-4 flex flex-col gap-3" start={0.8}>{activities.map(([I, c0, t, s, to]) => { const c = ac(c0); return <Item key={t} v="soft"><Card hover className="h-[90px] px-4 flex items-center gap-4" onClick={() => nav(to)}><span className="icon-orb w-[54px] h-[54px]" style={{ color: c, background: `${c}1f` }}><I size={28} /></span><span className="flex-1 leading-tight"><span className="block font-display font-extrabold text-[19px] text-ink">{t}</span><span className="block text-[15px] font-semibold text-ink-2">{s}</span></span></Card></Item> })}</Stack>
         <div className="mt-8 flex flex-col gap-3"><Button size="md" arrow className="w-full h-[64px] uppercase text-[22px]" sound="whoosh" onClick={() => nav('/parent/plan')}>See suggested steps</Button><Button variant="ghost" size="md" icon={<BarChart3 size={22} />} className="w-full h-[58px] uppercase text-[18px]" onClick={() => nav('/parent/evidence')}>View recorded activity</Button></div>
       </Panel>
     </Page>

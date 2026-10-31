@@ -1,11 +1,18 @@
 import { subjectKey } from './live-data.js'
 import {questionMedia} from './question-media.js'
 import {topicChallenges} from './challenge-selection.js'
+import { createTestAnswerBuffer } from './test-answer-buffer.js'
 
-export function createGameClient({ request, getToken, storage, mode = "mock" }) {
+export function createGameClient({ request, getToken, storage, mode = "mock", getLearningPath }) {
 
 
   const liveTransport = mode === 'live'
+  const answerBuffer = createTestAnswerBuffer({ storage, getToken, request })
+  const preparedQuestions = new Map()
+  const readyQuestions = new Map()
+  const finishingTests = new Map()
+  const testPreviews = new Map()
+  const previewKey = (studentId, subject, mode, missionId, testId) => JSON.stringify([getToken(), studentId, subject, mode, missionId || '', testId || ''])
   const mediaBanks = new Map()
   const paths = new Map()
   const missions = new Map()
@@ -38,13 +45,25 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
     if (!studentId) throw new Error('Create or select a child first.')
     const key = `${resourceKey(studentId, subject)}:${requestedTopicId || ''}`
     if (!paths.has(key)) paths.set(key, (async () => {
-      const { subjects } = await request(`/students/${studentId}/subjects`)
+      const [{ subjects }, learningPath] = await Promise.all([
+        request(`/students/${studentId}/subjects`),
+        liveTransport && getLearningPath ? getLearningPath(studentId) : null,
+      ])
+      if (learningPath && learningPath.student_id !== studentId) throw new Error('The learning path does not match this child.')
       const selected = subjects.find(s => subjectKey(s.slug || s.name) === subjectKey(subject))
       if (!selected) throw new Error(`No API subject available for ${subject}.`)
-      const { topics } = await request(`/subjects/${selected.id || selected.subject_id}/topics`)
+      const curriculumTopics = learningPath?.subjects?.find(item => item.id === (selected.id || selected.subject_id))?.topics
+      if (learningPath && !Array.isArray(curriculumTopics)) throw new Error('This subject has no API topics.')
+      // The child path already supplies the curriculum-filtered topic catalog.
+      // Keep its topic status as presentation metadata; the child detail and
+      // mission nodes below still validate availability, as before.
+      const topics = learningPath
+        ? curriculumTopics.map(({ status, ...topic }) => ({ ...topic, student_status: status }))
+        : (await request(`/subjects/${selected.id || selected.subject_id}/topics`)).topics
+      const offeredTopics = topics
       const candidates = requestedTopicId
-        ? topics.filter(t=>t.id===requestedTopicId && t.status!=='locked')
-        : [...topics.filter(t=>t.student_status==='current' && t.status!=='locked'), ...topics.filter(t=>t.student_status!=='current' && t.status!=='locked')]
+        ? offeredTopics.filter(t=>t.id===requestedTopicId && t.status!=='locked')
+        : [...offeredTopics.filter(t=>t.student_status==='current' && t.status!=='locked'), ...offeredTopics.filter(t=>t.student_status!=='current' && t.status!=='locked')]
       if (!candidates.length) throw new Error('This subject has no API topics.')
       // The public catalog includes other grades; student detail verifies access.
       for (const topic of candidates) {
@@ -147,7 +166,8 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
     return request(`${prefix}/${id}/result`)
   }
   async function startTest(studentId, subject, mode = 'test', missionId, testId) {
-    const detail = await getTestOverview(studentId, subject, mode,missionId,testId)
+    const preview = testPreviews.get(previewKey(studentId, subject, mode, missionId, testId))
+    const detail = preview && Date.now() - preview.at < 60000 ? preview.detail : await getTestOverview(studentId, subject, mode,missionId,testId)
     const total = Number(detail.questions_count ?? detail.question_count)
     const attempt = await request(`/students/${studentId}/tests/${detail.id}/attempts`, { method: 'POST', body: {} })
     if (!attempt.attempt_id) throw new Error('The test could not be started. Please try again.')
@@ -156,7 +176,10 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
     return saved
   }
   async function getTestOverview(studentId, subject, mode = 'test',missionId,testId) {
-    const context = missionId?await resolveLearning(studentId,subject,missionId):await resolveTopic(studentId, subject)
+    const [context, profile] = await Promise.all([
+      missionId ? resolveLearning(studentId,subject,missionId) : resolveTopic(studentId, subject),
+      liveTransport ? request(`/students/${studentId}/profile`).catch(()=>null) : null,
+    ])
     const {topicId}=context
     const { tests } = await request(`/topics/${topicId}/tests`)
     if (!tests.length) throw new Error('No test is available for this topic.')
@@ -169,16 +192,17 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
     const detail = await request(`/tests/${selected.id}`)
     const total = Number(detail.questions_count ?? detail.question_count)
     if (!Number.isInteger(total) || total < 1) throw new Error('This test has no available questions yet.')
-    const profile=liveTransport?await request(`/students/${studentId}/profile`).catch(()=>null):null
-    return {...detail,contentContext:{topic:context.detail.name,grade:profile?.grade??context.detail.grade_level,board:profile?.board}}
+    const result = {...detail,contentContext:{topic:context.detail.name,grade:profile?.grade??context.detail.grade_level,board:profile?.board}}
+    testPreviews.set(previewKey(studentId, subject, mode, missionId, testId), { detail: result, at: Date.now() })
+    // Load existing illustration metadata while the child reads the intro.
+    // This does not delay the preview or create an attempt.
+    if (liveTransport) void loadTestMedia(result)
+    return result
   }
-  async function getTestQuestion(studentId, subject, order, mode = 'test') {
-    const attempt = getTestAttempt(studentId, subject, mode)
-    const question=await deliverQuestion(`/tests/attempts/${attempt.attempt_id}/questions/${order}`,attempt.attempt_id,order)
-    if(!liveTransport||question.image_url||!attempt.test.contentContext)return question
-    const context=attempt.test.contentContext
-    if(!context.grade||!context.board)return question
-    const key=`${getToken()}:${attempt.test.id}`
+  function loadTestMedia(test) {
+    const context = test.contentContext
+    if (!context?.grade || !context.board) return Promise.resolve([])
+    const key=`${getToken()}:${test.id}`
     if(!mediaBanks.has(key))mediaBanks.set(key,(async()=>{
       const {packages=[]}=await request('/admin/content/packages')
       const grade=v=>String(v??'').replace(/^Grade\s*/i,'').trim()
@@ -186,13 +210,47 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
       const data=await Promise.all(candidates.map(p=>request(`/admin/content/packages/${p.id}`)))
       return data.flatMap(p=>p.test_questions?.questions||[])
     })().catch(()=>{mediaBanks.delete(key);return []}))
-    return questionMedia(question,await mediaBanks.get(key))
+    return mediaBanks.get(key)
+  }
+  async function getTestQuestion(studentId, subject, order, mode = 'test') {
+    const attempt = getTestAttempt(studentId, subject, mode)
+    const question=await deliverQuestion(`/tests/attempts/${attempt.attempt_id}/questions/${order}`,attempt.attempt_id,order)
+    if(!liveTransport||question.image_url||!attempt.test.contentContext)return question
+    return questionMedia(question,await loadTestMedia(attempt.test))
   }
   async function submitAnswer(studentId, subject, order, selected, displayedQuestion, mode = 'test') {
     const attempt = getTestAttempt(studentId, subject, mode)
     const q = deliveredQuestions.get(deliveryKey(attempt.attempt_id, order)) || await getTestQuestion(studentId, subject, order, mode)
     if (displayedQuestion && q.question_text !== displayedQuestion) throw new Error('API question and displayed content differ. Answer was not submitted; content mapping needs review.')
     return request(`/tests/attempts/${attempt.attempt_id}/answers`, { method: 'POST', body: { question_id: q.id, selected_answer: selected } })
+  }
+  function prepareTestQuestion(studentId, subject, order, mode = 'test') {
+    const attempt = getTestAttempt(studentId, subject, mode)
+    const key = deliveryKey(attempt.attempt_id, order)
+    if (!preparedQuestions.has(key)) preparedQuestions.set(key,
+      getTestQuestion(studentId, subject, order, mode).then(question => { readyQuestions.set(key, question); return question }).catch(error => { preparedQuestions.delete(key); throw error }))
+    return preparedQuestions.get(key)
+  }
+  function peekTestQuestion(studentId, subject, order, mode = 'test') {
+    const attempt = getTestAttempt(studentId, subject, mode)
+    return readyQuestions.get(deliveryKey(attempt.attempt_id, order)) || null
+  }
+  function queueTestAnswer(studentId, subject, order, selected, displayedQuestion, mode = 'test') {
+    const attempt = getTestAttempt(studentId, subject, mode)
+    const question = deliveredQuestions.get(deliveryKey(attempt.attempt_id, order))
+    if (!question || question.question_text !== displayedQuestion) throw new Error('The displayed question could not be verified. Please reload before continuing.')
+    answerBuffer.put(attempt, order, question, selected)
+  }
+  function finishBufferedTest(studentId, subject, mode = 'test') {
+    const attempt = getTestAttempt(studentId, subject, mode)
+    const token = getToken()
+    const key = deliveryKey(attempt.attempt_id, 'finish')
+    if (!finishingTests.has(key)) finishingTests.set(key, (async () => {
+      const answerResults = await answerBuffer.flush(attempt)
+      if (getToken() !== token || getTestAttempt(studentId, subject, mode).attempt_id !== attempt.attempt_id) throw new Error('The active test changed. Please reopen your test.')
+      return { ...await completeTest(studentId, subject, mode), answerResults }
+    })().finally(() => finishingTests.delete(key)))
+    return finishingTests.get(key)
   }
   async function completeTest(studentId, subject, mode = 'test') {
     const attempt = getTestAttempt(studentId, subject, mode)
@@ -217,8 +275,9 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
     return subjectKey(matched[0].subject.slug||matched[0].subject.name)
   }
   async function listTopicChallenges(studentId,subject='maths') {
-    const path=await resolveTopic(studentId,subject)
-    const {challenges=[]}=await request('/challenges')
+    const [path, {challenges=[]}] = await Promise.all([
+      resolveTopic(studentId,subject), request('/challenges'),
+    ])
     return {...path,challenges:topicChallenges(challenges,path.topicId,path.detail.name)}
   }
   async function battlePreview(botIndex = 0, subject = 'maths', missionId, challengeId, studentId, opponentId) {
@@ -266,7 +325,7 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
   }
   async function completeBattle(studentId, score) {
     const id = getBattleAttempt(studentId).battle_id
-    if (mode === 'live' && (!Number.isFinite(score) || score < 0 || score > 100)) throw new Error('The documented live battle completion requires a valid score (0–100). No completion was submitted.')
+    if (mode === 'live' && (!Number.isFinite(score) || score < 0 || score > 100)) throw new Error('The documented live battle completion requires a valid score (0â€“100). No completion was submitted.')
     await request(`/challenge-battles/${id}/complete`, { method: 'POST', body: { score } })
     return { ...await request(`/challenge-battles/${id}/result`), battleId: id }
   }
@@ -280,5 +339,5 @@ export function createGameClient({ request, getToken, storage, mode = "mock" }) 
     return request(`/students/${studentId}/companion-activities/${activity.id}/complete`, { method: 'POST', body: {} })
   }
 
-  return { resolveLearning, loadLearningPath, listTopicTests, listTopicChallenges, resolveMissionSubject, loadMission, startMission, completeMission, startLearningAttempt, getLearningQuestion, submitLearningAnswer, completeLearningAttempt, getAttemptReview, getAttemptResult, startTest, getTestOverview, getTestAttempt, getTestQuestion, submitAnswer, completeTest, battlePreview, startBattle, getBattleAttempt, getBattleQuestion, submitBattleAnswer, completeBattle, completeCompanionActivity }
+  return { peekTestQuestion, prepareTestQuestion, queueTestAnswer, finishBufferedTest, resolveLearning, loadLearningPath, listTopicTests, listTopicChallenges, resolveMissionSubject, loadMission, startMission, completeMission, startLearningAttempt, getLearningQuestion, submitLearningAnswer, completeLearningAttempt, getAttemptReview, getAttemptResult, startTest, getTestOverview, getTestAttempt, getTestQuestion, submitAnswer, completeTest, battlePreview, startBattle, getBattleAttempt, getBattleQuestion, submitBattleAnswer, completeBattle, completeCompanionActivity }
 }

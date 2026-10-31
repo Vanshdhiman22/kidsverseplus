@@ -3,13 +3,14 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   Home as HomeIcon, BookOpen, Compass, Star, User, Users, Settings, ArrowRight, ChevronRight,
-  Swords, ClipboardCheck, Trophy,
+  Swords, ClipboardCheck, Trophy, Map,
 } from 'lucide-react'
 import { openSettings } from './SettingsSheet.jsx'
 import ParentGate from './ParentGate.jsx'
 import { lead } from '../lib/motion.js'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
+import useDialogFocus from '../lib/useDialogFocus.js'
 
 /* One nav list for the whole app. Home drew this inline and every other screen either
    carried a different six-item rail or nothing at all, so the same product had two
@@ -17,7 +18,8 @@ import { cn } from '../lib/utils.js'
 export const NAV_ITEMS = [
   { label: 'Home', icon: HomeIcon, to: '/home', match: ['/home'] },
   { label: 'Learn', icon: BookOpen, to: '/learn', match: ['/learn', '/missions'] },
-  { label: 'Explore', icon: Compass, to: '/journey', match: ['/journey', '/extra'] },
+  { label: 'Journey', icon: Map, to: '/journey', match: ['/journey'] },
+  { label: 'Explore', icon: Compass, to: '/extra', match: ['/extra'] },
   { label: 'Achievements', icon: Star, to: '/profile', match: ['/profile'] },
   { label: 'My Space', icon: User, to: '/switch', match: ['/switch'] },
   { label: 'Battle Arena', icon: Swords, to: '/challenge/opponents', match: ['/challenge/opponents', '/challenge/preview', '/challenge/battle', '/challenge/result'] },
@@ -67,6 +69,7 @@ function Panel({ pinned, onNavigate, onGate }) {
             <motion.button key={it.label}
               className={cn('relative h-[46px] rounded-[15px] flex items-center gap-3 px-4 font-display font-bold text-[16px] transition-colors',
                 on ? 'text-white' : 'text-indigo-200/85 hover:text-white')}
+              aria-current={on ? 'page' : undefined}
               onClick={() => {
                 sfx.tap()
                 if (it.gated) onGate()
@@ -108,6 +111,7 @@ export default function NavDrawer({ pinned = false }) {
   const nav = useNavigate()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
+  const dialog = useDialogFocus(open, () => setOpen(false))
   const [gate, setGate] = useState(false)
 
   /* A route change means the drawer did its job; leaving it open would cover the screen
@@ -117,16 +121,10 @@ export default function NavDrawer({ pinned = false }) {
     document.documentElement.dataset.navDrawer = open ? 'open' : 'closed'
     return () => { document.documentElement.dataset.navDrawer = 'closed' }
   }, [open])
-  useEffect(() => {
-    if (!open) return
-    const esc = e => { if (e.key === 'Escape') setOpen(false) }
-    window.addEventListener('keydown', esc)
-    return () => window.removeEventListener('keydown', esc)
-  }, [open])
 
   if (pinned) {
     return (
-      <motion.aside className="absolute top-0 bottom-0 z-20"
+      <motion.aside className="kv-nav-pinned absolute top-0 bottom-0 z-20"
         style={{ left: 'calc(0px - var(--bleed, 0px))', width: 205 }}
         initial={{ x: -60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 220, damping: 26 }}>
         <Panel pinned onGate={() => setGate(true)} />
@@ -158,13 +156,13 @@ export default function NavDrawer({ pinned = false }) {
             {/* Nothing visual. The screen behind stays exactly as it was -- no wash, no
                 blur -- because the drawer sliding over it is already the whole signal that
                 a menu opened. This layer exists only so a tap anywhere outside closes it. */}
-            <div className="absolute inset-0 z-40" onClick={() => setOpen(false)} />
+            <div className="kv-nav-backdrop absolute inset-0 z-40" onClick={() => setOpen(false)} />
             {/* Keep edge positioning off the animated node. On ultrawide screens
                 Motion owns `transform`; a static wrapper preserves the negative
                 bleed offset while the inner panel slides independently. */}
-            <div className="absolute top-0 bottom-0 z-40"
+            <div className="kv-nav-drawer absolute top-0 bottom-0 z-40"
               style={{ left: 'calc(0px - var(--bleed, 0px))', width: 235 }}>
-              <motion.aside className="h-full w-full overflow-hidden rounded-r-[24px]"
+              <motion.aside ref={dialog} role="dialog" aria-modal="true" aria-label="Navigation menu" className="h-full w-full overflow-hidden rounded-r-[24px]"
                 initial={{ x: -245 }} animate={{ x: 0 }} exit={{ x: -245 }}
                 transition={{ type: 'spring', stiffness: 320, damping: 32 }}>
                 <Panel onNavigate={() => setOpen(false)} onGate={() => setGate(true)} />

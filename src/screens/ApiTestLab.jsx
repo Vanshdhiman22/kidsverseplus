@@ -12,6 +12,8 @@ const checks = [
   { label: 'Interests catalog', path: '/interests' },
   { label: 'Goals catalog', path: '/goals' },
   { label: 'Avatar characters', path: '/avatar/characters' },
+  { label: 'Avatar items', path: '/avatar/items' },
+  { label: 'Curriculum tree', path: '/curriculum/tree' },
   { label: 'Challenges catalog', path: '/challenges' },
 ]
 

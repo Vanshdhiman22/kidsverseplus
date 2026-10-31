@@ -1,3 +1,5 @@
+import { practiceReviewItem } from '../lib/practice-review-item.js'
+import { avatarPortrait } from '../lib/avatar-portrait.js'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
@@ -56,8 +58,9 @@ export default function Battle() {
   try { bot.name = JSON.parse(sessionStorage.getItem(`kv:api-opponent:${g.state.activeChildId}`))?.name || bot.name } catch {}
   /* The left fighter is whoever is signed in. girl_02 has a bespoke waist-up battle pose;
      every other face still uses its square head crop. */
-  const portrait = charByFace(face).id === 'girl_02' ? '/art/chars/pose/P12/girl_02.webp' : `/art/kid${face}-face.webp`
+  const portrait = charByFace(face).id === 'girl_02' ? '/art/chars/pose/P12/girl_02.webp' : avatarPortrait(face)
   const [round, setRound] = useState(0)
+  const [practiceReview, setPracticeReview] = useState([])
   /* Was [3, 3]: the scoreboard opened at three-all before a question had been asked,
      and that seed rode all the way to the result screen, so four wrong answers still
      reported three points scored. */
@@ -113,13 +116,16 @@ export default function Battle() {
   const submit = async () => {
     if (pick == null && !done) return
     if (done) {
+      const completedReview = cmsBattle ? [...practiceReview, practiceReviewItem(q, pick, answerCorrect)] : []
       if (round + 1 >= total) {
-        const result = cmsBattle
-          ? { battleId: `cms-${Date.now()}`, result: score[0] > score[1] ? 'win' : score[0] === score[1] ? 'draw' : 'loss', xp_awarded: 0, local: true }
+        const completed = cmsBattle
+          ? { battleId: `cms-${Date.now()}`, result: score[0] > score[1] ? 'win' : score[0] === score[1] ? 'draw' : 'loss', xp_awarded: 0, local: true, review: completedReview, studentId: g.state.activeChildId }
           : await completeBattle(g.state.activeChildId, score[0] / total * 100)
+        const result = { ...completed, studentId: g.state.activeChildId, correctCount: score[0], missedCount: score[1], seconds: elapsed }
         sessionStorage.setItem('kv:last-battle-result', JSON.stringify(result))
         sfx.whoosh(); nav(withSubject(`/challenge/result?bot=${bot.id}&me=${score[0]}&bot_s=${score[1]}&t=${elapsed}`)); return
       }
+      if (cmsBattle) setPracticeReview(completedReview)
       setRound(round + 1); setPick(null); setDone(false); setAnswerCorrect(false); setSecs(22); return
     }
     setAnswerPending(true)

@@ -1,0 +1,366 @@
+{
+  "repository": "https://github.com/sukhjeevan287/kidsverse-api",
+  "commit": "fb3a3c8402a45e8464ca886807bbc31801117a8d",
+  "operations": [
+    {
+      "name": "postParentSignup",
+      "method": "POST",
+      "path": "/auth/parent/signup"
+    },
+    {
+      "name": "postParentLogin",
+      "method": "POST",
+      "path": "/auth/parent/login"
+    },
+    {
+      "name": "postParentForgotPassword",
+      "method": "POST",
+      "path": "/auth/parent/forgot-password"
+    },
+    {
+      "name": "postParentLogout",
+      "method": "POST",
+      "path": "/auth/parent/logout"
+    },
+    {
+      "name": "getParentMe",
+      "method": "GET",
+      "path": "/parent/me"
+    },
+    {
+      "name": "getParentStudents",
+      "method": "GET",
+      "path": "/parent/students"
+    },
+    {
+      "name": "getParentOverview",
+      "method": "GET",
+      "path": "/parent/overview"
+    },
+    {
+      "name": "postParentVerificationStart",
+      "method": "POST",
+      "path": "/parent/verification/start"
+    },
+    {
+      "name": "postParentVerificationVerify",
+      "method": "POST",
+      "path": "/parent/verification/verify"
+    },
+    {
+      "name": "postParentPinVerify",
+      "method": "POST",
+      "path": "/parent/pin/verify"
+    },
+    {
+      "name": "getParentEvidence",
+      "method": "GET",
+      "path": "/parent/evidence"
+    },
+    {
+      "name": "getParentWeeklyPlan",
+      "method": "GET",
+      "path": "/parent/plan"
+    },
+    {
+      "name": "postCreateStudent",
+      "method": "POST",
+      "path": "/students"
+    },
+    {
+      "name": "patchUpdateGradeBoard",
+      "method": "PATCH",
+      "path": "/students/{studentId}/grade-board"
+    },
+    {
+      "name": "getStudentLearningPath",
+      "method": "GET",
+      "path": "/students/{studentId}/learning-path"
+    },
+    {
+      "name": "getStudentSettings",
+      "method": "GET",
+      "path": "/students/{studentId}/settings"
+    },
+    {
+      "name": "patchStudentSettings",
+      "method": "PATCH",
+      "path": "/students/{studentId}/settings"
+    },
+    {
+      "name": "getStudentNovaMessages",
+      "method": "GET",
+      "path": "/students/{studentId}/nova/messages"
+    },
+    {
+      "name": "postStudentNovaMessages",
+      "method": "POST",
+      "path": "/students/{studentId}/nova/messages"
+    },
+    {
+      "name": "getAvatarCharacters",
+      "method": "GET",
+      "path": "/avatar/characters"
+    },
+    {
+      "name": "getAvatarItems",
+      "method": "GET",
+      "path": "/avatar/items"
+    },
+    {
+      "name": "putSaveStudentAvatar",
+      "method": "PUT",
+      "path": "/students/{studentId}/avatar"
+    },
+    {
+      "name": "getInterestsCatalog",
+      "method": "GET",
+      "path": "/interests"
+    },
+    {
+      "name": "putStudentInterests",
+      "method": "PUT",
+      "path": "/students/{studentId}/interests"
+    },
+    {
+      "name": "getGoalsCatalog",
+      "method": "GET",
+      "path": "/goals"
+    },
+    {
+      "name": "putStudentGoals",
+      "method": "PUT",
+      "path": "/students/{studentId}/goals"
+    },
+    {
+      "name": "postCompleteOnboardingStep",
+      "method": "POST",
+      "path": "/students/{studentId}/onboarding/steps/{stepKey}/complete"
+    },
+    {
+      "name": "getOnboardingStatus",
+      "method": "GET",
+      "path": "/students/{studentId}/onboarding/status"
+    },
+    {
+      "name": "postNovaGreet",
+      "method": "POST",
+      "path": "/students/{studentId}/nova/greet"
+    },
+    {
+      "name": "getStudentHome",
+      "method": "GET",
+      "path": "/students/{studentId}/home"
+    },
+    {
+      "name": "getStudentSubjects",
+      "method": "GET",
+      "path": "/students/{studentId}/subjects"
+    },
+    {
+      "name": "getSubjectTopics",
+      "method": "GET",
+      "path": "/subjects/{subjectId}/topics"
+    },
+    {
+      "name": "getStudentTopicDetail",
+      "method": "GET",
+      "path": "/students/{studentId}/topics/{topicId}"
+    },
+    {
+      "name": "getMissionDetail",
+      "method": "GET",
+      "path": "/missions/{missionId}"
+    },
+    {
+      "name": "postStartMission",
+      "method": "POST",
+      "path": "/students/{studentId}/missions/{missionId}/start"
+    },
+    {
+      "name": "postCompleteMission",
+      "method": "POST",
+      "path": "/students/{studentId}/missions/{missionId}/complete"
+    },
+    {
+      "name": "getStudentMissionReview",
+      "method": "GET",
+      "path": "/students/{studentId}/missions/{missionId}/review"
+    },
+    {
+      "name": "getLearningPackageDetail",
+      "method": "GET",
+      "path": "/learning-packages/{packageId}"
+    },
+    {
+      "name": "getStudentJourney",
+      "method": "GET",
+      "path": "/students/{studentId}/journey"
+    },
+    {
+      "name": "postCompleteCompanionActivity",
+      "method": "POST",
+      "path": "/students/{studentId}/companion-activities/{activityId}/complete"
+    },
+    {
+      "name": "getTopicTests",
+      "method": "GET",
+      "path": "/topics/{topicId}/tests"
+    },
+    {
+      "name": "getTestDetail",
+      "method": "GET",
+      "path": "/tests/{testId}"
+    },
+    {
+      "name": "postStartTestAttempt",
+      "method": "POST",
+      "path": "/students/{studentId}/tests/{testId}/attempts"
+    },
+    {
+      "name": "getGetTestQuestion",
+      "method": "GET",
+      "path": "/tests/attempts/{attemptId}/questions/{order}"
+    },
+    {
+      "name": "postSubmitTestAnswer",
+      "method": "POST",
+      "path": "/tests/attempts/{attemptId}/answers"
+    },
+    {
+      "name": "postCompleteTestAttempt",
+      "method": "POST",
+      "path": "/tests/attempts/{attemptId}/complete"
+    },
+    {
+      "name": "getGetTestResult",
+      "method": "GET",
+      "path": "/tests/attempts/{attemptId}/result"
+    },
+    {
+      "name": "getTestAttemptReview",
+      "method": "GET",
+      "path": "/tests/attempts/{attemptId}/review"
+    },
+    {
+      "name": "getStudentExtraLearning",
+      "method": "GET",
+      "path": "/students/{studentId}/extra-learning"
+    },
+    {
+      "name": "getListChallenges",
+      "method": "GET",
+      "path": "/challenges"
+    },
+    {
+      "name": "getChallengeOpponents",
+      "method": "GET",
+      "path": "/challenges/{challengeId}/opponents"
+    },
+    {
+      "name": "getPreviewChallenge",
+      "method": "GET",
+      "path": "/challenges/{challengeId}/preview"
+    },
+    {
+      "name": "postStartChallengeBattle",
+      "method": "POST",
+      "path": "/students/{studentId}/challenge-battles"
+    },
+    {
+      "name": "postCompleteChallengeBattle",
+      "method": "POST",
+      "path": "/challenge-battles/{battleId}/complete"
+    },
+    {
+      "name": "getChallengeBattleResult",
+      "method": "GET",
+      "path": "/challenge-battles/{battleId}/result"
+    },
+    {
+      "name": "getChallengeLeaderboard",
+      "method": "GET",
+      "path": "/challenges/{challengeId}/leaderboard"
+    },
+    {
+      "name": "getStudentProfile",
+      "method": "GET",
+      "path": "/students/{studentId}/profile"
+    },
+    {
+      "name": "getStudentOurJourney",
+      "method": "GET",
+      "path": "/students/{studentId}/profile/our-journey"
+    },
+    {
+      "name": "getStudentCards",
+      "method": "GET",
+      "path": "/students/{studentId}/profile/cards"
+    },
+    {
+      "name": "getStudentBreakPass",
+      "method": "GET",
+      "path": "/students/{studentId}/break-passes"
+    },
+    {
+      "name": "postStudentBreakPass",
+      "method": "POST",
+      "path": "/students/{studentId}/break-passes"
+    },
+    {
+      "name": "postAdminContentFeed",
+      "method": "POST",
+      "path": "/admin/content/feed"
+    },
+    {
+      "name": "getAdminContentPackageList",
+      "method": "GET",
+      "path": "/admin/content/packages"
+    },
+    {
+      "name": "getAdminContentPackageDetail",
+      "method": "GET",
+      "path": "/admin/content/packages/{packageId}"
+    },
+    {
+      "name": "getCurriculumTree",
+      "method": "GET",
+      "path": "/curriculum/tree"
+    },
+    {
+      "name": "getCurriculumList",
+      "method": "GET",
+      "path": "/curriculums"
+    },
+    {
+      "name": "postCurriculumList",
+      "method": "POST",
+      "path": "/curriculums"
+    },
+    {
+      "name": "getCurriculumDetail",
+      "method": "GET",
+      "path": "/curriculums/{curriculumId}"
+    },
+    {
+      "name": "postCurriculumSubjectCreate",
+      "method": "POST",
+      "path": "/curriculums/{curriculumId}/subjects"
+    },
+    {
+      "name": "postTopicConceptCreate",
+      "method": "POST",
+      "path": "/topics/{topicId}/concepts"
+    },
+    {
+      "name": "getThemeList",
+      "method": "GET",
+      "path": "/themes"
+    },
+    {
+      "name": "postThemeList",
+      "method": "POST",
+      "path": "/themes"
+    }
+  ]
+}

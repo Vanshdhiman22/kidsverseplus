@@ -12,6 +12,7 @@ export function reviewAnswer(question, selectedKey) {
   const selected = question.options.find(option => option.key === selectedKey)
   const answer = question.options.find(option => option.key === question.answer)
   return {
+    questionId: question.question_id,
     question: question.instruction,
     selectedLabel: selected?.label ?? 'No answer',
     answerLabel: answer?.label ?? '—',

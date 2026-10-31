@@ -41,7 +41,7 @@ export default function TestArena() {
   const openTest = () => nav(`/tests/mixed/intro?subject=${encodeURIComponent(subject)}${liveTest?`&test=${encodeURIComponent(liveTest.id)}`:''}`)
 
   return (
-    <Page className="test-arena">
+    <Page className="responsive-page test-arena">
       <Scene name="arena" />
       <div className="test-arena__wash" aria-hidden="true" />
       <TopBar back="/home" backLabel="Home" right={<UserChip name={name} face={face} />} showControls={false} />

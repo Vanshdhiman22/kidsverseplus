@@ -18,7 +18,7 @@ import { getContent, DEFAULT_CONTENT_ID } from './bundled.js'
 export { getContent } from './bundled.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { loadMission } from '../lib/gameApi.js'
-import { getToken, apiRequest } from '../lib/api.js'
+import { API_MODE, getToken, apiRequest } from '../lib/api.js'
 import { normalizeMissionContent } from './mission.js'
 import { isReviewMode } from '../lib/reviewMode.js'
 import { contentSource } from './source-policy.js'
@@ -38,9 +38,9 @@ export function setPreviewStepImage(stepKey, file) {
 }
 
 /** The package for a learning step. Bundled at once, remote when it lands. */
-export function useContent(id) {
+export function useContent(id, { loadLesson = true } = {}) {
   const g = useGame()
-  const preview = new URLSearchParams(window.location.search).has('contentPreview') || sessionStorage.getItem('kidsverse-content-preview-active') === '1'
+  const preview = API_MODE === 'mock' && (new URLSearchParams(window.location.search).has('contentPreview') || sessionStorage.getItem('kidsverse-content-preview-active') === '1')
   const previewPackage = () => {
     if (!preview) return null
     try {
@@ -64,8 +64,8 @@ export function useContent(id) {
   const source = publicPreview ? 'api-preview' : contentSource({ review: isReviewMode(), studentId: g.state.activeChildId, token })
   const useApi = source === 'api'
   const missionId = new URLSearchParams(window.location.search).get('mission') || undefined
-  const resourceKey = `${source}:${publicPreview || missionId || ''}:${id}:${g.state.activeChildId}:${token}:${preview}`
-  const initial = () => ({ ...getContent(id), contentSource: source, contentLoading: useApi || Boolean(publicPreview), resourceKey })
+  const resourceKey = `${source}:${publicPreview || missionId || ''}:${id}:${g.state.activeChildId}:${token}:${preview}:${loadLesson}`
+  const initial = () => ({ ...getContent(id), contentSource: source, contentLoading: (useApi && loadLesson) || Boolean(publicPreview), contentError: API_MODE === 'live' && !useApi && !publicPreview ? 'Sign in first.' : '', resourceKey })
   const [pkg, setPkg] = useState(() => ({ ...(previewPackage() ?? initial()), resourceKey }))
   useEffect(() => {
     let live = true
@@ -81,7 +81,7 @@ export function useContent(id) {
       }).catch(error=>{if(live)setPkg({...initial(),contentLoading:false,contentError:error.message})})
       return ()=>{live=false}
     }
-    if (useApi) loadMission(g.state.activeChildId, subject, missionId).then(mission => {
+    if (useApi && loadLesson) loadMission(g.state.activeChildId, subject, missionId).then(mission => {
       if (!live) return
       const normalized = normalizeMissionContent(mission, id, getContent(id), {
         ...mission.learningContext, grade: g.state.profile.grade, board: g.state.profile.board,
@@ -107,9 +107,9 @@ export const withSubject = (path, subject = routeSubject()) => {
   if (new URLSearchParams(window.location.search).has('contentPreview') || sessionStorage.getItem('kidsverse-content-preview-active') === '1') url.searchParams.set('contentPreview', '1')
   return `${url.pathname}${url.search}`
 }
-export function useRouteContent() {
+export function useRouteContent(options) {
   const subject = routeSubject()
-  return useContent(subject === 'maths' ? ACTIVE_CONTENT_ID : `demo-${subject}`)
+  return useContent(subject === 'maths' ? ACTIVE_CONTENT_ID : `demo-${subject}`, options)
 }
 
 /* Small helpers the screens share, so each does not re-derive the same things. */

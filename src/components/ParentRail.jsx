@@ -1,3 +1,4 @@
+import { avatarPortrait } from '../lib/avatar-portrait.js'
 import React from 'react'
 import { motion } from 'motion/react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -34,7 +35,7 @@ export default function ParentRail({ children }) {
   const kids = g.state.children ?? []
 
   return (
-    <motion.aside className="absolute top-0 bottom-0 z-20 flex flex-col pt-6 pb-5 glass glass-soft"
+    <motion.aside className="kv-parent-rail absolute top-0 bottom-0 z-20 flex flex-col pt-6 pb-5 glass glass-soft"
       style={{ left: 'calc(0px - var(--bleed, 0px))', width: 'calc(215px + var(--bleed, 0px))',
         paddingLeft: 'calc(14px + var(--bleed, 0px))', paddingRight: 14, borderRadius: '0 34px 34px 0', borderLeft: 0 }}
       initial={{ x: -110, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 24 }}>
@@ -43,7 +44,7 @@ export default function ParentRail({ children }) {
 
       {/* who you are looking at, and one tap to change it */}
       <button className="mt-5 card p-2 flex items-center gap-2 text-left" onClick={() => { sfx.tap(); nav('/switch', { state: { from: 'parent' } }) }}>
-        <img src={`/art/kid${face}-face-sm.webp`} alt="" className="w-[42px] h-[42px] rounded-full object-cover border-2 border-white shrink-0" />
+        <img src={avatarPortrait(face, true)} alt="" className="w-[42px] h-[42px] rounded-full object-cover border-2 border-white shrink-0" />
         <span className="flex-1 leading-tight min-w-0">
           <span className="block font-display font-extrabold text-[17px] text-ink truncate">{name}</span>
           <span className="block text-[11px] font-bold text-ink-3 truncate">{gradeLabel(grade)} · {board}</span>
@@ -64,6 +65,7 @@ export default function ParentRail({ children }) {
               /* Switch Child is the one item that leaves the parent zone's own routes, so it
                  has to say who is asking -- that screen serves a parent and a child and
                  must not hand the parent the child's rail. */
+              aria-current={on ? 'page' : undefined}
               onClick={() => { sfx.tap(); nav(it.to, it.to === '/switch' ? { state: { from: 'parent' } } : undefined) }}
               initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.06 + i * 0.03 }}>
               {on && <motion.span layoutId="prail-pill" className="absolute inset-0 rounded-[16px] card" style={{ borderColor: 'var(--primary)' }} transition={{ type: 'spring', stiffness: 350, damping: 30 }} />}

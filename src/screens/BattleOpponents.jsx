@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { Lock, Star, Zap, ArrowLeft, Puzzle, BookOpen, FlaskConical, Grid3x3 } from 'lucide-react'
 import Scene, { Cutout, Child } from '../components/Scene.jsx'
@@ -29,13 +29,15 @@ export default function BattleOpponents() {
   const [sel, setSel] = useState('robo')
   const tint = useTint()
   const review = isReviewMode()
-  const { data: catalog, loading: catalogLoading, error: catalogError } = useLiveResource(() => listTopicChallenges(g.state.activeChildId,new URLSearchParams(window.location.search).get('subject')||'maths'), [review,g.state.activeChildId], { enabled: !review })
-  const requested=new URLSearchParams(window.location.search).get('challenge')
+  const [query] = useSearchParams()
+  const subject = query.get('subject') || g.state.progress.world || 'maths'
+  const requested = query.get('challenge')
+  const { data: catalog, loading: catalogLoading, error: catalogError } = useLiveResource(() => listTopicChallenges(g.state.activeChildId, subject), [review,g.state.activeChildId,subject], { enabled: !review && Boolean(requested) && Boolean(g.state.activeChildId) })
   const challenge=catalog?.challenges?.find(c=>c.id===requested)
   const challengeId = challenge?.id
   const { data: opponentResponse, loading: opponentsLoading, error: opponentsError } = useLiveResource(
     () => api.challengeOpponents(challengeId),
-    [challengeId],
+    [challengeId,review,g.state.activeChildId],
     { enabled: !review && Boolean(challengeId) },
   )
   const opponents = opponentResponse?.opponents ?? []
@@ -53,6 +55,7 @@ export default function BattleOpponents() {
     } : bot
   })
   const bot = bots.find(b => b.id === sel) ?? bots[0]
+  if (!review && !requested) return <Navigate replace to={withSubject('/challenge', subject)} />
   if (catalogLoading || opponentsLoading || catalogError || opponentsError || !bot) return <ContentStatus activity="opponents" pkg={{ contentLoading: catalogLoading || opponentsLoading, contentError: catalogError || opponentsError || (!challengeId?'Choose a concept from Challenge Home.':'No opponents are published for this concept yet.') }} />
   return (
     <Page>

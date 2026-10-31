@@ -74,3 +74,10 @@ test('live Battle uses selected topic challenge and never starts a wrong-topic o
  assert.ok(!calls.some(c=>c.method==='POST'));
  assert.ok(!calls.some(c=>c.path.includes('/fractions/')));
 });
+
+
+test('local preview results cannot bypass explicit mission identity checks', () => {
+  const result = { attemptId: 'local-run', score: 2, total: 3, local: true, missionId: 'mission-a', subject: 'maths', studentId: null }
+  assert.equal(validMissionResult(result, null, 'mission-b', 'maths', { allowLegacy: true }), false)
+  assert.equal(validMissionResult(result, null, 'mission-a', 'maths', { allowLegacy: true }), true)
+})

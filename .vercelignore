@@ -15,6 +15,12 @@ docs/verification/frontend-mock-*
 docs/verification/screen-api-popup/*.png
 docs/api-audit/*.private.json
 *.log
+local-test-results
+docs
+postman
+mock
+tools
+.claude
 
 # Main frontend uses the external live backend. Mock deployment has its own repo.
 api/mock.js

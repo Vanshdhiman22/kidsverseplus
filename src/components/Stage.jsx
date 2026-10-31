@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { useGame } from '../state/GameProvider.jsx'
+import { useLocation } from 'react-router-dom'
 
 export const STAGE_W = 1672
 export const STAGE_H = 941
@@ -30,6 +31,12 @@ export default function Stage({ children }) {
   const mode = g.state.settings.screenFit ?? 'auto'
   const zoom = g.state.settings.zoom ?? 1
   const ref = useRef(null)
+  const { pathname } = useLocation()
+  useEffect(() => {
+    // Each new screen starts at its heading, even after a long phone page.
+    const container = ref.current?.parentElement
+    if (container) { container.scrollTop = 0; container.scrollLeft = 0 }
+  }, [pathname])
 
   useEffect(() => {
     const root = document.documentElement

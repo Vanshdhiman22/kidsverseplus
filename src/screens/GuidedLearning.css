@@ -109,19 +109,53 @@ html[data-nav-drawer='open'] .kv-learning { padding-left: 255px; }
   .kv-learning__speech p { font-size: 15px; }
 }
 
-@media (max-width: 760px) {
-  .kv-learning { position: relative; min-height: 100dvh; grid-template-columns: 1fr; grid-template-rows: auto; padding: 14px; }
+/* Reflow at the viewport's real size instead of shrinking this layout inside
+   the desktop game board. Keep the change scoped to the lesson screen. */
+@media (max-width: 1024px) {
+  .stage-root:has(.kv-learning-screen) { display: block; overflow-x: hidden; overflow-y: auto; }
+  .stage:has(.kv-learning-screen) { width: 100%; height: auto; min-height: 100%; zoom: 1 !important; transform: none !important; --bleed: 0px; --bleed-y: 0px; }
+  .kv-learning-screen { position: relative; inset: auto; min-height: 100dvh; }
+  .kv-learning { position: relative; min-height: 100dvh; grid-template-columns: 1fr; grid-template-rows: auto; padding: 70px 14px calc(84px + env(safe-area-inset-bottom)); }
   html[data-nav-drawer='open'] .kv-learning { padding-left: 14px; }
   .kv-learning__progress { padding: 10px; gap: 4px; }
   .kv-learning__milestone { gap: 6px; }
   .kv-learning__milestone > span { width: 30px; height: 30px; font-size: 14px; }
-  .kv-learning__milestone strong { font-size: 11px; }
+  .kv-learning__milestone strong { font-size: 14px; }
   .kv-learning__milestone small { display: none; }
   .kv-learning__canvas, .kv-learning__nova, .kv-learning__quiz, .kv-learning__footer { grid-column: 1; }
   .kv-learning__media-row { grid-template-columns: 1fr; }
   .kv-learning__media { min-height: 210px; }
   .kv-learning__nova { padding: 0; }
   .kv-learning__nova > img { display: none; }
-  .kv-learning__answers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kv-learning__answers { grid-template-columns: 1fr; }
+  .kv-learning__alternate, .kv-learning__more { min-height: 44px; }
   .kv-learning__footer button { min-width: 0; min-height: 48px; padding: 0 14px; font-size: 14px; }
+  .kv-learning__feedback { font-size: 15px; line-height: 1.4; }
+  .kv-learning__media-row--text-only .kv-learning__body { font-size: 20px; }
+  .stage:has(.kv-learning-screen) > button[aria-label='Open menu'] { position: fixed; top: 12px !important; left: 14px !important; margin-top: 0 !important; width: 44px !important; height: 44px !important; border-radius: 14px; }
+}
+
+@media (max-width: 380px) {
+  .kv-learning__progress { padding: 10px 6px; }
+  .kv-learning__milestone { flex-direction: column; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kv-learning, .kv-learning button { transition: none; }
+}
+
+/* Use the extra width when a phone rotates; never shrink touch controls to fit
+   the short height. Content remains scrollable above the navigation buttons. */
+@media (min-width: 600px) and (max-width: 1024px) and (orientation: landscape) {
+  .kv-learning { padding: 10px max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left)); gap: 12px; }
+  .kv-learning__progress { margin-left: 56px; min-height: 44px; }
+  .kv-learning__media-row { grid-template-columns: minmax(0, 1fr) minmax(0, .85fr); }
+  .kv-learning__media-row--text-only { grid-template-columns: 1fr; }
+  .kv-learning__canvas { padding: 18px; }
+  .kv-learning__title-row h1 { font-size: 28px; }
+  .kv-learning__body { font-size: 17px; }
+  .kv-learning__media { min-height: 190px; }
+  .kv-learning__answers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kv-learning__answers button { min-height: 48px; }
+  .kv-learning__footer { position: sticky; bottom: 0; z-index: 10; background: #102b58; padding: 8px; border-radius: 16px; gap: 16px; }
 }

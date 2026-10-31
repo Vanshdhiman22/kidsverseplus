@@ -282,3 +282,21 @@ html[data-nav-drawer='open'] .learning-top { left: 250px; right: 55px; }
 html[data-nav-drawer='open'] .learning-panel { left: 250px; width: 845px; }
 html[data-nav-drawer='open'] .learning-check,
 html[data-nav-drawer='open'] .learning-footer { left: 250px; }
+
+/* Account forms need readable inputs on phones, rather than a scaled desktop canvas. */
+@media (max-width: 700px) and (orientation: portrait) {
+  .stage-root:has(.kv-auth) { display: block; overflow-y: auto; background: var(--bg); }
+  .stage:has(.kv-auth) { width: 100%; height: auto; min-height: 100%; zoom: 1 !important; transform: none !important; }
+  .kv-auth { position: relative; inset: auto; min-height: 100dvh; padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 24px; background: var(--bg); }
+  .kv-auth > :not(header):not(.kv-auth__hero):not(.kv-auth__panel) { display: none; }
+  .kv-auth > header { position: relative !important; inset: auto !important; width: 100%; transform: none !important; padding: 0; }
+  .kv-auth > header > div:last-child { display: none; }
+  .kv-auth__hero { position: static; width: 100%; }
+  .kv-auth__hero h1 { font-size: 38px; line-height: 1.1; }
+  .kv-auth__hero > div { font-size: 18px; }
+  .kv-auth__panel { position: relative; inset: auto; width: 100%; height: auto; min-height: 0; padding: 24px 18px; }
+  .kv-auth__panel h1, .kv-auth__panel h2 { font-size: 30px; }
+  .kv-auth__panel .input { min-height: 52px; font-size: 16px; }
+  .kv-auth__panel button { min-height: 44px; }
+  .kv-auth__panel input { min-width: 0; width: 100%; }
+}

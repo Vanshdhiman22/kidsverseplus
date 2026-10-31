@@ -88,7 +88,7 @@ export default function SwitchStudent() {
       <Scene name="switch" />
       <Rail {...railProps} />
       <motion.div className="absolute top-[22px] flex items-center gap-3" style={bleedR(34)} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-        <IconPill><Search size={22} /></IconPill><IconPill className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill>
+        <IconPill disabled title="Search unavailable" aria-label="Search unavailable"><Search size={22} /></IconPill><IconPill disabled title="Notifications unavailable" aria-label="Notifications unavailable" className="relative"><Bell size={22} /><span className="absolute top-3 right-3 w-[9px] h-[9px] rounded-full bg-red-500 border-2 border-white" /></IconPill>
         {fromParent
           ? <UserChip name="Parent Zone" sub="Manage Account" face={kid?.face ?? 1} />
           : <UserChip name={kid?.name ?? 'Explorer'} sub="Your space" face={kid?.face ?? 1} />}

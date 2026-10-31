@@ -1,0 +1,84 @@
+/* Phone gameplay uses real CSS pixels in both orientations. Preserve the
+   desktop composition above 1024px; short landscape screens may scroll. */
+@media (max-width: 1024px) {
+  .stage-root:has(.phone-game) { display: block; overflow-y: auto; overflow-x: hidden; }
+  .stage:has(.phone-game) { width: 100%; height: auto; min-height: 100%; zoom: 1 !important; transform: none !important; --bleed: 0px; --bleed-y: 0px; --safe-t: 0px; --safe-b: 0px; }
+  .phone-game { position: relative; inset: auto; min-height: 100dvh; padding: 64px max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: #edf3ff; color: #192952; }
+  .stage:has(.phone-game) > button[aria-label='Open menu'] { position: fixed; top: 10px !important; left: max(12px, env(safe-area-inset-left)) !important; margin-top: 0 !important; width: 44px !important; height: 44px !important; border-radius: 14px; }
+  .phone-game > header { position: relative; inset: auto !important; padding: 0 0 12px; gap: 12px; }
+  .phone-game > header > div:first-child > :not(button) { display: none; }
+  .phone-game > header .pill { min-height: 44px; height: auto; padding: 8px 12px; }
+  .phone-game > header .icon-orb, .phone-game > header .label-caps { display: none; }
+  .phone-game > header .font-display { font-size: 18px; }
+  .phone-game button, .phone-game select, .phone-game [role='button'] { touch-action: manipulation; }
+  .phone-game button:focus-visible, .phone-game select:focus-visible, .phone-game [role='button']:focus-visible { outline: 3px solid #e8a017; outline-offset: 3px; }
+
+  /* Keep task content; decorative desktop sidebars would obscure it here. */
+  .phone-test > :not(header):not([class*='phone-test__']):not([aria-label='Hear question']),
+  .phone-quiz > :not([class*='phone-quiz__']),
+  .phone-challenge > :not(header):not([class*='phone-challenge__']) { display: none; }
+  .phone-test__title, .phone-test__progress, .phone-test__question, .phone-test__hints, .phone-test__action,
+  .phone-quiz__question, .phone-quiz__hints, .phone-quiz__audio, .phone-quiz__action,
+  .phone-challenge__heading, .phone-challenge__choice, .phone-challenge__cards, .phone-challenge__links { position: relative; inset: auto !important; width: 100%; height: auto; margin: 0 0 16px; }
+  .phone-test__title { padding: 0; border: 0; }
+  .phone-test__progress { flex-wrap: wrap; gap: 8px; }
+  .phone-test__progress > div { flex: 1; width: auto; }
+  .phone-test__progress .pill { height: 44px; font-size: 16px; }
+  .phone-test > [aria-label='Hear question'] { position: absolute; top: 10px; left: auto; right: max(16px, env(safe-area-inset-right)); width: 44px; height: 44px; }
+  .phone-test__question, .phone-quiz__question { padding: 18px; overflow: visible; }
+  .phone-test__question > div:first-child { font-size: 22px; line-height: 1.3; }
+  .phone-test__visual { width: 100%; height: 200px; }
+  .phone-test__answers, .phone-quiz__answers { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: none; gap: 12px; }
+  .phone-test__answers .card { min-height: 64px; height: auto; padding: 12px; gap: 8px; }
+  .phone-test__answers .card > div { font-size: 17px; overflow-wrap: anywhere; }
+  .phone-test__answers .card > span { width: 28px; height: 28px; font-size: 16px; }
+  .phone-test__hints button { min-height: 44px; }
+  .phone-test__action, .phone-quiz__action { position: sticky; bottom: 0 !important; z-index: 10; padding: 12px 0 max(12px, env(safe-area-inset-bottom)); margin-bottom: 0; background: #edf3ff; }
+  .phone-test__action button, .phone-quiz__action button { width: 100%; min-height: 48px; height: auto; padding: 12px; font-size: 18px; }
+  .phone-quiz__question h1 { font-size: 26px; line-height: 1.15; }
+  .phone-quiz__question p { font-size: 18px; line-height: 1.4; }
+  .phone-quiz__visual { position: relative; inset: auto; width: 100%; height: 200px; margin: 16px 0; }
+  .phone-quiz__answers { position: relative; inset: auto; transform: none; }
+  .phone-quiz__answers .card { min-height: 64px; height: auto; padding: 16px 40px 16px 12px; }
+  .phone-quiz__answers .card > span:not(.absolute) { font-size: 18px; overflow-wrap: anywhere; }
+  .phone-quiz__alternate { position: relative; inset: auto; width: 100%; height: auto; margin: 12px 0; }
+  .phone-quiz__alternate button { min-height: 44px; }
+  .phone-quiz__audio { flex-wrap: wrap; gap: 8px; }
+  .phone-quiz__audio button { min-height: 44px; height: auto; padding: 10px; font-size: 16px; }
+  .phone-quiz__audio .icon-orb { width: 30px; height: 30px; }
+  .phone-challenge > header > div:last-child { display: none; }
+  .phone-challenge__heading .text-\[118px\] { font-size: 44px; }
+  .phone-challenge__heading .text-\[38px\] { font-size: 24px; }
+  .phone-challenge__heading svg { width: 32px; height: 32px; }
+  .phone-challenge__choice { flex-wrap: wrap; gap: 8px; }
+  .phone-challenge__choice select { min-width: 0; max-width: 100%; min-height: 48px; }
+  .phone-challenge__cards { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .phone-challenge__cards .card { width: 100%; height: auto; min-height: 220px; gap: 20px; }
+  .phone-challenge__cards .icon-orb { width: 48px; height: 48px; flex-shrink: 0; }
+  .phone-challenge__cards .icon-orb svg { width: 28px; height: 28px; }
+  .phone-challenge__cards button { min-height: 48px; height: auto; padding: 12px; font-size: 16px; }
+  .phone-challenge__links { flex-wrap: wrap; gap: 10px; }
+  .phone-challenge__links button { min-height: 48px; font-size: 16px; }
+  .phone-status > .screen { position: relative; min-height: calc(100dvh - 90px); }
+  .phone-status .glass { width: 100%; max-width: 640px; padding: 24px; }
+  .phone-status .glass h1 { font-size: 26px; }
+  .phone-status .glass p { font-size: 18px; }
+  .phone-status .glass > div { flex-wrap: wrap; }
+}
+
+@media (min-width: 600px) and (max-width: 1024px) and (orientation: landscape) {
+  .phone-game { padding-top: 60px; }
+  .phone-test__question { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 12px 18px; }
+  .phone-test__question > :first-child { grid-column: 1 / -1; }
+  .phone-test__visual { margin: 0; height: 200px; }
+  .phone-test__answers { margin: 0; align-content: center; }
+  .phone-test__question > p { grid-column: 1 / -1; }
+  .phone-quiz__question { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 16px; }
+  .phone-quiz__question > :first-child { grid-column: 1 / -1; }
+  .phone-quiz__answers { align-self: center; }
+  .phone-quiz__alternate { grid-column: 1 / -1; }
+  .phone-challenge__cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .phone-challenge__cards .card { min-height: 280px; padding: 16px; }
+  .phone-challenge__cards .card > div:first-child { flex-direction: column; gap: 10px; }
+  .phone-challenge__cards .text-\[24px\] { font-size: 20px; }
+}

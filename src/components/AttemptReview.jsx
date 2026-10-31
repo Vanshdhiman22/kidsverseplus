@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Check, X } from 'lucide-react'
 import Button from './Button.jsx'
@@ -7,20 +7,40 @@ import { useLiveResource } from '../lib/useLiveResource.js'
 import { getAttemptReview } from '../lib/gameApi.js'
 import { reviewItems } from '../lib/review-items.js'
 
-export default function AttemptReview({ open, title = 'Review your answers', items = [], attemptId, type = 'test', onClose }) {
+export default function AttemptReview({ open, title = 'Review your answers', items = [], emptyMessage, attemptId, type = 'test', onClose }) {
+  const dialog = useRef(null)
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    if (!open) return
+    const previous = document.activeElement
+    const root = dialog.current
+    const controls = () => [...root.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), [tabindex="0"]')].filter(el => el.getClientRects().length)
+    controls()[0]?.focus({ preventScroll: true })
+    const keydown = event => {
+      if (event.key === 'Escape') { event.preventDefault(); close.current?.(); return }
+      if (event.key !== 'Tab') return
+      const list = controls(), first = list[0], last = list.at(-1)
+      if (!first) { event.preventDefault(); return }
+      if (event.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', keydown)
+    return () => { document.removeEventListener('keydown', keydown); if (previous?.isConnected) previous.focus({ preventScroll: true }) }
+  }, [open])
   const resource = useLiveResource(() => getAttemptReview(attemptId,type), [open,attemptId,type], {enabled: Boolean(open && attemptId)})
-  const visibleItems = attemptId ? (resource.data ? reviewItems(resource.data) : []) : items
-  return <AnimatePresence>{open && <motion.div className="absolute inset-0 z-[110] grid place-items-center bg-indigo-950/40 p-8 backdrop-blur-[7px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="dialog" aria-modal="true" aria-label={title}>
+  const visibleItems = attemptId ? (resource.data ? reviewItems(resource.data, items) : []) : items
+  return <AnimatePresence>{open && <motion.div ref={dialog} className="absolute inset-0 z-[110] grid place-items-center bg-indigo-950/40 p-8 backdrop-blur-[7px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="dialog" aria-modal="true" aria-label={title}>
     <motion.section className="relative flex max-h-[820px] w-[1040px] flex-col overflow-hidden rounded-[34px] border-2 border-white/80 bg-white shadow-[0_32px_100px_rgba(44,35,110,.38)]" initial={{ y: 60, scale: .94 }} animate={{ y: 0, scale: 1 }} exit={{ y: 40, opacity: 0 }}>
       <header className="flex items-center border-b border-[var(--line)] px-8 py-6"><div><p className="label-caps text-primary-ink">Learn from every try</p><h2 className="font-display text-[34px] font-extrabold text-ink">{title}</h2></div><button className="ml-auto grid h-12 w-12 place-items-center rounded-full bg-violet-50 text-ink hover:bg-violet-100" onClick={onClose} aria-label="Close answer review"><X /></button></header>
       <div className="grid gap-5 overflow-y-auto p-7">
         {attemptId && !resource.data && !resource.error && <p role="status">Loading your saved answers…</p>}
         {resource.error && <p role="alert">{resource.error}</p>}
         {visibleItems.map((item, index) => <article key={`${item.question}-${index}`} className="grid grid-cols-[250px_1fr] gap-6 rounded-[24px] border-2 border-[var(--line)] bg-[#fbfaff] p-5">
-          <div className="h-[170px] overflow-hidden rounded-[18px] bg-white"><QuestionVisual question={item.question} model={item.model} /></div>
+          <div className="h-[170px] overflow-hidden rounded-[18px] bg-white">{item.model?.image && item.model.image_source !== 'lesson_fallback' ? <QuestionVisual question={item.question} model={item.model} /> : <p className="grid h-full place-items-center p-4 text-center text-[15px] font-semibold text-ink-3">Illustration unavailable for this saved question.</p>}</div>
           <div><p className="label-caps">Question {index + 1}</p><h3 className="mt-1 text-[20px] font-extrabold text-ink">{item.question}</h3><div className="mt-3 flex flex-wrap gap-3"><span className={`rounded-xl px-4 py-2 text-[15px] font-extrabold ${item.correct ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-700'}`}>{item.correct ? <Check className="mr-1 inline" size={17} /> : <X className="mr-1 inline" size={17} />}Your answer: {item.selectedLabel || 'No answer'}</span>{!item.correct && <span className="rounded-xl bg-emerald-100 px-4 py-2 text-[15px] font-extrabold text-emerald-800">Correct answer: {item.answerLabel}</span>}{item.hintsUsed > 0 && <span className="rounded-xl bg-amber-100 px-4 py-2 text-[15px] font-extrabold text-amber-800">Hints used: {item.hintsUsed}</span>}</div><p className="mt-3 text-[16px] font-semibold leading-relaxed text-ink-2">{item.explanation}</p></div>
         </article>)}
-        {!visibleItems.length && !resource.loading && !resource.error && (!attemptId || resource.data) && <p className="py-12 text-center text-[19px] font-bold text-ink-3">Complete a quiz to review your answers.</p>}
+        {!visibleItems.length && !resource.loading && !resource.error && (!attemptId || resource.data) && <p className="py-12 text-center text-[19px] font-bold text-ink-3">{emptyMessage || 'Complete a quiz to review your answers.'}</p>}
       </div>
       <footer className="border-t border-[var(--line)] bg-white px-8 py-5"><Button className="ml-auto h-[54px] w-[220px]" onClick={onClose}>Done Reviewing</Button></footer>
     </motion.section>

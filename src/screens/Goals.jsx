@@ -32,7 +32,7 @@ const CENTER = { x: 300, y: 240 }
 
 function Constellation({ chosen, onPick, available }) {
   return (
-    <div className="absolute left-[890px] top-[70px] w-[600px] h-[420px]">
+    <div className="goal-constellation absolute left-[890px] top-[70px] w-[600px] h-[420px]">
       <svg className="absolute inset-0 w-full h-full overflow-visible">
         {NODES.filter(n => available.some(g => g.id === n.id)).map((n, i) => (
           <motion.line key={n.id} x1={CENTER.x} y1={CENTER.y} x2={n.x + 40} y2={n.y + 40} stroke={chosen.includes(n.id) ? '#8b5cf6' : 'rgba(124,92,255,.4)'} strokeWidth={chosen.includes(n.id) ? 3 : 2} strokeDasharray="6 8" initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 1.2, delay: 0.06 + i * 0.12, ease: [0.16, 1, 0.3, 1] }} style={{ filter: chosen.includes(n.id) ? 'drop-shadow(0 0 6px rgba(139,92,246,.9))' : undefined }} />
@@ -68,10 +68,10 @@ export default function Goals() {
       const local = GOALS.find(goal => goal.id === apiGoalKey[item.key])
       return { ...local, id: apiGoalKey[item.key], title: item.name, tag: item.tagline, apiId: item.id }
     })), [])
-  const { data: goals, source, loading } = useApiCatalog(loadGoals, GOALS)
+  const { data: goals, source, loading, error } = useApiCatalog(loadGoals, GOALS)
   const visibleGoals = GOALS.map(local => goals.find(goal => goal.id === local.id)
     ? { ...local, ...goals.find(goal => goal.id === local.id), available: true }
-    : { ...local, available: source !== 'api' })
+    : { ...local, available: source === 'review' || source === 'demo' })
   const novaGoal = goals.find(goal => goal.id === 'nova')
   const chosen = g.state.profile.goals ?? []
   /* Pick as many as you like. "Let Nova decide" is the one exception: it means
@@ -101,7 +101,7 @@ export default function Goals() {
                   <div className="font-display font-extrabold text-[21px] text-ink leading-tight">{gl.title}</div>
                   <div className="text-[15px] font-semibold text-ink-3 leading-snug">{gl.desc}</div>
                 </div>
-                <div className="flex-1 text-[16px] font-bold text-primary-ink leading-snug">{gl.available ? gl.tag : 'Awaiting live API'}</div>
+                <div className="flex-1 text-[16px] font-bold text-primary-ink leading-snug">{gl.available ? gl.tag : 'Coming soon'}</div>
                 {gl.available ? (on ? <Check size={36} /> : <span className="radio" />) : <span className="chip h-[30px] px-3 text-[12px]">Coming soon</span>}
               </Card>
             </Item>
@@ -120,11 +120,11 @@ export default function Goals() {
       </Stack>
 
       <Constellation chosen={chosen} onPick={id => visibleGoals.find(goal => goal.id === id)?.available && pick(id)} available={visibleGoals} />
-      <div className="absolute right-[70px] top-[120px] rounded-full px-4 py-2 text-[13px] font-extrabold" style={{ background: source === 'api' ? (API_MODE === 'mock' ? 'rgba(59,130,246,.16)' : 'rgba(34,197,94,.16)') : 'rgba(245,158,11,.16)', color: source === 'api' ? (API_MODE === 'mock' ? '#1d4ed8' : '#15803d') : '#b45309' }}>{loading ? 'Loading catalog…' : source === 'api' ? `${API_MODE === 'mock' ? 'Mock' : 'Live'} API catalog · ${goals.length} items` : source === 'review' ? 'UI review · sample catalog' : 'Demo catalog fallback'}</div>
+      {error && <p role="alert" className="absolute right-[70px] top-[120px] text-red-500 font-bold">{error.message}</p>}
       <Child screen="goals" delay={0.5} />
       <div className="absolute left-[1462px] top-[560px]"><SpeechBubble tail="left" text="We can change this anytime. ✨" delay={0.3} className="w-[170px] text-[17px]" /></div>
       <motion.div className="absolute left-[945px] top-[798px]" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow className="w-[520px] h-[98px] uppercase text-[30px]" sound="whoosh" onClick={async () => { await g.saveGoals(); nav('/onboarding/nova') }}>Continue</Button>
+        <Button size="lg" arrow className="w-[520px] h-[98px] uppercase text-[30px]" sound="whoosh" disabled={loading || Boolean(error) || !goals.length} onClick={async () => { await g.saveGoals(); nav('/onboarding/nova') }}>Continue</Button>
       </motion.div>
     </Page>
   )

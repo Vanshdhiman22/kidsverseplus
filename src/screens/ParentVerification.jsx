@@ -66,7 +66,7 @@ export default function ParentVerification() {
   const verify = async () => {
     if (!challenge || !/^\d{6}$/.test(code)) { setMessage('Enter the 6-digit code from your phone.'); return }
     const result = await api.verifyParentPhone({ challenge_id: challenge, code })
-    if (!result.phone_verified) throw new Error('Phone verification was not confirmed. Please retry.')
+    if (!(result.phone_verified || result.verified)) throw new Error('Phone verification was not confirmed. Please retry.')
     setVerified(true)
     setDemoCode('')
     setMessage('Phone verified. Your family setup is ready to continue.')
@@ -113,7 +113,7 @@ export default function ParentVerification() {
       </motion.div>}
 
       {message && <p role="status" className="mt-4 text-[16px] font-bold text-ink-2">{message}</p>}
-      {verified && <div className="mt-4"><Button size="md" arrow className="w-full h-[62px] uppercase text-[20px]" onClick={() => nav('/onboarding/grade-board')}><CheckCircle2 size={23} /> Continue to learning setup</Button></div>}
+      {verified && <div className="mt-4"><Button size="md" arrow className="w-full h-[62px] uppercase text-[20px]" onClick={() => nav('/onboarding/whatsapp')}><CheckCircle2 size={23} /> Continue to parent contact</Button></div>}
       <button type="button" className="mt-5 flex items-center gap-2 text-[17px] font-extrabold text-primary-ink hover:underline" onClick={() => nav('/onboarding/child')}><ArrowLeft size={18} /> Back to child name</button>
     </Panel>
   </Page>

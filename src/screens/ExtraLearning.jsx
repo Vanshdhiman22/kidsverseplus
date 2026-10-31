@@ -1,3 +1,5 @@
+import { useCompanionCatalog } from '../lib/useCompanionActivity.js'
+import { usableCompanion } from '../lib/companion-catalog.js'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
@@ -28,6 +30,8 @@ export default function ExtraLearning() {
   try { saved = JSON.parse(sessionStorage.getItem('kv:last-test-run') || 'null') } catch {}
   const resource=useLiveResource(()=>apiRequest(`/students/${g.state.activeChildId}/extra-learning`),[g.state.activeChildId,getToken()],{enabled:!isReviewMode() && Boolean(g.state.activeChildId && getToken())})
   const recommendations=resource.data?.recommendations || []
+  const catalog = useCompanionCatalog(g.state.activeChildId, g.state.progress.world || 'maths')
+  const available = card => card.id === 'challenge' || catalog.data?.some(activity => activity.type === (card.id === 'confidence' ? 'speaking' : card.id) && usableCompanion(activity))
   return (
     <Page>
       <Scene name="extra" />
@@ -42,24 +46,24 @@ export default function ExtraLearning() {
         {recommendations[0]?.mission_id && <button className="mt-2 text-left font-bold underline text-primary-ink" onClick={() => nav(withSubject(`/missions/fractions?mission=${recommendations[0].mission_id}`, recommendations[0].subject || saved?.subject))}>Open recommended lesson</button>}
         <Sparkles n={4} seed={22} />{resource.loading && <p role="status">Loading recommendations…</p>}{resource.error && <p role="alert">{resource.error}</p>}
         <div className="flex items-center gap-2 text-[17px] font-extrabold text-primary-ink"><Star size={18} className="text-gold" fill="currentColor" /> Choose an activity</div>
-        <div className="mt-1 font-display font-extrabold text-[32px] leading-none text-ink">{recommendations[0]?.name || 'Your pace, your pick'}</div>
-        <div className="mt-2 text-[17px] font-semibold text-ink-2 leading-snug">{recommendations[0]?.reason || 'Reading and speaking here are self-guided.'}</div>
+        <div className="mt-1 font-display font-extrabold text-[32px] leading-none text-ink">{recommendations[0]?.mission || recommendations[0]?.name || 'Your pace, your pick'}</div>
+        <div className="mt-2 text-[17px] font-semibold text-ink-2 leading-snug">{recommendations[0]?.reason || 'Choose from your available activities.'}</div>
       </Panel>
       <motion.img src="/art/hd/nova-v2.webp" alt="" className="absolute left-[1030px] top-[118px] w-[170px]" style={{ filter: 'drop-shadow(0 18px 24px rgba(40,20,120,.28))' }} initial={{ opacity: 0, y: 40, scale: 0.9 }} animate={{ opacity: 1, y: [0, -9, 0], scale: 1 }} transition={{ opacity: { delay: 0.17 }, scale: { delay: 0.17, type: 'spring' }, y: { duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 } }} />
 
       <Stack className="absolute left-[235px] top-[362px] flex gap-[22px]" start={0.6} delay={0.12}>
-        {CARDS.map(c => (
+        {CARDS.filter(available).map(c => (
           <Item key={c.id} v="pop"><Tilt max={5}>
-            <Card hover className="relative w-[450px] h-[465px] p-0 overflow-hidden flex flex-col" onClick={() => { sfx.whoosh(); nav(c.to) }}>
+            <Card hover={Boolean(available(c))} aria-disabled={!available(c)} tabIndex={available(c) ? 0 : -1} className="relative w-[450px] h-[465px] p-0 overflow-hidden flex flex-col" onClick={() => { if (available(c)) { sfx.whoosh(); nav(c.to) } }}>
               <div className="relative h-[300px] overflow-hidden">
                 <motion.img src={c.img} alt="" className="w-full h-full object-cover" whileHover={{ scale: 1.05 }} transition={{ duration: 0.6 }} />
               </div>
               <div className="flex-1 px-5 pt-4 flex items-start gap-4">
                 <span className="icon-orb w-[58px] h-[58px] text-white shrink-0" style={{ background: c.c }}><c.icon size={28} /></span>
-                <span className="flex-1 leading-tight"><span className="block font-display font-extrabold text-[22px] text-ink uppercase">{c.t}</span><span className="block text-[16px] font-semibold text-ink-3 mt-1">{c.s}</span></span>
+                <span className="flex-1 leading-tight"><span className="block font-display font-extrabold text-[22px] text-ink uppercase">{c.t}</span><span className="block text-[16px] font-semibold text-ink-3 mt-1">{available(c) ? c.s : catalog.loading ? 'Checking availability…' : 'Not available yet'}</span></span>
                 <span className="w-[54px] h-[54px] rounded-full grid place-items-center border-2 shrink-0" style={{ borderColor: c.c, color: c.c }}><ArrowRight size={26} strokeWidth={2.6} /></span>
               </div>
-              <div className="px-5 pb-4"><Button size="md" arrow className="w-full h-[54px] uppercase text-[20px]" sound="whoosh" onClick={e => { e.stopPropagation(); nav(c.to) }}>Open activity</Button></div>
+              <div className="px-5 pb-4"><Button disabled={!available(c)} size="md" arrow className="w-full h-[54px] uppercase text-[20px]" sound="whoosh" onClick={e => { e.stopPropagation(); nav(c.to) }}>{available(c) ? 'Open activity' : catalog.loading ? 'Loading…' : 'Not available yet'}</Button></div>
             </Card>
           </Tilt></Item>
         ))}

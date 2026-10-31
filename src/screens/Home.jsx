@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
 import { subjectKey } from '../lib/live-data.js'
+import { usePublishedSubjects } from '../lib/usePublishedSubjects.js'
 import { getToken } from '../lib/api.js'
 import { isReviewMode } from '../lib/reviewMode.js'
 import { reviewHome } from '../lib/review-learning.js'
@@ -85,7 +86,14 @@ export default function Home() {
       .catch(error => { if (active) { setApiHome(null); setHomeError(error.message) } })
     return () => { active = false }
   }, [g.state.activeChildId,review])
-  const subjects = review || g.state.activeChildId ? (apiHome?.subjects || []).map(item => { const id = subjectKey(item.slug || item.name); return { ...(SUBJECT_STYLE[id] || SUBJECT_STYLE.maths), t: item.name, locked: item.locked, to: `/learn/topics/${id}` } }) : SUBJECTS
+  const subjectCatalog = usePublishedSubjects(g.state.activeChildId)
+  useEffect(() => {
+    const available = subjectCatalog.data || []
+    if (available.length && !available.some(item => subjectKey(item.slug || item.name) === g.state.progress.world)) {
+      g.setProgress({ world: subjectKey(available[0].slug || available[0].name) })
+    }
+  }, [subjectCatalog.data, g.state.progress.world])
+  const subjects = (subjectCatalog.data || []).map(item => { const id = subjectKey(item.slug || item.name); return { ...(SUBJECT_STYLE[id] || SUBJECT_STYLE.maths), t: item.name, locked: item.locked, to: `/learn/topics/${id}` } })
   const { name, face } = g.state.profile
   const { streak, xp } = g.state.stats
   const level = g.level
@@ -107,7 +115,7 @@ export default function Home() {
   const [gate, setGate] = useState(false)
 
   return (
-    <Page>
+    <Page className="responsive-page kv-home">
       <Scene name="nhome" wings="stretch" />
 
       {/* The rail, shared with every other screen -- pinned open here because Home is
@@ -145,8 +153,8 @@ export default function Home() {
       </motion.div>
 
       {/* ---------- subjects ---------- */}
-      <Stack className="absolute left-[240px] top-[424px] flex gap-[15px] z-10" start={0.45} delay={0.04}>
-        {!apiHome && <p role="status" className="text-[18px] font-bold text-ink">{homeError ? 'Could not load your subjects. Please reload to retry.' : 'Loading your subjects...'}</p>}
+      <Stack className="kv-home__subjects absolute left-[240px] top-[424px] flex gap-[15px] z-10" start={0.45} delay={0.04}>
+        {(subjectCatalog.loading || subjectCatalog.error || !subjects.length) && <p role="status" className="text-[18px] font-bold text-ink">{subjectCatalog.error ? 'Could not load your subjects. Please reload to retry.' : subjectCatalog.loading ? 'Loading your subjects...' : 'New lessons will appear here when they are ready.'}</p>}
         {subjects.map(s => (
           <Item key={s.t} v="pop">
             <motion.button className="w-[205px] h-[124px] rounded-[20px] px-3 pt-3 pb-3 flex flex-col items-center text-center relative overflow-hidden"

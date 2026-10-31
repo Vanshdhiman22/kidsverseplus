@@ -12,6 +12,10 @@ import { GRADES, BOARDS } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { ONBOARDING_STEPS } from './CreateChild.jsx'
 import { sfx } from '../lib/sound.js'
+import { api } from '../lib/api.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
+import { isReviewMode } from '../lib/reviewMode.js'
+import { curriculumSupports } from '../lib/curriculum-options.js'
 
 const BOARD_ICON = { book: BookOpen, bank: Landmark, globe: Globe, dots: MoreHorizontal }
 
@@ -28,7 +32,13 @@ export default function LearningSetup() {
   const nav = useNavigate()
   const g = useGame()
   const { grade, board } = g.state.profile
-  const canContinue = Boolean(grade && board)
+  const review = isReviewMode()
+  const catalog = useLiveResource(() => api.curriculums(), [], { enabled: !review })
+  const curriculums = catalog.data?.curriculums || []
+  const selectedCurriculum = curriculums.find(item => curriculumSupports([item],grade,board))
+  const details = useLiveResource(() => api.curriculumDetail(selectedCurriculum.id), [selectedCurriculum?.id], { enabled: !review && Boolean(selectedCurriculum) })
+  const supported = (gr, br) => review || curriculumSupports(curriculums, gr, br)
+  const canContinue = Boolean(grade && board && supported(grade,board))
   return (
     <Page>
       <Scene name="setup" />
@@ -41,12 +51,15 @@ export default function LearningSetup() {
 
       <Panel className="absolute left-[680px] top-[160px] w-[520px] h-[600px] p-7" initial="hidden" animate="show">
         <Head icon={GraduationCap} title="Select Grade" sub="Playschool to Grade 8" />
+        {catalog.loading && <p role="status">Loading available learning paths…</p>}
+        {catalog.error && <p role="alert">{catalog.error}</p>}
         <Stack className="mt-5 grid grid-cols-4 gap-3" start={0.55} delay={0.04}>
           {GRADES.map(gr => {
             const sel = grade === gr.id
+            const available = review || curriculums.some(item => curriculumSupports([item],gr.id,item.board))
             return (
               <Item key={gr.id} v="pop">
-                <Card hover selected={sel} className="relative h-[108px] flex flex-col items-center justify-center" onClick={() => { sfx.select(); g.setProfile({ grade: gr.id }) }}>
+                <Card hover={available} selected={sel} aria-disabled={!available} className={`relative h-[108px] flex flex-col items-center justify-center ${available?'':'opacity-40'}`} onClick={available ? () => { sfx.select(); g.setProfile({ grade: gr.id }) } : undefined}>
                   {/* The fill sits above the card's own pale background (which is why the
                       white label reads) and lights up in place — a shared layoutId would
                       fly across the grid and paint over the neighbouring labels. */}
@@ -67,9 +80,10 @@ export default function LearningSetup() {
         <Stack className="mt-5 flex flex-col gap-3" start={0.65} delay={0.07}>
           {BOARDS.map(b => {
             const Icon = BOARD_ICON[b.icon]; const sel = board === b.id
+            const available = Boolean(grade && supported(grade,b.id))
             return (
               <Item key={b.id} v="pop">
-                <Card hover selected={sel} className="relative h-[80px] px-5 flex items-center gap-4" onClick={() => { sfx.select(); g.setProfile({ board: b.id }) }}>
+                <Card hover={available} selected={sel} aria-disabled={!available} className={`relative h-[80px] px-5 flex items-center gap-4 ${available?'':'opacity-40'}`} onClick={available ? () => { sfx.select(); g.setProfile({ board: b.id }) } : undefined}>
                   {sel && <motion.span className="absolute inset-0 z-0 rounded-[22px]" style={{ background: 'var(--grad-primary)' }} initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 460, damping: 30 }} />}
                   {sel && <Check className="absolute -top-3 -right-3 z-20" size={32} />}
                   <Icon size={30} strokeWidth={2} className={`relative z-10 ${sel ? 'text-white' : 'text-primary-ink'}`} />
@@ -80,7 +94,7 @@ export default function LearningSetup() {
             )
           })}
         </Stack>
-        <Item className="mt-4 card px-5 py-3 flex items-center gap-4 text-[15px] font-semibold text-ink-2" v="soft"><span className="icon-orb w-[40px] h-[40px]"><ShieldCheck size={20} /></span>We use this to personalise your child's learning and recommendations.</Item>
+        <Item className="mt-4 card px-5 py-3 flex items-center gap-4 text-[15px] font-semibold text-ink-2" v="soft"><span className="icon-orb w-[40px] h-[40px]"><ShieldCheck size={20} /></span>{details.loading ? 'Loading subjects…' : details.error ? details.error : details.data ? `Available subjects: ${details.data.subjects.filter(subject=>subject.is_active!==false).map(subject=>subject.name).join(', ') || 'Not published yet'}` : 'Choose your grade and board to see available subjects.'}</Item>
       </Panel>
 
       <Panel className="absolute left-[680px] top-[790px] w-[945px] h-[112px] px-6 flex items-center justify-end gap-6" initial="hidden" animate="show" style={{ borderRadius: 30 }}>

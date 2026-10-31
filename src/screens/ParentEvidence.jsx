@@ -1,5 +1,6 @@
 import React, { useState,useEffect } from 'react'
-import {apiRequest,getToken} from '../lib/api.js'
+import {apiRequest,getToken,API_MODE} from '../lib/api.js'
+import ParentEvidenceLive from './ParentEvidenceLive.jsx'
 import {useLiveResource} from '../lib/useLiveResource.js'
 import AttemptReview from '../components/AttemptReview.jsx'
 import {reviewItems} from '../lib/review-items.js'
@@ -23,6 +24,10 @@ import { formatBrowserDateTime } from '../lib/time.js'
 
 
 export default function ParentEvidence() {
+  return API_MODE === 'live' ? <ParentEvidenceLive /> : <RecordedEvidence />
+}
+
+function RecordedEvidence() {
   const resource=useLiveResource(()=>apiRequest('/parent/evidence'),[getToken()],{enabled:Boolean(getToken())})
   const report=resource.data
   const [selectedReview,setSelectedReview]=useState(null)
@@ -51,14 +56,14 @@ export default function ParentEvidence() {
   ]
   const ac = useAccent()
   return (
-    <Page>
+    <Page className="responsive-page kv-parent-evidence">
       <Scene name="evidence" />
       <ParentRail />
       <motion.div className="absolute flex items-center gap-3" style={{ ...bleedR(30), ...safeT(20) }} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><UserChip name={`Parent of ${name}`} face={face} /></motion.div>
 
       <Panel soft className="absolute left-[295px] top-[90px] w-[1345px] h-[800px] p-8" initial="hidden" animate="show">
         <div className="flex items-center gap-5">
-          <button className="pill w-[48px] h-[48px] justify-center text-ink" onClick={() => { sfx.tap(); nav('/parent') }}><ArrowLeft size={22} /></button>
+          <button aria-label="Back to parent overview" className="pill w-[48px] h-[48px] justify-center text-ink" onClick={() => { sfx.tap(); nav('/parent') }}><ArrowLeft size={22} /></button>
           <img src="/art/planet-sm.webp" alt="" className="w-[90px] floaty" />
           <div><h1 className="font-display font-extrabold text-[54px] leading-none text-ink">Learning activity</h1><div className="mt-1 text-[20px] font-semibold text-ink-2">{board} {gradeLabel(grade)} <span className="mx-2 text-ink-3">|</span> Recorded sessions</div></div>
           <button className="ml-auto flex items-center gap-2 text-[14px] font-extrabold text-primary-ink uppercase tracking-wide" onClick={() => { sfx.tap(); setWhy(w => !w) }}>How this is calculated <Info size={18} /></button>

@@ -1,3 +1,4 @@
+import { avatarPortrait } from '../lib/avatar-portrait.js'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
@@ -85,7 +86,7 @@ export default function LessonDiscover() {
       </motion.div>
       <motion.div className="absolute left-[1406px] top-[28px]" initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
         <div className="pill h-[68px] pl-2 pr-4 gap-3">
-          <img src={`/art/kid${face}-face-sm.webp`} alt="" className="w-[52px] h-[52px] rounded-full object-cover border-2 border-white shadow-md" />
+          <img src={avatarPortrait(face, true)} alt="" className="w-[52px] h-[52px] rounded-full object-cover border-2 border-white shadow-md" />
           <div className="leading-tight">
             <div className="font-display font-extrabold text-[19px] text-ink">Hi, {name}!</div>
             <div className="text-[14px] font-bold text-ink-3">Keep Exploring!</div>

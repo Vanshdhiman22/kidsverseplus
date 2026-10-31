@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useMotionValue, useSpring, useTransform, animate } from 'motion/react'
 import { Shirt, Scissors, Glasses, RotateCw, ArrowLeft, ArrowRight, Rocket, Star, ShieldCheck, Heart, Users, Lock } from 'lucide-react'
@@ -14,6 +14,10 @@ import { APPROVED_FACES, OUTFITS, spriteFor, hasFaceArt } from '../data/catalog.
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
+import { api } from '../lib/api.js'
+import { useLiveResource } from '../lib/useLiveResource.js'
+import { isReviewMode } from '../lib/reviewMode.js'
+import { selectApiAvatar } from '../lib/avatar-selection.js'
 
 function MiniSteps({ steps, current }) {
   return (
@@ -34,6 +38,25 @@ function MiniSteps({ steps, current }) {
 export default function Avatar() {
   const nav = useNavigate()
   const g = useGame()
+  const review = isReviewMode()
+  const catalog = useLiveResource(async () => {
+    const [{ characters }, { items }] = await Promise.all([api.avatarCharacters(), api.avatarItems()])
+    return { characters, items }
+  }, [], { enabled: !review })
+  const supported = (face, outfit) => {
+    if (review) return true
+    if (!catalog.data) return false
+    try { selectApiAvatar({ face, outfit }, catalog.data.characters, catalog.data.items); return true } catch { return false }
+  }
+  const faces = APPROVED_FACES.filter(face => supported(face.id, 'explorer'))
+  const outfits = OUTFITS.filter(item => supported(g.state.profile.face || faces[0]?.id || 1, item.id))
+  useEffect(() => {
+    if (!catalog.data || !faces.length) return
+    const patch = {}
+    if (!faces.some(face => face.id === Number(g.state.profile.face))) patch.face = faces[0].id
+    if (!outfits.some(item => item.id === g.state.profile.outfit) && outfits.length) patch.outfit = outfits[0].id
+    if (Object.keys(patch).length) g.setProfile(patch)
+  }, [catalog.data, g.state.profile.face, g.state.profile.outfit])
   const { face, outfit, name } = g.state.profile
   const displayName = name?.trim() || 'Explorer'
   const selectedFace = [1, 4].includes(Number(face)) ? Number(face) : 1
@@ -47,7 +70,7 @@ export default function Avatar() {
   const sprite = spriteFor(outfit, selectedFace)
 
   return (
-    <Page>
+    <Page className="responsive-page kv-avatar">
       <Scene name="avatar" />
       {/* The default look used to draw the designer's flat avatar-0 cutout instead of the
           sprite, with the sprite hidden behind opacity:0. The cutout sits outside the
@@ -63,9 +86,9 @@ export default function Avatar() {
       </Stack>
 
       <Stack className="absolute left-[85px] top-[222px] flex flex-col gap-3" start={0.4} delay={0.08}>
-        {APPROVED_FACES.map(f => (
+        {faces.map(f => (
           <Item key={f.id} v="pop">
-            <Card hover selected={selectedFace === f.id} className="relative w-[236px] h-[112px] overflow-hidden grid place-items-center" onClick={() => { sfx.select(); g.setProfile({ face: f.id }) }}>
+            <Card aria-label={`Choose avatar ${f.id}`} aria-pressed={selectedFace === f.id} hover selected={selectedFace === f.id} className="relative w-[236px] h-[112px] overflow-hidden grid place-items-center" onClick={() => { sfx.select(); g.setProfile({ face: f.id }) }}>
               <img src={f.thumb} alt="" className="h-[104px] object-contain" />
               {selectedFace === f.id && <Check className="absolute -top-1 -right-1" size={34} />}
             </Card>
@@ -75,7 +98,7 @@ export default function Avatar() {
       </Stack>
 
       {/* Podium + sprite with drag-to-rotate */}
-      <motion.div className="absolute left-[590px] top-[165px] w-[300px] h-[535px] flex items-end justify-center cursor-grab active:cursor-grabbing" drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.05} onDrag={(e, info) => rot.set(rot.get() + info.delta.x * 0.8)} initial={{ opacity: 0, y: 120 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20, delay: 0.35 }}>
+      <motion.div className="kv-avatar__preview absolute left-[590px] top-[165px] w-[300px] h-[535px] flex items-end justify-center cursor-grab active:cursor-grabbing" drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.05} onDrag={(e, info) => rot.set(rot.get() + info.delta.x * 0.8)} initial={{ opacity: 0, y: 120 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20, delay: 0.35 }}>
         <motion.div className="relative w-full flex justify-center" style={{ scaleX, skewY: skew }}>
           <motion.img key={sprite} src={sprite} alt="" className="h-[535px] object-contain pointer-events-none" style={{ filter: 'drop-shadow(0 24px 30px rgba(40,20,120,.3))' }} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1, y: [0, -8, 0] }} transition={{ opacity: { duration: 0.4 }, scale: { type: 'spring', stiffness: 200 }, y: { duration: 3.8, repeat: Infinity, ease: 'easeInOut' } }} />
         </motion.div>
@@ -86,8 +109,8 @@ export default function Avatar() {
         <span className="flex items-center gap-2 font-display font-extrabold text-[18px]"><RotateCw size={20} /> Rotate</span>
         <span className="text-[13px] font-semibold text-ink-3 text-center">Click &amp; drag to rotate</span>
       </motion.button>
-      <motion.button className="absolute left-[424px] top-[706px] pill w-[64px] h-[64px] justify-center text-ink" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} onClick={() => turn(-180)}><ArrowLeft size={28} strokeWidth={2.6} /></motion.button>
-      <motion.button className="absolute left-[978px] top-[706px] pill w-[64px] h-[64px] justify-center text-ink" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} onClick={() => turn(180)}><ArrowRight size={28} strokeWidth={2.6} /></motion.button>
+      <motion.button aria-label="Rotate avatar left" className="absolute left-[424px] top-[706px] pill w-[64px] h-[64px] justify-center text-ink" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} onClick={() => turn(-180)}><ArrowLeft size={28} strokeWidth={2.6} /></motion.button>
+      <motion.button aria-label="Rotate avatar right" className="absolute left-[978px] top-[706px] pill w-[64px] h-[64px] justify-center text-ink" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} onClick={() => turn(180)}><ArrowRight size={28} strokeWidth={2.6} /></motion.button>
 
       <Panel className="absolute left-[1130px] top-[145px] w-[495px] h-[615px] p-7" initial="hidden" animate="show">
         <Sparkles n={4} seed={11} />
@@ -110,9 +133,9 @@ export default function Avatar() {
         </div>
         <div className="mt-5 font-display font-extrabold text-[20px] text-ink">Choose an outfit</div>
         <Stack className="mt-3 grid grid-cols-3 gap-4" start={0.5} delay={0.06}>
-          {OUTFITS.map(o => (
+          {outfits.map(o => (
             <Item key={o.id} v="pop">
-              <Card hover selected={outfit === o.id} className="relative h-[148px] grid place-items-center overflow-hidden" onClick={() => { sfx.select(); g.setProfile({ outfit: o.id }) }}>
+              <Card aria-label={`Choose ${o.name}`} aria-pressed={outfit === o.id} hover selected={outfit === o.id} className="relative h-[148px] grid place-items-center overflow-hidden" onClick={() => { sfx.select(); g.setProfile({ outfit: o.id }) }}>
                 <img src={o.thumb} alt="" className="h-[136px] object-contain" />
                 {outfit === o.id && <Check className="absolute -top-1 -right-1" size={32} />}
               </Card>
@@ -132,7 +155,10 @@ export default function Avatar() {
       <TrustRow compact className="absolute left-[85px] top-[812px]" delay={0.3} items={[[ShieldCheck, '#22c55e', 'Safe & Secure', "Your child's data is always protected"], [Heart, '#ec4899', 'Loved by Kids', 'Designed for joy and growth'], [Users, '#3b82f6', 'Trusted by Parents', 'Real progress. Real results.']]} />
       <motion.div className="absolute left-[1085px] top-[795px] flex items-center gap-5" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <Button variant="ghost" size="md" icon={<ArrowLeft size={24} strokeWidth={2.6} />} className="h-[76px] px-9 text-[22px]" onClick={() => nav(-1)}>Back</Button>
-        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[360px] uppercase" sound="whoosh" onClick={async () => { await g.saveAvatar(); nav('/onboarding/interests') }}>This is me</Button>
+        {catalog.loading && <p role="status">Loading available avatars…</p>}
+        {catalog.error && <p role="alert">{catalog.error}</p>}
+        {!catalog.loading && !catalog.error && !faces.length && <p role="status">No supported explorer avatars are available yet.</p>}
+        <Button size="lg" arrow icon={<Rocket size={28} strokeWidth={2.4} />} className="w-[360px] uppercase" sound="whoosh" disabled={!supported(selectedFace,outfit)} onClick={async () => { await g.saveAvatar(); nav('/onboarding/interests') }}>This is me</Button>
       </motion.div>
     </Page>
   )
