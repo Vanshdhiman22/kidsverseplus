@@ -1,7 +1,7 @@
 // Keep remote identifiers separate from the artwork and route aliases used by the UI.
 export function subjectKey(value = '') {
   const key = String(value).toLowerCase().replace(/[ _]+/g, '-')
-  return ({ math: 'maths', mathematics: 'maths', english: 'literacy', science: 'evs', 'evs-/-science':'evs', computers: 'computer', 'computer-science': 'computer', 'general-awareness': 'general', 'general-knowledge': 'general' })[key] || key
+  return ({ math: 'maths', mathematics: 'maths', english: 'literacy', science: 'evs', 'evs-science': 'evs', 'evs-/-science':'evs', computers: 'computer', 'computer-science': 'computer', 'general-awareness': 'general', 'general-knowledge': 'general' })[key] || key
 }
 
 export function availableWorlds(subjects = [], artwork = []) {

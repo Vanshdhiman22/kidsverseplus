@@ -7,7 +7,7 @@ import { checkedJourney, subjectKey } from '../lib/live-data.js'
 import { journeyStationUrl } from '../lib/journey-route.js'
 import { loadJourneyProgress } from '../lib/journey-progress.js'
 import { usePublishedSubjects } from '../lib/usePublishedSubjects.js'
-import { api, getToken } from '../lib/api.js'
+import { api, API_MODE, getToken } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 import { isReviewMode } from '../lib/reviewMode.js'
 import { reviewLearning } from '../lib/review-learning.js'
@@ -16,6 +16,7 @@ import { WORLDS } from '../data/catalog.js'
 import { journeySubjectChoices, journeySubjectQuery } from '../lib/journey-subjects.js'
 import { journeyDisplaySnapshot, journeyDisplayData } from '../lib/journey-display-cache.js'
 import { journeyWorldTheme } from '../lib/journey-world-theme.js'
+import { journeyFromSubjects } from '../lib/journey-catalog.js'
 
 export default function Journey() {
   const nav = useNavigate()
@@ -28,7 +29,7 @@ export default function Journey() {
   const displayCache = React.useRef({ studentId, token, subjects:new Map() })
   if (displayCache.current.studentId !== studentId || displayCache.current.token !== token) displayCache.current = { studentId, token, subjects:new Map() }
   const [refreshKey, setRefreshKey] = React.useState(0)
-  const subjects = usePublishedSubjects(studentId, refreshKey)
+  const subjects = usePublishedSubjects(studentId, refreshKey, { curriculumTopics: API_MODE === 'live' })
   React.useEffect(() => {
     // Warm the existing small illustrations once, never hold map rendering on
     // an image download or decode. Subsequent subject switches use browser cache.
@@ -48,18 +49,19 @@ export default function Journey() {
   }, [subject, requested, choices.length, previewOnly, subjects.loading, g.state.progress.world])
   const resource = useLiveResource(
     () => api.studentJourney(studentId, apiSubject).then(data => checkedJourney(data, subject)),
-    [studentId, subject, apiSubject, token, refreshKey], { enabled: !review && !previewOnly && !subjects.error && (!subjects.loading || subject === 'maths') && Boolean(studentId && subject && token) },
+    [studentId, subject, apiSubject, token, refreshKey], { enabled: API_MODE !== 'live' && !review && !previewOnly && !subjects.error && !subjects.loading && Boolean(studentId && subject && token) },
   )
+  const curriculumJourney = React.useMemo(() => API_MODE === 'live' ? journeyFromSubjects(subjects.data, subject) : null, [subjects.data, subject])
   const sample = React.useMemo(() => review ? reviewLearning(subject, { contentId: ACTIVE_CONTENT_ID }) : null, [review, subject])
-  const rawJourney = journeyDisplayData({ previewOnly, sample:sample?.journey, live:resource.data, cached:displayCache.current.subjects.get(subject) })
+  const rawJourney = journeyDisplayData({ previewOnly, sample:sample?.journey, live:curriculumJourney || resource.data, cached:displayCache.current.subjects.get(subject) })
   const progress = useLiveResource(
     () => loadJourneyProgress({ journey: rawJourney, studentId, readTopic: api.studentTopic }),
-    [studentId, subject, token, rawJourney], { enabled: !review && Boolean(resource.data && studentId && token) },
+    [studentId, subject, token, rawJourney], { enabled: !review && Boolean((curriculumJourney || resource.data) && studentId && token) },
   )
   React.useEffect(() => {
-    const latest = progress.data || resource.data
+    const latest = progress.data || curriculumJourney || resource.data
     if (!review && latest) displayCache.current.subjects.set(subject, journeyDisplaySnapshot(latest))
-  }, [subject, resource.data, progress.data, review])
+  }, [subject, curriculumJourney, resource.data, progress.data, review])
   const worlds = progress.data?.worlds || rawJourney?.worlds || []
   const visitStation = (station, index) => {
     const url = journeyStationUrl(subject, station)
@@ -79,10 +81,10 @@ export default function Journey() {
     <JourneyCloudMap key={studentId} worlds={worlds} name={name} face={face} subject={subject}
       choices={choices} seen={g.state.progress.journeySeen?.[subject]} catalogReady={!subjects.loading && !subjects.error}
       previewOnly={previewOnly} subjectName={selectedSubject?.name}
-      loading={!review && (subjects.loading || resource.loading) && !rawJourney} error={subjects.error || resource.error}
+      loading={!review && (subjects.loading || resource.loading) && !rawJourney} error={!studentId && !review ? 'Choose a child profile to load their topics.' : subjects.error || resource.error}
       checkingProgress={!review && Boolean(rawJourney) && (progress.loading || resource.loading)} onVisit={visitStation}
       advanced={g.state.progress.journeyAdvanced?.[subject]} onAutoAdvance={rememberAdvance}
       onPark={index => g.markJourneySeen(subject, index)}
-      onSubject={id => setQuery({ subject: id })} onBack={() => nav('/home')} onRetry={()=>setRefreshKey(value=>value+1)} />
+      onSubject={id => setQuery({ subject: id })} onBack={() => nav('/home')} onRetry={()=>studentId ? setRefreshKey(value=>value+1) : nav('/switch')} />
   </Page>
 }

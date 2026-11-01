@@ -18,7 +18,7 @@ import './IllustratedJourney.css'
 const NO_ADVANCES = []
 const WORLD_ICONS = { maths: Shapes, books: BookOpen, nature: Leaf, technology: Cpu, discovery: Compass }
 
-function CloudContents({ cloud, seen, advanced, autoTravel, engineEffects, onVisit, onPark, onAutoAdvance, onChangePhase, registerStart, registerVisit, onFocusTopic, subject, reduced, visible, onFallback }) {
+function CloudContents({ cloud, seen, advanced, autoTravel, engineEffects, onVisit, onPark, onAutoAdvance, onChangePhase, registerStart, registerVisit, onFocusTopic, subject, reduced, visible, onFallback, loading, error }) {
   const available = cloud.stations.filter(station => station.available)
   const remembered = seen - cloud.offset
   const first = currentJourneyStation(available)
@@ -92,7 +92,7 @@ function CloudContents({ cloud, seen, advanced, autoTravel, engineEffects, onVis
   })
   return <>
     <IllustratedStationWorld subject={subject} cloud={cloud} parked={parked} selected={selected} trip={trip}
-      engineEffects={engineEffects} reduced={reduced} onArrive={arrive} onVisit={visit} onNextCloud={nextCloud} visible={visible} onFallback={onFallback} />
+      engineEffects={engineEffects} reduced={reduced} onArrive={arrive} onVisit={visit} onNextCloud={nextCloud} visible={visible} onFallback={onFallback} loading={loading} error={error} />
     {trip && <span className="sr-only" role="status">{trip.gate ? `Driving to Phase ${cloud.phase + 1}` : `Driving to ${cloud.stations[trip.index].name}`}</span>}
   </>
 }
@@ -168,7 +168,7 @@ export default function JourneyCloudMap({ worlds = [], name, face, subject, subj
           <p>{previewOnly ? 'Topics coming soon' : 'Complete 10 topics to reach the next cloud'}</p>
         </section>
         <section className="journey-world__topics" aria-labelledby="journey-topics-heading">
-          <div className="journey-world__topics-heading"><h2 id="journey-topics-heading">In this cloud</h2><span>{cloud.available} {cloud.available === 1 ? 'topic' : 'topics'}</span></div>
+          <div className="journey-world__topics-heading"><h2 id="journey-topics-heading">In this cloud</h2><span>{loading ? 'Loading…' : `${cloud.available} ${cloud.available === 1 ? 'topic' : 'topics'}`}</span></div>
           <div className="journey-world__topic-links">
             {available.length ? available.map(station => <button type="button" key={station.id} aria-current={selected?.id === station.id ? 'location' : undefined} onClick={() => visitAction.current?.(station.index - cloud.offset)}>
               <span>{station.completed ? <Check size={16} /> : String(station.number).padStart(2, '0')}</span><strong>{station.name}</strong><ArrowRight size={16} aria-hidden="true" />
@@ -188,17 +188,17 @@ export default function JourneyCloudMap({ worlds = [], name, face, subject, subj
             <CloudContents cloud={cloud} face={face} seen={seen} subject={subject} reduced={reduced}
               advanced={advanced} autoTravel={autoTravel} engineEffects={engineEffects} onVisit={onVisit} onPark={onPark} onAutoAdvance={onAutoAdvance}
               onChangePhase={phase => { setAutoTravel(true); setRequestedPhase(phase) }} registerStart={startAction} registerVisit={visitAction}
-              onFocusTopic={onFocusTopic} visible={view === 'map'} onFallback={()=>setView('topics')} />
+              onFocusTopic={onFocusTopic} visible={view === 'map'} onFallback={()=>setView('topics')} loading={loading} error={error} />
           </div>
           {view === 'topics' && <div className="journey-world__list" aria-label="Topics in this cloud">{cloud.stations.map(station => <button type="button" key={station.id || `future-${station.number}`} disabled={!station.available || focus.travelling} onClick={() => visitAction.current?.(station.index - cloud.offset)}>
-            <span>{station.completed ? <Check size={20} /> : String(station.number).padStart(2, '0')}</span><div><small>{station.completed ? 'Completed' : station.available ? 'Topic' : 'Coming soon'}</small><strong>{station.available ? station.name : 'A new discovery awaits'}</strong></div>{station.available ? <ArrowRight size={18} /> : <Lock size={16} />}
+            <span>{station.completed ? <Check size={20} /> : String(station.number).padStart(2, '0')}</span><div><small>{station.completed ? 'Completed' : station.available ? 'Topic' : loading ? 'Loading…' : error ? 'Unavailable' : 'Coming soon'}</small><strong>{station.available ? station.name : 'A new discovery awaits'}</strong></div>{station.available ? <ArrowRight size={18} /> : <Lock size={16} />}
           </button>)}</div>}
           {previewOnly && view === 'map' && <div className="journey-world__preview-badge"><WorldIcon size={15} /><span>{theme.label} world preview</span><span>·</span><span>Coming soon</span></div>}
           {loading && <div className="town-sync" role="status"><Sparkles size={15} /><span>Finding your published topics…</span></div>}
         </div>
         <footer className="journey-world__dock">
           <span className="journey-world__dock-icon"><MapPin size={22} /></span><div className="journey-world__destination" aria-live="polite"><small>{focus.travelling ? 'ON THE WAY' : selected ? 'YOUR NEXT DISCOVERY' : 'A NEW WORLD TO EXPLORE'}</small><strong>{selected?.name || `${theme.label} adventure`}</strong><p>{selected ? 'Drive to this topic and explore its concepts.' : 'New topics will appear as they become available.'}</p></div>
-          <button type="button" disabled={(!canStart && !error) || focus.travelling} onClick={() => error ? onRetry?.() : cloud.canGoNext ? startAction.current?.() : selected && visitAction.current?.(selected.index - cloud.offset)}>{error ? 'Try again' : focus.travelling ? 'Driving…' : cloud.canGoNext ? 'Next cloud' : selected ? 'Explore topic' : 'Coming soon'}<ArrowRight size={19} /></button>
+          <button type="button" disabled={(!canStart && !error) || focus.travelling} onClick={() => error ? onRetry?.() : cloud.canGoNext ? startAction.current?.() : selected && visitAction.current?.(selected.index - cloud.offset)}>{error ? 'Try again' : loading ? 'Loading topics…' : focus.travelling ? 'Driving…' : cloud.canGoNext ? 'Next cloud' : selected ? 'Explore topic' : 'Coming soon'}<ArrowRight size={19} /></button>
         </footer>
         {cloud.phase > 1 && <button type="button" className="journey-world__previous" onClick={() => { setAutoTravel(false); setRequestedPhase(cloud.phase - 1) }}><ArrowLeft size={16} />Previous cloud</button>}
       </section>

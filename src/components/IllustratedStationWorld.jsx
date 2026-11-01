@@ -3,7 +3,7 @@ import { Check, Lock, MapPin, ArrowRight } from 'lucide-react'
 import { ILLUSTRATED_WORLD_KEYS, illustratedWorld, illustratedRoadPoint } from '../lib/illustrated-journey.js'
 import './IllustratedStationWorld.css'
 
-export default function IllustratedStationWorld({ subject, cloud, parked, selected, trip, engineEffects, reduced, onArrive, onVisit, onNextCloud, visible=true, onFallback }) {
+export default function IllustratedStationWorld({ subject, cloud, parked, selected, trip, engineEffects, reduced, onArrive, onVisit, onNextCloud, visible=true, onFallback, loading=false, error='' }) {
   const world=illustratedWorld(subject), route=world.route
   const car=useRef(null),position=useRef(route.stops[parked]??route.stops[0])
   const latest=useRef(onArrive);latest.current=onArrive
@@ -68,11 +68,11 @@ export default function IllustratedStationWorld({ subject, cloud, parked, select
       return <button key={station.number} type="button" className={`illustrated-town__station ${station.available?'is-published':'is-future'} ${station.completed?'is-complete':''} ${index===selected&&station.available?'is-current':''}`}
         style={{left:`clamp(8.5%,${x/10}%,91.5%)`,top:`${y/6}%`}}
         disabled={!station.available} onClick={()=>onVisit(index)} aria-current={index===selected&&station.available?'location':undefined}
-        aria-label={`${station.available?'Open':'Coming soon, station'} ${station.number}${station.available?`: ${station.name}`:''}${station.completed?', completed':''}`}
-        title={station.available?station.name:'Topics will appear when they are published.'}>
+        aria-label={`${station.available?'Open':loading?'Loading topic':error?'Unavailable station':'Coming soon, station'} ${station.number}${station.available?`: ${station.name}`:''}${station.completed?', completed':''}`}
+        title={station.available?station.name:loading?'Loading your topics.':error?'Your topics could not load. Please try again.':'Topics will appear when they are published.'}>
         <span className="illustrated-town__number" aria-hidden="true">{String(station.number).padStart(2,'0')}</span>
-        <span className="illustrated-town__sign" aria-hidden="true">{station.completed&&<Check size={13}/>}<span>{station.available?station.name:'Coming soon'}</span>{station.available&&<ArrowRight size={12}/>}</span>
-        {!station.available&&<span className="illustrated-town__lock" aria-hidden="true"><Lock size={17}/></span>}
+        <span className="illustrated-town__sign" aria-hidden="true">{station.completed&&<Check size={13}/>}<span>{station.available?station.name:loading?'Loading…':error?'Unavailable':'Coming soon'}</span>{station.available&&<ArrowRight size={12}/>}</span>
+        {!station.available&&!loading&&<span className="illustrated-town__lock" aria-hidden="true"><Lock size={17}/></span>}
       </button>
     })}
     <button ref={car} type="button" className={`illustrated-town__car ${trip?'is-driving':''}`} style={{left:`${parkedPoint.x/10}%`,top:`${parkedPoint.y/6}%`}}
