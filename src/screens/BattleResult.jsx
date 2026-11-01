@@ -47,7 +47,7 @@ export default function BattleResult() {
   const pkg = useRouteContent()
   try { bot.name = JSON.parse(sessionStorage.getItem(`kv:api-opponent:${g.state.activeChildId}`))?.name || bot.name } catch {}
   useEffect(() => {
-    if (!savedResult?.battleId) { nav('/challenge/preview', { replace: true }); return }
+    if (!savedResult?.battleId) return
     const t = setTimeout(() => (won ? sfx.success() : sfx.unlock()), 400)
     const t2 = setTimeout(() => {
       const key = `kv:rewarded:${savedResult.battleId}`

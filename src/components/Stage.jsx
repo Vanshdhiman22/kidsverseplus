@@ -41,7 +41,8 @@ export default function Stage({ children }) {
   useEffect(() => {
     const root = document.documentElement
     const apply = () => {
-      const w = window.innerWidth, h = window.innerHeight
+      const container = ref.current?.parentElement
+      const w = container?.clientWidth || window.innerWidth, h = container?.clientHeight || window.innerHeight
       /* Stretch scales the axes independently, so the board reaches all four
          edges without ever cropping — the art just reads a little wider. */
       const fit = Math.min(w / STAGE_W, h / STAGE_H)
@@ -65,9 +66,11 @@ export default function Stage({ children }) {
       }
     }
     apply()
+    const observer = new ResizeObserver(apply)
+    if (ref.current?.parentElement) observer.observe(ref.current.parentElement)
     window.addEventListener('resize', apply)
     window.visualViewport?.addEventListener('resize', apply)
-    return () => { window.removeEventListener('resize', apply); window.visualViewport?.removeEventListener('resize', apply) }
+    return () => { observer.disconnect(); window.removeEventListener('resize', apply); window.visualViewport?.removeEventListener('resize', apply) }
   }, [mode, zoom])
 
   return (

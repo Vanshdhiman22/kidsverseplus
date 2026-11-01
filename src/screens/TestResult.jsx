@@ -8,6 +8,7 @@ import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar, UserChip } from '../components/TopBar.jsx'
 import { Panel, Card } from '../components/Panel.jsx'
 import Button from '../components/Button.jsx'
+import ContentStatus from '../components/ContentStatus.jsx'
 import { Ring, Counter, Confetti, Sparkles } from '../components/Widgets.jsx'
 import { useGame } from '../state/GameProvider.jsx'
 import { completeTest, getAttemptResult } from '../lib/gameApi.js'
@@ -56,7 +57,7 @@ export default function TestResult() {
     ['var(--danger-ink)', 'Incorrect', run ? run.total - run.correct : 0],
   ]
   useEffect(() => {
-    if (!run?.attemptId && !run?.runId) { nav('/tests/mixed/intro', { replace: true }); return }
+    if (!run?.attemptId && !run?.runId) return
     const t = setTimeout(() => pct >= 70 ? sfx.success() : sfx.wrong(), 500)
     const rewardKey = `kv:rewarded:${run.attemptId || run.runId}`
     const t2 = setTimeout(() => { if (!localStorage.getItem(rewardKey)) { localStorage.setItem(rewardKey, '1'); g.finishQuiz(); g.recordTest(run) }; if (!run.local) g.refreshStats().catch(e => g.notice(e.message)) }, 1600)
@@ -69,6 +70,7 @@ export default function TestResult() {
   const reviewPath = recommendation?.mission_id
     ? withSubject(`/missions/fractions/learn?mission=${encodeURIComponent(recommendation.mission_id)}`, run.subject)
     : run?.local ? withSubject('/missions/fractions/learn') : `/learn/topics/${run?.subject || 'maths'}`
+  if (!run?.attemptId && !run?.runId) return <ContentStatus activity="test result" pkg={{ contentError: 'No saved test result. Complete a test to see your score.' }} />
   return (
     <Page>
       <Scene name="result" />

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { Lock, Star, Zap, ArrowLeft, Puzzle, BookOpen, FlaskConical, Grid3x3 } from 'lucide-react'
 import Scene, { Cutout, Child } from '../components/Scene.jsx'
@@ -55,7 +55,6 @@ export default function BattleOpponents() {
     } : bot
   })
   const bot = bots.find(b => b.id === sel) ?? bots[0]
-  if (!review && !requested) return <Navigate replace to={withSubject('/challenge', subject)} />
   if (catalogLoading || opponentsLoading || catalogError || opponentsError || !bot) return <ContentStatus activity="opponents" pkg={{ contentLoading: catalogLoading || opponentsLoading, contentError: catalogError || opponentsError || (!challengeId?'Choose a concept from Challenge Home.':'No opponents are published for this concept yet.') }} />
   return (
     <Page>

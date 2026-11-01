@@ -1,3 +1,4 @@
+import { SCREENS } from './lib/screens.js'
 import React, { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
@@ -73,20 +74,7 @@ const ApiTestLab = lazyScreen(() => import('./screens/ApiTestLab.jsx'))
 const ScreenIndex = lazyScreen(() => import('./screens/ScreenIndex.jsx'))
 const ContentPreview = lazyScreen(() => import('./screens/ContentPreview.jsx'))
 
-/* Route list, kept as the single place the screen order is written down. */
-export const SCREENS = [
-  ['/', '01 Landing'], ['/parent/login', '02 Parent Login'], ['/parent/forgot-password', '02a Forgot Password'], ['/parent/create-account', '02b Create Account'], ['/onboarding/child', '03 Create Child'], ['/onboarding/whatsapp', '03b Parent WhatsApp'], ['/onboarding/grade-board', '04 Learning Setup'],
-  ['/onboarding/avatar', '05 Avatar'], ['/onboarding/interests', '06 Interests'], ['/onboarding/goals', '07 Goals'], ['/onboarding/nova', '08 Meet Nova'],
-  ['/welcome', '09 First Welcome'], ['/home', '10 Home'], ['/learn', '11 Learn Hub'], ['/journey', '12 Journey Map'], ['/learn/topics/maths', '13 Topic'],
-  ['/missions/fractions', '14 Lesson Â· Discover'], ['/missions/fractions/learn', '15 Learn Before Quiz'], ['/missions/fractions/spot-mistake', '16 Spot the Mistake'], ['/missions/fractions/complete', '17 Mission Complete'],
-  ['/tests', '18 Test Arena'], ['/tests/mixed/intro', '19 Test Intro'], ['/tests/mixed/question', '20 Test Question'], ['/tests/mixed/result', '21 Test Result'],
-  ['/extra', '22 Extra Learning'], ['/extra/reading', '23 Reading Fluency'], ['/extra/confidence', '24 Confidence Mission'], ['/challenge', '25 Challenge Home'],
-  ['/challenge/opponents', '26 Battle Opponents'], ['/challenge/preview', '27 Battle Preview'], ['/challenge/battle', '28 Battle'], ['/challenge/result', '29 Battle Result'],
-  ['/challenge/leaderboard', '30 Leaderboard'], ['/profile', '31 Profile'], ['/profile/journey', '32 Our Journey'], ['/profile/break-passes', '32a Break Passes'], ['/switch', '33 Switch Student'],
-  ['/parent', '34 Parent Overview'], ['/parent/evidence', '35 Parent Topic Evidence'], ['/parent/plan', '36 Parent Next Plan'],
-  ['/api-test', 'Dev Â· API Test Lab'],
-  ['/screens', 'Dev Â· Screen Index'],
-]
+export { SCREENS } from './lib/screens.js'
 
 /* Space-themed placeholder while a lazy chunk loads (a few ms on a warm cache). */
 const Loading = () => <div className="screen grid place-items-center" role="status" aria-label="Loading screen"><motion.div className="w-[64px] h-[64px] rounded-full border-4 border-t-transparent" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} animate={{ rotate: 360 }} transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }} /></div>
@@ -136,7 +124,7 @@ function Routed() {
   return (
     <AnimatePresence initial={false}>
       <Suspense fallback={<Loading />} key={location.pathname === '/journey' ? location.pathname : location.pathname + location.search}>
-        <Routes location={location}>
+        <ScreenErrorBoundary key={location.pathname + location.search}><Routes location={location}>
           <Route path="/" element={<Landing />} />
           <Route path="/parent/login" element={<ParentLogin />} />
           <Route path="/demo" element={<DemoEntry />} />
@@ -185,7 +173,7 @@ function Routed() {
           <Route path="/api-test" element={<ApiTestLab />} />
           <Route path="/screens" element={<ScreenIndex />} />
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        </Routes></ScreenErrorBoundary>
       </Suspense>
     </AnimatePresence>
   )
@@ -203,7 +191,7 @@ export default function App() {
           <MusicPlayer />
           <AuditBridge />
           {API_MODE==='mock'&&<><MockInspector /><DevDummyNavigator screens={SCREENS} /></>}
-          {import.meta.env.DEV && API_MODE==='live' && <ScreenBypass />}
+          <ScreenBypass />
           <Stage><SessionGate><Routed /></SessionGate><NavDrawer /><BackButton /><Overlays /></Stage><PreviewNotice />
         </MotionConfig>
       </GameProvider>
