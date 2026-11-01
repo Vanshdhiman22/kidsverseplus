@@ -16,6 +16,7 @@ export default function ParentWhatsApp() {
   const nav = useNavigate()
   const input = useRef(null)
   const saving = useRef(false)
+  const onScreen = useRef(true)
   const [number, setNumber] = useState('')
   const [parent, setParent] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -25,6 +26,11 @@ export default function ParentWhatsApp() {
   const [touched, setTouched] = useState(false)
   const [reload, setReload] = useState(0)
   const invalid = touched && !validWhatsappNumber(number)
+
+  useEffect(() => {
+    onScreen.current = true
+    return () => { onScreen.current = false }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -48,13 +54,15 @@ export default function ParentWhatsApp() {
     saving.current = true; setBusy(true)
     try {
       const saved = await api.saveParentWhatsApp(`+91${number}`)
+      if (!onScreen.current) return
       const details = saved?.parent ?? saved
       if (details?.whatsapp_number !== `+91${number}`) throw new Error('Save not confirmed')
       nav('/onboarding/grade-board')
     } catch {
-      setSaveError('Your number couldn’t be saved. Please try again.')
+      if (onScreen.current) setSaveError('Your number couldn’t be saved. Please try again.')
     } finally {
-      saving.current = false; setBusy(false)
+      saving.current = false
+      if (onScreen.current) setBusy(false)
     }
   }
 
@@ -89,6 +97,8 @@ export default function ParentWhatsApp() {
               {saveError && <p role="alert" className="whatsapp-error">{saveError}</p>}
               <Button type="submit" size="lg" arrow disabled={busy} className="whatsapp-continue">{busy ? 'Saving…' : 'Save and continue'}</Button>
             </form>}
+        <Button type="button" variant="outline" arrow className="whatsapp-skip" aria-describedby="whatsapp-skip-help" onClick={() => { onScreen.current = false; nav('/onboarding/grade-board') }}>Skip this screen</Button>
+        <p id="whatsapp-skip-help" className="whatsapp-help">You can continue without entering a number.</p>
         <button type="button" className="whatsapp-back" disabled={busy} onClick={() => nav('/onboarding/child')}><ArrowLeft size={19} aria-hidden="true" /> Back to child details</button>
       </Panel>
     </div>
