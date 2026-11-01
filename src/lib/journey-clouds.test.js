@@ -3,9 +3,35 @@ import assert from 'node:assert/strict'
 import { isJourneyTopicComplete, journeyCloud, journeyTopicArt } from './journey-clouds.js'
 import { cloudJourneyRoute, CLOUD_PLATFORMS } from './journey-cloud-route.js'
 import { loadJourneyProgress } from './journey-progress.js'
+import { journeyStationUrl } from './journey-route.js'
+
+test('Journey uses the database topic name and topic ID, while the topic path keeps its concept mission IDs', async () => {
+  const worlds = [{ topic_id: 'db-topic-shapes', world_name: 'Fantasy City', status: 'unlocked' }]
+  const concepts = [{ mission_id: 'concept-mission-spatial', name: 'Spatial Relationships', status: 'unlocked' }, { mission_id: 'concept-mission-2d', name: 'Basic 2D Shapes', status: 'locked' }]
+  const result = await loadJourneyProgress({ journey: { worlds }, studentId: 'child', readTopic: async (studentId, topicId) => {
+    assert.equal(studentId, 'child')
+    assert.equal(topicId, 'db-topic-shapes')
+    return { id: topicId, name: 'Shapes and Spatial Understanding', nodes: concepts }
+  } })
+  const cloud = journeyCloud(result.worlds, 1, 'maths')
+  assert.equal(cloud.available, 1)
+  assert.equal(cloud.stations[0].name, 'Shapes and Spatial Understanding')
+  assert.equal(cloud.stations[0].art, 'shapes')
+  assert.equal(journeyStationUrl('maths', cloud.stations[0]), '/learn/topics/maths?topic=db-topic-shapes')
+  assert.equal(result.worlds[0].total_missions, 2)
+  assert.deepEqual(concepts.map(node => node.mission_id), ['concept-mission-spatial', 'concept-mission-2d'])
+})
 
 const topic = (index, extra = {}) => ({ topic_id: `topic-${index}`, world_name: `Topic ${index}`, status: 'completed',
   progress_verified: true, total_missions: 2, completed_missions: 2, ...extra })
+
+test('subject-specific stations keep English, nature and technology artwork separate from maths', () => {
+  assert.equal(journeyTopicArt('Counting words', 'literacy'), 'books')
+  assert.equal(journeyTopicArt('Number codes', 'computer'), 'technology')
+  assert.equal(journeyTopicArt('Discovering our world', 'general'), 'discovery')
+  assert.equal(journeyTopicArt('Numbers in nature', 'evs'), 'nature')
+  assert.equal(journeyTopicArt('Counting objects', 'maths'), 'numbers')
+})
 
 test('a sparse live curriculum renders ten places without inventing IDs, names, completion or a second cloud', () => {
   const worlds = [topic(1, { world_name: 'Shapes and Spatial Understanding' }), topic(2, { world_name: 'Numbers from 1 to 9', progress_verified: false })]

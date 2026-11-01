@@ -4,13 +4,13 @@ import { isReviewMode } from './reviewMode.js'
 import { reviewSubjects } from './review-learning.js'
 import { loadPublishedSubjects } from './published-subject-loader.js'
 
-export function usePublishedSubjects(studentId) {
+export function usePublishedSubjects(studentId, refreshKey = 0) {
   const review = isReviewMode()
   const resource = useLiveResource(() => loadPublishedSubjects({
     studentId, live: API_MODE === 'live',
     loadSubjects: () => api.studentSubjects(studentId),
     loadPath: () => api.studentLearningPath(studentId),
     loadCatalog: () => apiRequest('/admin/content/packages'),
-  }), [studentId, getToken(), review], { enabled: !review && Boolean(studentId && getToken()) })
+  }), [studentId, getToken(), review, refreshKey], { enabled: !review && Boolean(studentId && getToken()) })
   return review ? { data: reviewSubjects(), loading: false, error: '' } : resource
 }

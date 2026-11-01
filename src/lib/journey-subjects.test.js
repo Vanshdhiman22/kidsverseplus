@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { journeySubjectChoices } from './journey-subjects.js'
+import { journeySubjectChoices, journeySubjectQuery } from './journey-subjects.js'
 import { checkedJourney } from './live-data.js'
 
 test('Journey exposes other subject previews without copying sample IDs, progress or lesson data', () => {
@@ -22,4 +22,13 @@ test('a Maths Journey response can never become another subject Journey', () => 
   const maths = { subject: 'Mathematics', worlds: [{ topic_id: 'shapes', world_name: 'Shapes' }] }
   for (const subject of ['literacy', 'evs', 'computer', 'general']) assert.throws(() => checkedJourney(maths, subject), /different subject/)
   assert.equal(checkedJourney(maths, 'maths'), maths)
+})
+
+test('Journey sends the published API slug while keeping the route alias and subject guard', () => {
+  const catalog = [{ name: 'English', slug: 'english' }, { name: 'Mathematics', slug: 'mathematics' }, { name: 'Robotics', slug: 'robotics-studio' }]
+  assert.equal(journeySubjectQuery('literacy', catalog), 'english')
+  assert.equal(journeySubjectQuery('maths', catalog), 'mathematics')
+  assert.equal(journeySubjectQuery('robotics-studio', catalog), 'robotics-studio')
+  assert.equal(checkedJourney({ subject: 'English', worlds: [] }, 'literacy').subject, 'English')
+  assert.throws(() => checkedJourney({ subject: 'Mathematics', worlds: [] }, 'literacy'), /different subject/)
 })

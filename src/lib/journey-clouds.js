@@ -2,6 +2,10 @@ export const TOPICS_PER_CLOUD = 10
 
 export function journeyTopicArt(name = '', subject = '') {
   const topic = String(name).toLowerCase()
+  if (subject === 'literacy') return 'books'
+  if (subject === 'computer') return 'technology'
+  if (subject === 'general') return 'discovery'
+  if (subject === 'evs') return 'nature'
   if (/shape|spatial|geometr|fraction/.test(topic)) return 'shapes'
   if (/number|count|digit|decimal/.test(topic)) return 'numbers'
   if (/add|subtract|multiply|multiplication|division|arithmetic|operation/.test(topic)) return 'arithmetic'
@@ -37,10 +41,10 @@ export function journeyCloud(worlds = [], requestedPhase = 1, subject = '') {
       id: available ? world.topic_id : null,
       number: offset + index + 1,
       index: offset + index,
-      name: available ? world.world_name || world.name || `Topic ${offset + index + 1}` : 'Coming soon',
+      name: available ? world.topic_name || world.world_name || world.name || `Topic ${offset + index + 1}` : 'Coming soon',
       available, completed,
       state: completed ? 'done' : ['current', 'in_progress'].includes(world?.status) ? 'here' : world?.status === 'unlocked' ? 'next' : 'locked',
-      art: available ? journeyTopicArt(world.world_name || world.name, subject) : null,
+      art: available ? journeyTopicArt(world.topic_name || world.world_name || world.name, subject) : null,
     }
   })
   const completed = stations.filter(station => station.completed).length

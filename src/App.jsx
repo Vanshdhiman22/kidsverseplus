@@ -15,6 +15,7 @@ import MusicPlayer from './components/MusicPlayer.jsx'
 import Landing from './screens/Landing.jsx'
 import MockInspector from './components/MockInspector.jsx'
 import DevDummyNavigator from './components/DevDummyNavigator.jsx'
+import ScreenBypass from './components/ScreenBypass.jsx'
 import MockDemo from './screens/MockDemo.jsx'
 import MockParentGate from './screens/MockParentGate.jsx'
 import DemoEntry from './screens/DemoEntry.jsx'
@@ -134,7 +135,7 @@ function Routed() {
      old one fades out underneath it, so a click reads as instant. */
   return (
     <AnimatePresence initial={false}>
-      <Suspense fallback={<Loading />} key={location.pathname + location.search}>
+      <Suspense fallback={<Loading />} key={location.pathname === '/journey' ? location.pathname : location.pathname + location.search}>
         <Routes location={location}>
           <Route path="/" element={<Landing />} />
           <Route path="/parent/login" element={<ParentLogin />} />
@@ -202,6 +203,7 @@ export default function App() {
           <MusicPlayer />
           <AuditBridge />
           {API_MODE==='mock'&&<><MockInspector /><DevDummyNavigator screens={SCREENS} /></>}
+          {import.meta.env.DEV && API_MODE==='live' && <ScreenBypass />}
           <Stage><SessionGate><Routed /></SessionGate><NavDrawer /><BackButton /><Overlays /></Stage><PreviewNotice />
         </MotionConfig>
       </GameProvider>

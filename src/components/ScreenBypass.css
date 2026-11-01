@@ -1,0 +1,10 @@
+.screen-bypass { position:fixed; left:50%; bottom:max(16px,env(safe-area-inset-bottom)); z-index:1000; transform:translateX(-50%); display:flex; align-items:center; gap:18px; width:max-content; max-width:calc(100vw - 24px); padding:10px 12px 10px 16px; border:1px solid #cbbcf2; border-radius:16px; background:#fff; color:#28204f; box-shadow:0 6px 24px #24144126; font:600 12px/1.4 var(--font-body); }
+.screen-bypass strong,.screen-bypass span { display:block; }
+.screen-bypass strong { font-weight:900; }
+.screen-bypass span { color:#655783; }
+.screen-bypass button { display:flex; align-items:center; justify-content:center; gap:8px; flex-shrink:0; min-height:44px; padding:10px 14px; border:1px solid #aa8bea; border-radius:11px; background:#eee7ff; color:#54289b; font:800 14px/1.2 var(--font-body); cursor:pointer; touch-action:manipulation; }
+.screen-bypass button:hover { background:#e2d5ff; }
+.screen-bypass button:focus-visible { outline:3px solid #7847cc; outline-offset:3px; }
+.screen-bypass button:disabled { opacity:.5; cursor:default; }
+.screen-bypass--inline { position:relative; inset:auto; transform:none; width:100%; max-width:none; margin-top:18px; box-shadow:none; }
+@media(max-width:500px) { .screen-bypass { gap:8px; padding:8px 10px; font-size:11px; } .screen-bypass button { padding-inline:10px; font-size:13px; } }

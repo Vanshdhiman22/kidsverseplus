@@ -7,6 +7,7 @@ import { TopBar } from '../components/TopBar.jsx'
 import { Panel } from '../components/Panel.jsx'
 import { Steps } from '../components/Stepper.jsx'
 import Button from '../components/Button.jsx'
+import ScreenBypass from '../components/ScreenBypass.jsx'
 import { api } from '../lib/api.js'
 import { validWhatsappNumber, whatsappDigits } from '../lib/parent-contact.js'
 import { ONBOARDING_STEPS } from './CreateChild.jsx'
@@ -89,6 +90,7 @@ export default function ParentWhatsApp() {
               {saveError && <p role="alert" className="whatsapp-error">{saveError}</p>}
               <Button type="submit" size="lg" arrow disabled={busy} className="whatsapp-continue">{busy ? 'Saving…' : 'Save and continue'}</Button>
             </form>}
+        <ScreenBypass inline disabled={busy} />
         <button type="button" className="whatsapp-back" disabled={busy} onClick={() => nav('/onboarding/child')}><ArrowLeft size={19} aria-hidden="true" /> Back to child details</button>
       </Panel>
     </div>

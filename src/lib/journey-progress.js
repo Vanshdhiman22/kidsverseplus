@@ -12,7 +12,7 @@ export async function loadJourneyProgress({journey,studentId,readTopic}) {
    const status=nodes.length&&completed===nodes.length?'completed':completed||active?'in_progress':ready?'unlocked':world.status;
    const display=learningPathDisplay(nodes,detail.tiers||[]);
    const next=nextLearningNode(display);
-   return {...world,status,completed_missions:completed,total_missions:nodes.length,progress_verified:true,next_lesson:next?.name,exploring:Boolean(next)&&status!=='completed'};
+   return {...world,...(detail.name?{topic_name:detail.name}:{}),status,completed_missions:completed,total_missions:nodes.length,progress_verified:true,next_lesson:next?.name,exploring:Boolean(next)&&status!=='completed'};
   }catch{return world;}
  }));
  return {...journey,worlds};
