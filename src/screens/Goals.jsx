@@ -1,10 +1,11 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
+import { Lock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import Scene, { Child } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
-import { Card, Check } from '../components/Panel.jsx'
+import { Check } from '../components/Panel.jsx'
 import Button from '../components/ApiButton.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Segments } from '../components/Stepper.jsx'
@@ -14,6 +15,7 @@ import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 import { api, API_MODE } from '../lib/api.js'
 import { useApiCatalog } from '../lib/useApiCatalog.js'
+import ComingSoonBadge from '../components/ComingSoonBadge.jsx'
 
 const apiGoalKey = { master_school_topics: 'school', build_confidence: 'confidence', prepare_competitions: 'competition', read_fluently: 'reading', explore_beyond_class: 'explore', not_sure_yet: 'nova' }
 
@@ -43,11 +45,14 @@ function Constellation({ chosen, onPick, available }) {
       </svg>
       <motion.div className="absolute w-[36px] h-[36px] rounded-full" style={{ left: CENTER.x - 18, top: CENTER.y - 18, background: 'radial-gradient(circle, #fff, #a78bfa 40%, transparent 70%)' }} animate={{ scale: [1, 1.5, 1], opacity: [0.8, 1, 0.8] }} transition={{ duration: 2.4, repeat: Infinity }} />
       {NODES.filter(n => available.some(g => g.id === n.id)).map((n, i) => {
-        const goal = GOALS.find(g => g.id === n.id); const on = chosen.includes(n.id)
+        const goal = GOALS.find(g => g.id === n.id)
+        const enabled = available.find(item => item.id === n.id)?.available
+        const on = enabled && chosen.includes(n.id)
         return (
-          <motion.button key={n.id} className="absolute flex flex-col items-center w-[160px] -ml-[40px]" style={{ left: n.x, top: n.y }} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.08 + i * 0.1 }} onClick={() => onPick(n.id)}>
+          <motion.button key={n.id} type="button" disabled={!enabled} aria-label={enabled ? `Choose ${goal.title}` : `${goal.title}, locked, coming soon`} aria-pressed={on} className={cn('absolute flex flex-col items-center w-[160px] -ml-[40px]', !enabled && 'cursor-not-allowed')} style={{ left: n.x, top: n.y }} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.08 + i * 0.1 }} onClick={() => onPick(n.id)}>
             <motion.div className="relative w-[80px] h-[80px] rounded-full grid place-items-center pill" animate={{ scale: on ? 1.15 : 1, boxShadow: on ? '0 0 0 4px rgba(139,92,246,.5), 0 0 40px rgba(139,92,246,.8)' : '0 6px 18px -10px rgba(70,50,190,.35)' }} transition={{ type: 'spring', stiffness: 300, damping: 18 }}>
-              <img src={goal.icon} alt="" className="w-[48px] h-[48px] object-contain" />
+              <img src={goal.icon} alt="" className={cn('w-[48px] h-[48px] object-contain', !enabled && 'grayscale opacity-45')} />
+              {!enabled && <span className="absolute -bottom-1 -right-1 rounded-full bg-[var(--lavender)] p-1.5 text-ink"><Lock size={16} aria-hidden="true" /></span>}
               {on && <motion.span className="absolute -top-1 -right-1 w-[26px] h-[26px] rounded-full grid place-items-center text-white" style={{ background: 'var(--grad-primary)' }} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 18 }}><Check size={15} strokeWidth={3.5} /></motion.span>}
             </motion.div>
             <div className={cn('mt-2 text-center text-[17px] font-extrabold whitespace-pre-line leading-tight', on ? 'text-ink' : 'text-ink-2')}>{n.label}</div>
@@ -66,17 +71,27 @@ export default function Goals() {
     .filter(item => apiGoalKey[item.key])
     .map(item => {
       const local = GOALS.find(goal => goal.id === apiGoalKey[item.key])
-      return { ...local, id: apiGoalKey[item.key], title: item.name, tag: item.tagline, apiId: item.id }
+      return { ...local, id: apiGoalKey[item.key], title: item.name, tag: item.tagline, apiId: item.id, available: item.is_active !== false && item.locked !== true }
     })), [])
   const { data: goals, source, loading, error } = useApiCatalog(loadGoals, GOALS)
-  const visibleGoals = GOALS.map(local => goals.find(goal => goal.id === local.id)
-    ? { ...local, ...goals.find(goal => goal.id === local.id), available: true }
-    : { ...local, available: source === 'review' || source === 'demo' })
+  const preview = source === 'review' || source === 'demo'
+  const visibleGoals = GOALS.map(local => {
+    const item = goals.find(goal => goal.id === local.id)
+    return { ...local, ...item, available: preview || Boolean(item?.apiId && item.available) }
+  })
   const novaGoal = goals.find(goal => goal.id === 'nova')
+  const novaAvailable = preview || Boolean(novaGoal?.apiId && novaGoal.available)
   const chosen = g.state.profile.goals ?? []
+  const availableIds = [...visibleGoals.filter(goal => goal.available).map(goal => goal.id), ...(novaAvailable ? ['nova'] : [])]
+  useEffect(() => {
+    if (loading || error) return
+    const selected = chosen.filter(id => availableIds.includes(id))
+    if (selected.length !== chosen.length) g.setProfile({ goals: selected })
+  }, [loading, error, chosen, availableIds.join('|')])
   /* Pick as many as you like. "Let Nova decide" is the one exception: it means
      "I have not chosen", so it clears the rest and any other pick clears it. */
   const pick = id => {
+    if (loading || error || !availableIds.includes(id)) return
     sfx.select()
     if (id === 'nova') return g.setProfile({ goals: chosen.includes('nova') ? [] : ['nova'] })
     const next = chosen.includes(id) ? chosen.filter(x => x !== id) : [...chosen.filter(x => x !== 'nova'), id]
@@ -92,30 +107,32 @@ export default function Goals() {
       </Stack>
       <Stack className="absolute left-[95px] top-[275px] flex flex-col gap-[8px]" start={0.4} delay={0.07}>
         {visibleGoals.map(gl => {
-          const on = chosen.includes(gl.id)
+          const on = gl.available && chosen.includes(gl.id)
           return (
             <Item key={gl.id} v="left">
-              <Card hover={gl.available} selected={on} className={cn('w-[685px] h-[78px] px-5 flex items-center gap-5', !gl.available && 'opacity-65')} onClick={() => gl.available && pick(gl.id)}>
+              <motion.button type="button" disabled={!gl.available} aria-label={gl.available ? gl.title : `${gl.title}, locked, coming soon`} aria-pressed={on}
+                className={cn('card w-[685px] h-[78px] px-5 flex items-center gap-5 text-left', gl.available ? 'card-hover' : 'cursor-not-allowed', on && 'card-selected')} onClick={() => pick(gl.id)}>
                 <span className="w-[60px] h-[60px] rounded-full grid place-items-center shrink-0" style={{ background: 'var(--lavender)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.7)' }}><img src={gl.icon} alt="" className="w-[44px] h-[44px] object-contain" /></span>
                 <div className="w-[270px]">
                   <div className="font-display font-extrabold text-[21px] text-ink leading-tight">{gl.title}</div>
                   <div className="text-[15px] font-semibold text-ink-3 leading-snug">{gl.desc}</div>
                 </div>
                 <div className="flex-1 text-[16px] font-bold text-primary-ink leading-snug">{gl.available ? gl.tag : 'Coming soon'}</div>
-                {gl.available ? (on ? <Check size={36} /> : <span className="radio" />) : <span className="chip h-[30px] px-3 text-[12px]">Coming soon</span>}
-              </Card>
+                {gl.available ? (on ? <Check size={36} /> : <span className="radio" />) : <ComingSoonBadge loading={loading} error={Boolean(error)} className="shrink-0" />}
+              </motion.button>
             </Item>
           )
         })}
         <Item v="left">
-          <Card hover selected={chosen.includes('nova')} className="w-[685px] h-[74px] px-5 flex items-center gap-5" onClick={() => pick('nova')}>
+          <motion.button type="button" disabled={!novaAvailable} aria-label={novaAvailable ? 'Let Nova decide' : 'Let Nova decide, locked, coming soon'} aria-pressed={novaAvailable && chosen.includes('nova')}
+            className={cn('card w-[685px] h-[74px] px-5 flex items-center gap-5 text-left', novaAvailable ? 'card-hover' : 'cursor-not-allowed', novaAvailable && chosen.includes('nova') && 'card-selected')} onClick={() => pick('nova')}>
             <span className="w-[56px] h-[56px] rounded-full grid place-items-center shrink-0" style={{ background: 'var(--lavender)' }}><img src="/art/goal-nova.webp" alt="" className="w-[44px] h-[44px] object-contain" /></span>
             <div className="flex-1">
               <div className="font-display font-extrabold text-[21px] text-ink leading-tight">{novaGoal?.title || 'Not sure yet — Let Nova decide'}</div>
               <div className="text-[15px] font-semibold text-ink-3">{novaGoal?.tag || 'Help me explore and decide later.'}</div>
             </div>
-            {chosen.includes('nova') ? <Check size={36} /> : <span className="radio" />}
-          </Card>
+            {!novaAvailable ? <ComingSoonBadge loading={loading} error={Boolean(error)} /> : chosen.includes('nova') ? <Check size={36} /> : <span className="radio" />}
+          </motion.button>
         </Item>
       </Stack>
 
@@ -124,7 +141,7 @@ export default function Goals() {
       <Child screen="goals" delay={0.5} />
       <div className="absolute left-[1462px] top-[560px]"><SpeechBubble tail="left" text="We can change this anytime. ✨" delay={0.3} className="w-[170px] text-[17px]" /></div>
       <motion.div className="absolute left-[945px] top-[798px]" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Button size="lg" arrow className="w-[520px] h-[98px] uppercase text-[30px]" sound="whoosh" disabled={loading || Boolean(error) || !goals.length} onClick={async () => { await g.saveGoals(); nav('/onboarding/nova') }}>Continue</Button>
+        <Button size="lg" arrow className="w-[520px] h-[98px] uppercase text-[30px]" sound="whoosh" disabled={loading || Boolean(error) || !chosen.some(id => availableIds.includes(id))} onClick={async () => { await g.saveGoals(); nav('/onboarding/nova') }}>Continue</Button>
       </motion.div>
     </Page>
   )

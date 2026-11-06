@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ChevronLeft, Star } from 'lucide-react'
@@ -16,6 +16,7 @@ import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
 import { api, API_MODE } from '../lib/api.js'
 import { useApiCatalog } from '../lib/useApiCatalog.js'
+import ComingSoonBadge from '../components/ComingSoonBadge.jsx'
 
 export default function Interests() {
   const nav = useNavigate()
@@ -27,10 +28,23 @@ export default function Interests() {
     // Keep the polished local art; the server controls the catalog's real IDs/names.
     img: INTERESTS.find(local => local.id === item.key)?.img || item.thumbnail_url,
     apiId: item.id,
+    available: item.is_active !== false && item.locked !== true,
   }))), [])
   const { data: interests, source, loading, error } = useApiCatalog(loadInterests, INTERESTS)
+  const preview = source === 'review' || source === 'demo'
+  const visibleInterests = [...INTERESTS, ...interests.filter(item => !INTERESTS.some(local => local.id === item.id))].map(local => {
+    const item = interests.find(item => item.id === local.id)
+    return { ...local, ...item, available: preview || Boolean(item?.apiId && item.available) }
+  })
+  const availableIds = visibleInterests.filter(item => item.available).map(item => item.id)
+  const selectedCount = sel.filter(id => availableIds.includes(id)).length
+  useEffect(() => {
+    if (loading || error) return
+    const selected = sel.filter(id => availableIds.includes(id))
+    if (selected.length !== sel.length) g.setProfile({ interests: selected })
+  }, [loading, error, sel, availableIds.join('|')])
   const toggle = id => { const on = sel.includes(id); sfx[on ? 'tap' : 'select'](); g.setProfile({ interests: on ? sel.filter(i => i !== id) : [...sel, id] }) }
-  const enough = !loading && !error && sel.filter(id => interests.some(item => item.id === id)).length >= 3
+  const enough = !loading && !error && selectedCount >= 3
   return (
     <Page>
       <Scene name="interests" />
@@ -45,16 +59,17 @@ export default function Interests() {
       <div className="absolute left-[255px] top-[135px]"><SpeechBubble tail="bottom" delay={0.3} className="w-[240px] text-[18px]"><span className="font-extrabold">Great choices!</span><br /><span className="font-semibold text-[16px]">I already have ideas. ✨</span></SpeechBubble></div>
 
       <Stack className="absolute left-[545px] top-[236px] grid grid-cols-4 gap-[22px]" start={0.45} delay={0.07}>
-        {interests.map(it => {
-          const on = sel.includes(it.id)
+        {visibleInterests.map(it => {
+          const on = it.available && sel.includes(it.id)
           return (
             <Item key={it.id} v="pop">
-              <Tilt max={8}>
-                <button className={cn('relative w-[245px] h-[262px] rounded-[26px] overflow-hidden text-left transition-all duration-500', on ? 'ring-[3px] ring-[var(--primary)]' : 'ring-1 ring-[var(--glass-ring)]')} style={{ boxShadow: on ? '0 26px 50px -18px rgba(109,77,232,.6), 0 0 40px -8px rgba(124,92,255,.5)' : '0 16px 36px -18px rgba(70,50,190,.35)' }} onClick={() => toggle(it.id)} onMouseEnter={() => sfx.hover()}>
-                  <img src={it.img} alt="" className="absolute inset-0 w-full h-full object-cover object-top" />
+              <Tilt max={it.available ? 8 : 0}>
+                <button type="button" disabled={!it.available} aria-pressed={on} aria-label={it.available ? it.name : `${it.name}, locked, coming soon`}
+                  className={cn('relative w-[245px] h-[262px] rounded-[26px] overflow-hidden text-left transition-all duration-500', !it.available && 'cursor-not-allowed', on ? 'ring-[3px] ring-[var(--primary)]' : 'ring-1 ring-[var(--glass-ring)]')} style={{ boxShadow: on ? '0 26px 50px -18px rgba(109,77,232,.6), 0 0 40px -8px rgba(124,92,255,.5)' : '0 16px 36px -18px rgba(70,50,190,.35)' }} onClick={() => toggle(it.id)} onMouseEnter={() => it.available && sfx.hover()}>
+                  <img src={it.img} alt="" className={cn('absolute inset-0 w-full h-full object-cover object-top', !it.available && 'grayscale opacity-45')} />
                   <div className="absolute inset-x-0 bottom-0 h-[56px] flex items-center justify-center font-display font-extrabold text-[22px] text-ink" style={{ background: 'var(--bubble)', backdropFilter: 'blur(6px)' }}>{it.name}</div>
                   <motion.div className="absolute inset-0 rounded-[26px]" animate={{ boxShadow: on ? 'inset 0 0 0 3px rgba(255,255,255,.6)' : 'inset 0 0 0 0px rgba(255,255,255,0)' }} />
-                  <div className="absolute top-3 right-3"><Check size={38} show={on} /></div>
+                  {it.available ? <div className="absolute top-3 right-3"><Check size={38} show={on} /></div> : <ComingSoonBadge className="absolute top-3 left-3" loading={loading} error={Boolean(error)} />}
                 </button>
               </Tilt>
             </Item>
@@ -66,8 +81,8 @@ export default function Interests() {
       <motion.div className="absolute left-[545px] top-[800px] card h-[96px] w-[520px] px-6 flex items-center gap-4" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <span className="icon-orb w-[48px] h-[48px]"><Star size={26} fill="currentColor" /></span>
         <div>
-          <div className="font-display font-extrabold text-[24px] text-ink"><motion.span key={sel.length} initial={{ scale: 1.4, color: '#7c5cff' }} animate={{ scale: 1, color: 'var(--ink)' }} className="inline-block">{sel.length}</motion.span> selected</div>
-          <div className="text-[16px] font-semibold text-ink-3">{enough ? 'Pick one more or more to explore even deeper!' : `Pick ${3 - sel.length} more to continue.`}</div>
+          <div className="font-display font-extrabold text-[24px] text-ink"><motion.span key={selectedCount} initial={{ scale: 1.4, color: '#7c5cff' }} animate={{ scale: 1, color: 'var(--ink)' }} className="inline-block">{selectedCount}</motion.span> selected</div>
+          <div className="text-[16px] font-semibold text-ink-3">{enough ? 'Ready to continue. You can pick more if you like.' : `Pick ${Math.max(0, 3 - selectedCount)} more to continue.`}</div>
         </div>
       </motion.div>
       <motion.div className="absolute left-[1085px] top-[800px]" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>

@@ -5,12 +5,12 @@ import { Shirt, Scissors, Glasses, RotateCw, ArrowLeft, ArrowRight, Rocket, Star
 import Scene, { Cutout } from '../components/Scene.jsx'
 import Page, { Stack, Item } from '../components/Page.jsx'
 import { TopBar } from '../components/TopBar.jsx'
-import { Panel, Card, Check } from '../components/Panel.jsx'
+import { Panel, Check } from '../components/Panel.jsx'
 import Button from '../components/ApiButton.jsx'
 import SpeechBubble from '../components/SpeechBubble.jsx'
 import { Sparkles } from '../components/Widgets.jsx'
 import { TrustRow } from './Landing.jsx'
-import { APPROVED_FACES, OUTFITS, spriteFor, hasFaceArt } from '../data/catalog.js'
+import { FACES, APPROVED_FACES, OUTFITS, spriteFor, hasFaceArt } from '../data/catalog.js'
 import { useGame } from '../state/GameProvider.jsx'
 import { sfx } from '../lib/sound.js'
 import { cn } from '../lib/utils.js'
@@ -18,6 +18,7 @@ import { api } from '../lib/api.js'
 import { useLiveResource } from '../lib/useLiveResource.js'
 import { isReviewMode } from '../lib/reviewMode.js'
 import { selectApiAvatar } from '../lib/avatar-selection.js'
+import ComingSoonBadge from '../components/ComingSoonBadge.jsx'
 
 function MiniSteps({ steps, current }) {
   return (
@@ -46,7 +47,11 @@ export default function Avatar() {
   const supported = (face, outfit) => {
     if (review) return true
     if (!catalog.data) return false
-    try { selectApiAvatar({ face, outfit }, catalog.data.characters, catalog.data.items); return true } catch { return false }
+    try {
+      const selection = selectApiAvatar({ face, outfit }, catalog.data.characters, catalog.data.items)
+      const available = item => item && item.is_active !== false && item.locked !== true && item.is_locked !== true
+      return available(catalog.data.characters.find(item => item.id === selection.character_id)) && available(catalog.data.items.find(item => item.id === selection.outfit_item_id))
+    } catch { return false }
   }
   const faces = APPROVED_FACES.filter(face => supported(face.id, 'explorer'))
   const outfits = OUTFITS.filter(item => supported(g.state.profile.face || faces[0]?.id || 1, item.id))
@@ -86,15 +91,20 @@ export default function Avatar() {
       </Stack>
 
       <Stack className="absolute left-[85px] top-[222px] flex flex-col gap-3" start={0.4} delay={0.08}>
-        {faces.map(f => (
+        {FACES.map(f => {
+          const available = faces.some(item => item.id === f.id)
+          const selected = available && selectedFace === f.id
+          return (
           <Item key={f.id} v="pop">
-            <Card aria-label={`Choose avatar ${f.id}`} aria-pressed={selectedFace === f.id} hover selected={selectedFace === f.id} className="relative w-[236px] h-[112px] overflow-hidden grid place-items-center" onClick={() => { sfx.select(); g.setProfile({ face: f.id }) }}>
-              <img src={f.thumb} alt="" className="h-[104px] object-contain" />
-              {selectedFace === f.id && <Check className="absolute -top-1 -right-1" size={34} />}
-            </Card>
+            <button type="button" disabled={!available} aria-label={available ? `Choose avatar ${f.id}` : `Avatar ${f.id}, locked, coming soon`} aria-pressed={selected}
+              className={cn('card relative w-[236px] h-[112px] overflow-hidden grid place-items-center', available ? 'card-hover' : 'cursor-not-allowed', selected && 'card-selected')}
+              onClick={() => { sfx.select(); g.setProfile({ face: f.id }) }}>
+              <img src={f.thumb} alt="" className={cn('h-[104px] object-contain', !available && 'grayscale opacity-45')} />
+              {selected && <Check className="absolute -top-1 -right-1" size={34} />}
+              {!available && <ComingSoonBadge className="absolute bottom-2 left-2" loading={catalog.loading} error={Boolean(catalog.error)} />}
+            </button>
           </Item>
-        ))}
-        <Item v="pop"><div className="pill w-[236px] h-[46px] justify-center text-[15px] font-bold text-ink-2">More avatars coming soon ✨</div></Item>
+        )})}
       </Stack>
 
       {/* Podium + sprite with drag-to-rotate */}
@@ -112,7 +122,7 @@ export default function Avatar() {
       <motion.button aria-label="Rotate avatar left" className="absolute left-[424px] top-[706px] pill w-[64px] h-[64px] justify-center text-ink" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} onClick={() => turn(-180)}><ArrowLeft size={28} strokeWidth={2.6} /></motion.button>
       <motion.button aria-label="Rotate avatar right" className="absolute left-[978px] top-[706px] pill w-[64px] h-[64px] justify-center text-ink" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} onClick={() => turn(180)}><ArrowRight size={28} strokeWidth={2.6} /></motion.button>
 
-      <Panel className="absolute left-[1130px] top-[145px] w-[495px] h-[615px] p-7" initial="hidden" animate="show">
+      <Panel className="absolute left-[1130px] top-[145px] w-[495px] h-[615px] p-7 overflow-y-auto" initial="hidden" animate="show">
         <Sparkles n={4} seed={11} />
         {/* Hair and Accessories moved the highlight but showed the outfit grid underneath
             either way -- three tabs, one panel. There is no hair or accessory art yet, so
@@ -133,14 +143,20 @@ export default function Avatar() {
         </div>
         <div className="mt-5 font-display font-extrabold text-[20px] text-ink">Choose an outfit</div>
         <Stack className="mt-3 grid grid-cols-3 gap-4" start={0.5} delay={0.06}>
-          {outfits.map(o => (
+          {OUTFITS.map(o => {
+            const available = outfits.some(item => item.id === o.id)
+            const selected = available && outfit === o.id
+            return (
             <Item key={o.id} v="pop">
-              <Card aria-label={`Choose ${o.name}`} aria-pressed={outfit === o.id} hover selected={outfit === o.id} className="relative h-[148px] grid place-items-center overflow-hidden" onClick={() => { sfx.select(); g.setProfile({ outfit: o.id }) }}>
-                <img src={o.thumb} alt="" className="h-[136px] object-contain" />
-                {outfit === o.id && <Check className="absolute -top-1 -right-1" size={32} />}
-              </Card>
+              <button type="button" disabled={!available} aria-label={available ? `Choose ${o.name}` : `${o.name}, locked, coming soon`} aria-pressed={selected}
+                className={cn('card relative w-full h-[132px] grid place-items-center overflow-hidden', available ? 'card-hover' : 'cursor-not-allowed', selected && 'card-selected')}
+                onClick={() => { sfx.select(); g.setProfile({ outfit: o.id }) }}>
+                <img src={o.thumb} alt="" className={cn('h-[120px] object-contain', !available && 'grayscale opacity-45')} />
+                {selected && <Check className="absolute -top-1 -right-1" size={32} />}
+                {!available && <ComingSoonBadge className="absolute bottom-1 left-1 right-1 px-1 text-[10px]" loading={catalog.loading} error={Boolean(catalog.error)} />}
+              </button>
             </Item>
-          ))}
+          )})}
         </Stack>
         <motion.div key={current.id} className="mt-5 card px-5 py-4 flex items-center gap-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <span className="icon-orb w-[52px] h-[52px] text-gold" style={{ background: '#fef3c7' }}><Star size={26} fill="currentColor" /></span>
